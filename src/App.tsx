@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { PlayerBar } from './components/PlayerBar';
 import { MainFeed } from './components/MainFeed';
 import { LyricsAndQueue } from './components/LyricsAndQueue';
+import { AuthModal } from './components/AuthModal';
 import type { Track, Playlist } from './types';
 import { POPULAR_TRACKS, searchYouTube } from './utils/youtube';
 
@@ -25,7 +26,9 @@ const DEFAULT_THEME = { primary: '#ff0000', glow: 'rgba(255, 0, 0, 0.2)', bg: '#
 
 function App() {
   // Views and search state
-  const [currentView, setView] = useState<string>('home');
+  const [currentView, setView] = useState<string>(() => {
+    return localStorage.getItem('yt_music_current_view') || 'home';
+  });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Track[]>([]);
 
@@ -38,17 +41,42 @@ function App() {
     const saved = localStorage.getItem('yt_music_liked');
     return saved ? JSON.parse(saved) : [];
   });
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(() => {
+    return localStorage.getItem('yt_music_selected_playlist_id');
+  });
 
   // Playback States
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(() => {
+    const saved = localStorage.getItem('yt_music_current_track');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
-  const [volume, setVolume] = useState<number>(0.5);
-  const [queue, setQueue] = useState<Track[]>(POPULAR_TRACKS);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [isShuffle, setIsShuffle] = useState<boolean>(false);
-  const [isRepeat, setIsRepeat] = useState<'none' | 'one' | 'all'>('none');
+  const [progress, setProgress] = useState<number>(() => {
+    return Number(localStorage.getItem('yt_music_progress') || 0);
+  });
+  const [volume, setVolume] = useState<number>(() => {
+    return Number(localStorage.getItem('yt_music_volume') || 0.5);
+  });
+  const [queue, setQueue] = useState<Track[]>(() => {
+    const saved = localStorage.getItem('yt_music_queue');
+    return saved ? JSON.parse(saved) : POPULAR_TRACKS;
+  });
+  const [currentIndex, setCurrentIndex] = useState<number>(() => {
+    return Number(localStorage.getItem('yt_music_current_index') || 0);
+  });
+  const [isShuffle, setIsShuffle] = useState<boolean>(() => {
+    return localStorage.getItem('yt_music_is_shuffle') === 'true';
+  });
+  const [isRepeat, setIsRepeat] = useState<'none' | 'one' | 'all'>(() => {
+    return (localStorage.getItem('yt_music_is_repeat') as 'none' | 'one' | 'all') || 'none';
+  });
+
+  // User & Auth States
+  const [user, setUser] = useState<{ name: string; email: string; avatar?: string; isGoogle?: boolean } | null>(() => {
+    const saved = localStorage.getItem('resonate_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Side panels states
   const [showLyrics, setShowLyrics] = useState<boolean>(false);
@@ -67,6 +95,58 @@ function App() {
   useEffect(() => {
     localStorage.setItem('yt_music_liked', JSON.stringify(likedTracks));
   }, [likedTracks]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_music_current_view', currentView);
+  }, [currentView]);
+
+  useEffect(() => {
+    if (selectedPlaylistId) {
+      localStorage.setItem('yt_music_selected_playlist_id', selectedPlaylistId);
+    } else {
+      localStorage.removeItem('yt_music_selected_playlist_id');
+    }
+  }, [selectedPlaylistId]);
+
+  useEffect(() => {
+    if (currentTrack) {
+      localStorage.setItem('yt_music_current_track', JSON.stringify(currentTrack));
+    } else {
+      localStorage.removeItem('yt_music_current_track');
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_music_progress', progress.toString());
+  }, [progress]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_music_volume', volume.toString());
+  }, [volume]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_music_queue', JSON.stringify(queue));
+  }, [queue]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_music_current_index', currentIndex.toString());
+  }, [currentIndex]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_music_is_shuffle', isShuffle.toString());
+  }, [isShuffle]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_music_is_repeat', isRepeat);
+  }, [isRepeat]);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('resonate_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('resonate_user');
+    }
+  }, [user]);
 
   // Apply Dynamic Theme when currentTrack changes
   useEffect(() => {
@@ -196,6 +276,45 @@ function App() {
     }
   };
 
+  // Sync Playlists from Google/YouTube
+  const handleSyncPlaylists = () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    // Simulate syncing:
+    // Create new synced playlists
+    const syncedPlaylists: Playlist[] = [
+      {
+        id: 'yt-sync-1',
+        name: 'My Synced Hits (YouTube)',
+        description: 'Synced from your Google account',
+        createdAt: new Date().toISOString(),
+        tracks: [
+          POPULAR_TRACKS[0], // Despacito
+          POPULAR_TRACKS[1], // Gangnam Style
+          POPULAR_TRACKS[2], // Uptown Funk
+        ],
+      },
+      {
+        id: 'yt-sync-2',
+        name: 'Lofi & Focus Vibes (YouTube)',
+        description: 'Synced study list from YouTube',
+        createdAt: new Date().toISOString(),
+        tracks: [
+          POPULAR_TRACKS[9], // Lofi Hip Hop
+          POPULAR_TRACKS[5], // Counting Stars
+        ],
+      }
+    ];
+
+    // Merge playlists, removing older synced playlists first to avoid duplicates
+    setPlaylists((prev) => {
+      const filtered = prev.filter((p) => !p.id.startsWith('yt-sync-'));
+      return [...filtered, ...syncedPlaylists];
+    });
+  };
+
   return (
     <div className="app-container dynamic-theme">
       {/* Top Navbar */}
@@ -203,6 +322,9 @@ function App() {
         onSearch={handleSearch}
         setView={setView}
         onPlayTrackImmediate={handlePlayTrackImmediate}
+        user={user}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={() => setUser(null)}
       />
 
       {/* Side Navigation Bar */}
@@ -212,6 +334,8 @@ function App() {
         playlists={playlists}
         onCreatePlaylist={() => setIsModalOpen(true)}
         setSelectedPlaylistId={setSelectedPlaylistId}
+        user={user}
+        onSyncPlaylists={handleSyncPlaylists}
       />
 
       {/* Main Content Layout containing Feed and Drawer */}
@@ -307,6 +431,13 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Google and Custom Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={(u) => setUser(u)}
+      />
     </div>
   );
 }

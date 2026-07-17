@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Music, Disc } from 'lucide-react';
+import { Search, Music, Disc, LogOut, User as UserIcon } from 'lucide-react';
 import type { Track } from '../types';
 import { POPULAR_TRACKS } from '../utils/youtube';
 
@@ -7,19 +7,34 @@ interface NavbarProps {
   onSearch: (query: string) => void;
   setView: (view: string) => void;
   onPlayTrackImmediate: (track: Track) => void;
+  user: { name: string; email: string; avatar?: string; isGoogle?: boolean } | null;
+  onOpenAuth: () => void;
+  onLogout: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onSearch, setView, onPlayTrackImmediate }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onSearch,
+  setView,
+  onPlayTrackImmediate,
+  user,
+  onOpenAuth,
+  onLogout,
+}) => {
   const [query, setQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Track[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
-  // Close suggestions when clicking outside
+  // Close suggestions and profile dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -99,8 +114,34 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearch, setView, onPlayTrackIm
         )}
       </div>
 
-      <div className="nav-right">
-        <div className="avatar">A</div>
+      <div className="nav-right" ref={profileRef}>
+        {user ? (
+          <div className="profile-dropdown-container">
+            <div className="avatar" style={{ cursor: 'pointer' }} onClick={() => setShowDropdown(!showDropdown)}>
+              {user.avatar || user.name.charAt(0).toUpperCase()}
+            </div>
+            {showDropdown && (
+              <div className="profile-dropdown">
+                <div className="profile-info">
+                  <div className="profile-name">{user.name}</div>
+                  <div className="profile-email">{user.email}</div>
+                </div>
+                <button className="dropdown-item" onClick={() => { setView('library'); setShowDropdown(false); }}>
+                  <UserIcon size={16} />
+                  My Library
+                </button>
+                <button className="dropdown-item dropdown-item-danger" onClick={() => { onLogout(); setShowDropdown(false); }}>
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button className="btn btn-primary" onClick={onOpenAuth}>
+            Sign In
+          </button>
+        )}
       </div>
     </nav>
   );

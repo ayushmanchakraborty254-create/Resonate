@@ -109,6 +109,11 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         events: {
           onReady: (event: any) => {
             event.target.setVolume(volume * 100);
+            const savedProgress = Number(localStorage.getItem('yt_music_progress') || 0);
+            if (savedProgress > 0 && currentTrack) {
+              event.target.seekTo(savedProgress, true);
+              event.target.pauseVideo();
+            }
           },
           onStateChange: (event: any) => {
             // YT.PlayerState: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)

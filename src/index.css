@@ -798,6 +798,275 @@ body {
   background-color: #e6e6e6;
 }
 
+/* Auth Modal Styles */
+.auth-modal-overlay {
+  z-index: 1000;
+}
+
+.auth-modal-content {
+  max-width: 420px;
+  width: 100%;
+  padding: 32px;
+  position: relative;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auth-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--yt-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.auth-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth-logo-icon {
+  color: var(--yt-accent);
+  margin-bottom: 12px;
+}
+
+.auth-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.auth-header p {
+  font-size: 13px;
+  color: var(--yt-text-secondary);
+}
+
+.auth-error-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(229, 57, 53, 0.15);
+  border: 1px solid rgba(229, 57, 53, 0.3);
+  color: #ef5350;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-input-group {
+  position: relative;
+  width: 100%;
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--yt-text-secondary);
+}
+
+.auth-input-group input {
+  width: 100%;
+  height: 44px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0 16px 0 42px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.auth-input-group input:focus {
+  border-color: var(--yt-accent);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.btn-auth-submit {
+  height: 44px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: var(--yt-text-secondary);
+  font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auth-divider:not(:empty)::before {
+  margin-right: .5em;
+}
+
+.auth-divider:not(:empty)::after {
+  margin-left: .5em;
+}
+
+.btn-google-signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 44px;
+  background-color: #fff;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-google-signin:hover {
+  background-color: #e6e6e6;
+}
+
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--yt-text-secondary);
+}
+
+.auth-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--yt-accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-toggle-btn:hover {
+  text-decoration: underline;
+}
+
+/* User Profile Menu Dropdown */
+.profile-dropdown-container {
+  position: relative;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 0;
+  width: 200px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+}
+
+.profile-info {
+  padding: 8px 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
+}
+
+.profile-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-email {
+  font-size: 11px;
+  color: var(--yt-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-item-danger {
+  color: #ef5350;
+}
+
+.dropdown-item-danger:hover {
+  background-color: rgba(229, 57, 53, 0.08);
+}
+
+/* Sync Playlist Header Section */
+.sync-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 8px;
+}
+
+.sync-btn {
+  background: transparent;
+  border: none;
+  color: var(--yt-text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.sync-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
 /* Responsive fixes */
 @media (max-width: 900px) {
   .app-container {

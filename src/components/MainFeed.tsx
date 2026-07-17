@@ -45,6 +45,79 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     return `${m}:${s}`;
   };
 
+  if (view === 'favourites') {
+    return (
+      <div>
+        <div className="playlist-header">
+          <div
+            style={{
+              width: '200px',
+              height: '200px',
+              backgroundColor: 'rgba(255, 228, 230, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              boxShadow: '0 8px 24px rgba(225, 29, 72, 0.25)',
+              border: '1px solid rgba(225, 29, 72, 0.15)',
+            }}
+          >
+            <Heart size={72} fill="var(--yt-accent)" style={{ color: 'var(--yt-accent)' }} />
+          </div>
+          <div className="playlist-details">
+            <div className="playlist-tag">Collection</div>
+            <div className="playlist-name">Favourites</div>
+            <div className="playlist-desc">Your personal list of liked tracks.</div>
+            <div className="playlist-stats">
+              {likedTracks.length} songs
+            </div>
+            <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  if (likedTracks.length > 0) {
+                    onPlayTrack(likedTracks[0]);
+                  }
+                }}
+                disabled={likedTracks.length === 0}
+              >
+                Play
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="home-section">
+          {likedTracks.length === 0 ? (
+            <div style={{ color: 'var(--yt-text-secondary)', fontSize: '14px', padding: '24px 0' }}>
+              No liked tracks yet. Click the heart icon on any song to save it here!
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {likedTracks.map((track) => (
+                <div key={track.id} className="track-row" onClick={() => onPlayTrack(track)}>
+                  <img
+                    src={track.thumbnailUrl}
+                    className="track-row-img"
+                    alt={track.title}
+                  />
+                  <div className="track-row-info">
+                    <div className="track-row-title">{track.title}</div>
+                    <div className="track-row-subtitle">{track.artist}</div>
+                  </div>
+                  <div className="track-row-right">
+                    <Heart size={16} fill="var(--yt-accent)" style={{ color: 'var(--yt-accent)' }} />
+                    <span style={{ fontSize: '12px', marginLeft: '8px' }}>{formatSecs(track.duration)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'home') {
     return (
       <div>

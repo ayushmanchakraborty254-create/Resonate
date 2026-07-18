@@ -7,12 +7,6 @@ interface AuthModalProps {
   onLoginSuccess: (user: { name: string; email: string; avatar?: string; isGoogle?: boolean }) => void;
 }
 
-declare global {
-  interface Window {
-    google?: any;
-  }
-}
-
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -20,59 +14,73 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
 
-  // Polling check to initialize and render the official Google button when GIS SDK is loaded
+  // Client ID state loaded from localstorage
+  const [customClientId, setCustomClientId] = useState(() => {
+    return localStorage.getItem('resonate_google_client_id') || '';
+  });
+
+  // Automatically initialize and render the official Google button when GSI SDK is ready
   useEffect(() => {
+    if (!isOpen) return;
+
     let interval: any;
-
-    const initGoogleSignIn = () => {
-      if (window.google && window.google.accounts) {
+    const initGoogleGsi = () => {
+      const gWindow = window as any;
+      if (gWindow.google && gWindow.google.accounts) {
         clearInterval(interval);
-        window.google.accounts.id.initialize({
-          client_id: "680789422005-7s5m745qj99723l8410292f7c00e1234.apps.googleusercontent.com", // standard dev client ID
-          callback: (response: any) => {
-            try {
-              const token = response.credential;
-              // Decode standard JWT
-              const base64Url = token.split('.')[1];
-              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-              const jsonPayload = decodeURIComponent(
-                window.atob(base64)
-                  .split('')
-                  .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                  .join('')
-              );
-              const payload = JSON.parse(jsonPayload);
-              
-              onLoginSuccess({
-                name: payload.name || payload.email.split('@')[0],
-                email: payload.email,
-                avatar: payload.picture,
-                isGoogle: true,
-              });
-              onClose();
-            } catch (err) {
-              console.error('Error decoding credential response:', err);
+        try {
+          gWindow.google.accounts.id.initialize({
+            client_id: customClientId || "YOUR_GOOGLE_CLIENT_ID", // fallback placeholder
+            callback: (response: any) => {
+              try {
+                const token = response.credential;
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(
+                  window.atob(base64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+                );
+                const payload = JSON.parse(jsonPayload);
+                
+                onLoginSuccess({
+                  name: payload.name || payload.email.split('@')[0],
+                  email: payload.email,
+                  avatar: payload.picture,
+                  isGoogle: true,
+                });
+                onClose();
+              } catch (err) {
+                console.error('Error decoding credential response:', err);
+              }
             }
-          }
-        });
+          });
 
-        const btnContainer = document.getElementById("google-signin-button");
-        if (btnContainer) {
-          window.google.accounts.id.renderButton(
-            btnContainer,
-            { theme: "filled_blue", size: "large", width: 356, text: "signin_with" }
-          );
+          const btnContainer = document.getElementById("google-official-btn");
+          if (btnContainer) {
+            btnContainer.innerHTML = ""; // Clear old rendering
+            gWindow.google.accounts.id.renderButton(
+              btnContainer,
+              { 
+                theme: "filled_black", 
+                size: "large", 
+                width: 356, 
+                shape: "pill",
+                text: "signin_with" 
+              }
+            );
+          }
+        } catch (err) {
+          console.warn('Failed to initialize Google GSI client:', err);
         }
       }
     };
 
-    if (isOpen) {
-      initGoogleSignIn();
-      interval = setInterval(initGoogleSignIn, 500);
-    }
-
+    initGoogleGsi();
+    interval = setInterval(initGoogleGsi, 1000);
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, customClientId]);
 
   if (!isOpen) return null;
 
@@ -103,9 +111,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
     onClose();
   };
 
+  const handleClientIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCustomClientId(val);
+    if (val.trim()) {
+      localStorage.setItem('resonate_google_client_id', val.trim());
+    } else {
+      localStorage.removeItem('resonate_google_client_id');
+    }
+  };
+
   return (
     <div className="modal-overlay auth-modal-overlay">
-      <div className="modal-content auth-modal-content">
+      <div className="modal-content auth-modal-content" style={{ maxWidth: '440px' }}>
         <button className="auth-close-btn" onClick={onClose}>
           <X size={20} />
         </button>
@@ -168,8 +186,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           <span>OR</span>
         </div>
 
-        {/* Official Google Sign-In Button Target */}
-        <div id="google-signin-button" style={{ display: 'flex', justifyContent: 'center', width: '100%', minHeight: '40px' }}></div>
+        {/* Official Sign In with Google container */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%' }}>
+          <div id="google-official-btn" style={{ minHeight: '40px' }}></div>
+          
+          <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
+            <label style={{ fontSize: '11px', color: 'var(--yt-text-secondary)', display: 'block', marginBottom: '6px', textAlign: 'left' }}>
+              Google API Client ID (Required to authorize official button):
+            </label>
+            <input
+              type="text"
+              className="modal-input"
+              placeholder="Paste Client ID here (ex: 680789...)"
+              value={customClientId}
+              onChange={handleClientIdChange}
+              style={{ height: '36px', fontSize: '12px', marginBottom: '0' }}
+            />
+          </div>
+        </div>
 
         <div className="auth-footer">
           <span>{isSignUp ? 'Already have an account? ' : "Don't have an account? "}</span>

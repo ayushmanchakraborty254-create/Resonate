@@ -937,21 +937,29 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  height: 44px;
-  background-color: #fff;
-  color: #000;
-  border: none;
-  border-radius: 8px;
+  height: 46px;
+  background-color: #ffffff;
+  color: #1f1f1f;
+  border: 1px solid #dadce0;
+  border-radius: 23px;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
 }
 
 .btn-google-signin:hover {
-  background-color: #e6e6e6;
+  background-color: #f8f9fa;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.05);
+  transform: translateY(-1px);
+}
+
+.btn-google-signin:active {
+  transform: translateY(0);
+  background-color: #f1f3f4;
 }
 
 .auth-footer {

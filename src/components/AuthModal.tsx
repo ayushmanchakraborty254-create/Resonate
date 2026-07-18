@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, LogIn, Mail, Lock, User, AlertCircle } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (user: { name: string; email: string; avatar?: string; isGoogle?: boolean }) => void;
+}
+
+declare global {
+  interface Window {
+    google?: any;
+  }
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
@@ -14,36 +20,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
 
-  // Client ID state loaded from localstorage
+  // Client ID state loaded from localstorage or env
   const [customClientId, setCustomClientId] = useState(() => {
-    return localStorage.getItem('resonate_google_client_id') || '605009533283-r6tg33nkq8i24n6qh8gkds8cdgknk2a6.apps.googleusercontent.com';
+    return localStorage.getItem('resonate_google_client_id') || 
+           import.meta.env.VITE_GOOGLE_CLIENT_ID || 
+           '605009533283-r6tg33nkq8i24n6qh8gkds8cdgknk2a6.apps.googleusercontent.com';
   });
 
-  // Automatically initialize and render the official Google button when GSI SDK is ready
-  useEffect(() => {
-    if (!isOpen) return;
+  if (!isOpen) return null;
 
-    let interval: any;
-    const initGoogleGsi = () => {
-      const gWindow = window as any;
-      if (gWindow.google && gWindow.google.accounts) {
-        clearInterval(interval);
-        try {
-          gWindow.google.accounts.id.initialize({
-            client_id: customClientId || "YOUR_GOOGLE_CLIENT_ID", // fallback placeholder
-            callback: (response: any) => {
-              try {
-                const token = response.credential;
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(
-                  window.atob(base64)
-                    .split('')
-                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                    .join('')
-                );
-                const payload = JSON.parse(jsonPayload);
-                
+  const handleGoogleSignIn = () => {
+    setError('');
+    const gWindow = window as any;
+    if (gWindow.google && gWindow.google.accounts && gWindow.google.accounts.oauth2) {
+      try {
+        const client = gWindow.google.accounts.oauth2.initTokenClient({
+          client_id: customClientId,
+          scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly',
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse.error) {
+              console.error('Google OAuth Error:', tokenResponse.error);
+              setError(`Google Auth failed: ${tokenResponse.error_description || tokenResponse.error}`);
+              return;
+            }
+
+            const accessToken = tokenResponse.access_token;
+            localStorage.setItem('resonate_google_access_token', accessToken);
+            // Save token expiry timestamp
+            const expiryTime = Date.now() + tokenResponse.expires_in * 1000;
+            localStorage.setItem('resonate_google_token_expiry', expiryTime.toString());
+
+            // Fetch user profile info using the access token
+            try {
+              const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${accessToken}` }
+              });
+              if (res.ok) {
+                const payload = await res.json();
                 onLoginSuccess({
                   name: payload.name || payload.email.split('@')[0],
                   email: payload.email,
@@ -51,38 +64,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
                   isGoogle: true,
                 });
                 onClose();
-              } catch (err) {
-                console.error('Error decoding credential response:', err);
+              } else {
+                setError('Failed to fetch user profile details from Google API');
               }
+            } catch (err) {
+              console.error('Error fetching user info:', err);
+              setError('Failed to contact Google API to retrieve profile details');
             }
-          });
-
-          const btnContainer = document.getElementById("google-official-btn");
-          if (btnContainer) {
-            btnContainer.innerHTML = ""; // Clear old rendering
-            gWindow.google.accounts.id.renderButton(
-              btnContainer,
-              { 
-                theme: "filled_black", 
-                size: "large", 
-                width: 356, 
-                shape: "pill",
-                text: "signin_with" 
-              }
-            );
           }
-        } catch (err) {
-          console.warn('Failed to initialize Google GSI client:', err);
-        }
+        });
+        client.requestAccessToken();
+      } catch (err) {
+        console.error('Failed to initialize Google token client:', err);
+        setError('Failed to start Google Sign-In script. Please try again.');
       }
-    };
-
-    initGoogleGsi();
-    interval = setInterval(initGoogleGsi, 1000);
-    return () => clearInterval(interval);
-  }, [isOpen, customClientId]);
-
-  if (!isOpen) return null;
+    } else {
+      setError('Google Authentication library is still loading. Please wait a few seconds and try again.');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,18 +185,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           <span>OR</span>
         </div>
 
-        {/* Official Sign In with Google container */}
+        {/* Custom Premium Google Sign In Button */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%' }}>
-          <div id="google-official-btn" style={{ minHeight: '40px' }}></div>
+          <button className="btn-google-signin" onClick={handleGoogleSignIn} style={{ outline: 'none' }}>
+            <svg className="google-icon" viewBox="0 0 24 24" width="20" height="20">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22c-.22-.67-.35-1.37-.35-2.09z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+            <span>Continue with Google</span>
+          </button>
           
           <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
             <label style={{ fontSize: '11px', color: 'var(--yt-text-secondary)', display: 'block', marginBottom: '6px', textAlign: 'left' }}>
-              Google API Client ID (Required to authorize official button):
+              Google API Client ID (Required for custom OAuth authorization):
             </label>
             <input
               type="text"
               className="modal-input"
-              placeholder="Paste Client ID here (ex: 680789...)"
+              placeholder="Paste Client ID here (ex: 605009...)"
               value={customClientId}
               onChange={handleClientIdChange}
               style={{ height: '36px', fontSize: '12px', marginBottom: '0' }}

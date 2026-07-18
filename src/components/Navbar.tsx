@@ -117,8 +117,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="nav-right" ref={profileRef}>
         {user ? (
           <div className="profile-dropdown-container">
-            <div className="avatar" style={{ cursor: 'pointer' }} onClick={() => setShowDropdown(!showDropdown)}>
-              {user.avatar || user.name.charAt(0).toUpperCase()}
+            <div className="avatar" style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowDropdown(!showDropdown)}>
+              {user.avatar && (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) ? (
+                <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              ) : (
+                user.avatar || user.name.charAt(0).toUpperCase()
+              )}
             </div>
             {showDropdown && (
               <div className="profile-dropdown">

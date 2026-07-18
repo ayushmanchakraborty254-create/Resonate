@@ -7,6 +7,9 @@ import { LyricsAndQueue } from './components/LyricsAndQueue';
 import { AuthModal } from './components/AuthModal';
 import type { Track, Playlist } from './types';
 import { POPULAR_TRACKS, searchYouTube } from './utils/youtube';
+import { YouTubeProvider } from './utils/syncManager';
+
+const youtubeProvider = new YouTubeProvider();
 
 // Color themes mapped to each track's visual identity to simulate Material You dynamic theme
 const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }> = {
@@ -148,6 +151,69 @@ function App() {
     }
   }, [user]);
 
+  const executeSyncSilent = async (accessToken: string) => {
+    try {
+      const syncedPlaylists = await youtubeProvider.fetchPlaylists(accessToken);
+      const syncedLikes = await youtubeProvider.fetchLikedSongs(accessToken);
+
+      setPlaylists((prev) => {
+        const custom = prev.filter((p) => !p.id.startsWith('yt-sync-'));
+        return [...custom, ...syncedPlaylists];
+      });
+
+      if (syncedLikes.length > 0) {
+        setLikedTracks((prev) => {
+          const merged = [...prev];
+          syncedLikes.forEach((track) => {
+            if (!merged.some((t) => t.id === track.id)) {
+              merged.push({
+                id: track.id,
+                title: track.title,
+                artist: track.artist,
+                duration: track.duration,
+                thumbnailUrl: track.thumbnailUrl,
+                youtubeUrl: track.youtubeUrl,
+                lyrics: `[Enjoy listening to ${track.title} on Resonate!]`
+              });
+            }
+          });
+          return merged;
+        });
+      }
+    } catch (e) {
+      console.warn('Silent sync failed:', e);
+    }
+  };
+
+  // Automatically sync playlists when a Google user logs in, or clear them on logout
+  useEffect(() => {
+    if (user?.isGoogle) {
+      const token = localStorage.getItem('resonate_google_access_token');
+      const expiry = localStorage.getItem('resonate_google_token_expiry');
+      if (token && expiry && Date.now() < Number(expiry)) {
+        executeSyncSilent(token);
+      }
+    } else {
+      // Clear synced playlists on logout
+      setPlaylists((prev) => prev.filter((p) => !p.id.startsWith('yt-sync-')));
+    }
+  }, [user]);
+
+  // Background periodic sync (every 15 minutes)
+  useEffect(() => {
+    if (!user?.isGoogle) return;
+
+    const interval = setInterval(() => {
+      const token = localStorage.getItem('resonate_google_access_token');
+      const expiry = localStorage.getItem('resonate_google_token_expiry');
+      if (token && expiry && Date.now() < Number(expiry)) {
+        executeSyncSilent(token);
+      }
+    }, 15 * 60 * 1000); // 15 mins
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Apply Dynamic Theme when currentTrack changes
   useEffect(() => {
     const root = document.documentElement;
@@ -276,43 +342,89 @@ function App() {
     }
   };
 
-  // Sync Playlists from Google/YouTube
-  const handleSyncPlaylists = () => {
-    if (!user) {
+  // Sync Playlists from Google/YouTube using official API
+  const handleSyncPlaylists = async () => {
+    if (!user || !user.isGoogle) {
       setIsAuthModalOpen(true);
       return;
     }
-    // Simulate syncing:
-    // Create new synced playlists
-    const syncedPlaylists: Playlist[] = [
-      {
-        id: 'yt-sync-1',
-        name: 'My Synced Hits (YouTube)',
-        description: 'Synced from your Google account',
-        createdAt: new Date().toISOString(),
-        tracks: [
-          POPULAR_TRACKS[0], // Despacito
-          POPULAR_TRACKS[1], // Gangnam Style
-          POPULAR_TRACKS[2], // Uptown Funk
-        ],
-      },
-      {
-        id: 'yt-sync-2',
-        name: 'Lofi & Focus Vibes (YouTube)',
-        description: 'Synced study list from YouTube',
-        createdAt: new Date().toISOString(),
-        tracks: [
-          POPULAR_TRACKS[9], // Lofi Hip Hop
-          POPULAR_TRACKS[5], // Counting Stars
-        ],
-      }
-    ];
 
-    // Merge playlists, removing older synced playlists first to avoid duplicates
-    setPlaylists((prev) => {
-      const filtered = prev.filter((p) => !p.id.startsWith('yt-sync-'));
-      return [...filtered, ...syncedPlaylists];
-    });
+    const token = localStorage.getItem('resonate_google_access_token');
+    const expiry = localStorage.getItem('resonate_google_token_expiry');
+
+    if (!token || !expiry || Date.now() > Number(expiry)) {
+      // Token is missing or expired! Re-prompt user scopes using Google GSI Token flow
+      const gWindow = window as any;
+      if (gWindow.google && gWindow.google.accounts && gWindow.google.accounts.oauth2) {
+        try {
+          const clientId = localStorage.getItem('resonate_google_client_id') || 
+                           import.meta.env.VITE_GOOGLE_CLIENT_ID || 
+                           '605009533283-r6tg33nkq8i24n6qh8gkds8cdgknk2a6.apps.googleusercontent.com';
+                           
+          const client = gWindow.google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly',
+            callback: async (tokenResponse: any) => {
+              if (tokenResponse.error) {
+                alert(`Authentication failed: ${tokenResponse.error}`);
+                return;
+              }
+              const newToken = tokenResponse.access_token;
+              localStorage.setItem('resonate_google_access_token', newToken);
+              localStorage.setItem('resonate_google_token_expiry', (Date.now() + tokenResponse.expires_in * 1000).toString());
+              
+              await executeSync(newToken);
+            }
+          });
+          client.requestAccessToken();
+        } catch (e) {
+          console.error(e);
+          alert('Failed to request Google Access Token');
+        }
+      } else {
+        alert('Google API library is still loading. Please try again.');
+      }
+      return;
+    }
+
+    await executeSync(token);
+  };
+
+  const executeSync = async (accessToken: string) => {
+    try {
+      const syncedPlaylists = await youtubeProvider.fetchPlaylists(accessToken);
+      const syncedLikes = await youtubeProvider.fetchLikedSongs(accessToken);
+
+      setPlaylists((prev) => {
+        const custom = prev.filter((p) => !p.id.startsWith('yt-sync-'));
+        return [...custom, ...syncedPlaylists];
+      });
+
+      if (syncedLikes.length > 0) {
+        setLikedTracks((prev) => {
+          const merged = [...prev];
+          syncedLikes.forEach((track) => {
+            if (!merged.some((t) => t.id === track.id)) {
+              merged.push({
+                id: track.id,
+                title: track.title,
+                artist: track.artist,
+                duration: track.duration,
+                thumbnailUrl: track.thumbnailUrl,
+                youtubeUrl: track.youtubeUrl,
+                lyrics: `[Enjoy listening to ${track.title} on Resonate!]`
+              });
+            }
+          });
+          return merged;
+        });
+      }
+
+      alert('Sync completed successfully! Your Google/YouTube music library is updated.');
+    } catch (e) {
+      console.error('Sync failed:', e);
+      alert('Failed to sync library. Please ensure your Google account configuration is correct.');
+    }
   };
 
   return (

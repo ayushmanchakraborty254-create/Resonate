@@ -16,7 +16,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
 
   // Client ID state loaded from localstorage
   const [customClientId, setCustomClientId] = useState(() => {
-    return localStorage.getItem('resonate_google_client_id') || '';
+    return localStorage.getItem('resonate_google_client_id') || '605009533283-r6tg33nkq8i24n6qh8gkds8cdgknk2a6.apps.googleusercontent.com';
   });
 
   // Automatically initialize and render the official Google button when GSI SDK is ready

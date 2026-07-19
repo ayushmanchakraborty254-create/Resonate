@@ -10,6 +10,10 @@ import { POPULAR_TRACKS, searchYouTube } from './utils/youtube';
 import { syncManager } from './utils/syncManager';
 import { UniversalLibrary } from './components/UniversalLibrary';
 import { personalization } from './utils/personalization';
+import { useBreakpoint } from './utils/responsive';
+import { useNavigation } from './utils/navigation';
+import type { ActiveView } from './utils/navigation';
+import { Home, Search, Library, RefreshCw, User } from 'lucide-react';
 
 // Color themes mapped to each track's visual identity to simulate Material You dynamic theme
 const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }> = {
@@ -28,10 +32,11 @@ const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }
 const DEFAULT_THEME = { primary: '#ff0000', glow: 'rgba(255, 0, 0, 0.2)', bg: '#070707' };
 
 function App() {
-  // Views and search state
-  const [currentView, setView] = useState<string>(() => {
-    return localStorage.getItem('yt_music_current_view') || 'home';
-  });
+  const { isMobile } = useBreakpoint();
+  const { currentView, pushView, activePlaylistId: selectedPlaylistId, setSelectedPlaylistId } = useNavigation();
+  const setView = (v: any) => pushView(v as ActiveView);
+
+  // Search state
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Track[]>([]);
 
@@ -43,9 +48,6 @@ function App() {
   const [likedTracks, setLikedTracks] = useState<Track[]>(() => {
     const saved = localStorage.getItem('yt_music_liked');
     return saved ? JSON.parse(saved) : [];
-  });
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(() => {
-    return localStorage.getItem('yt_music_selected_playlist_id');
   });
 
   // Playback States
@@ -412,7 +414,7 @@ function App() {
   };
 
   return (
-    <div className="app-container dynamic-theme">
+    <div className={`app-container dynamic-theme ${isMobile ? 'mobile-layout' : ''}`}>
       {/* Top Navbar */}
       <Navbar
         onSearch={handleSearch}
@@ -424,20 +426,111 @@ function App() {
       />
 
       {/* Side Navigation Bar */}
-      <Sidebar
-        currentView={currentView}
-        setView={setView}
-        playlists={playlists}
-        onCreatePlaylist={() => setIsModalOpen(true)}
-        setSelectedPlaylistId={setSelectedPlaylistId}
-        user={user}
-        onSyncPlaylists={handleSyncPlaylists}
-      />
+      {!isMobile && (
+        <Sidebar
+          currentView={currentView}
+          setView={setView}
+          playlists={playlists}
+          onCreatePlaylist={() => setIsModalOpen(true)}
+          setSelectedPlaylistId={setSelectedPlaylistId}
+          user={user}
+          onSyncPlaylists={handleSyncPlaylists}
+        />
+      )}
 
       {/* Main Content Layout containing Feed and Drawer */}
       <div className="main-layout" style={{ gridArea: 'main' }}>
         <main className="main-content">
-          {currentView === 'universal_library' ? (
+          {currentView === 'profile' ? (
+            <div style={{ padding: '24px 16px', maxWidth: '600px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+                <div style={{ width: '96px', height: '96px', borderRadius: '50%', backgroundColor: 'var(--yt-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: 'bold', color: '#fff', overflow: 'hidden', boxShadow: '0 8px 24px var(--yt-accent-glow)' }}>
+                  {user ? (user.avatar ? <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : user.name[0].toUpperCase()) : <User size={48} />}
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{user ? user.name : 'Guest Listener'}</h3>
+                  <p style={{ color: 'var(--yt-text-secondary)', fontSize: '14px', marginTop: '4px' }}>{user ? user.email : 'Sign in to sync across devices'}</p>
+                </div>
+              </div>
+
+              {user ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <button className="btn btn-secondary" onClick={() => setUser(null)} style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 600 }}>
+                    Sign Out Account
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <button className="btn btn-primary" onClick={() => setIsAuthModalOpen(true)} style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 600 }}>
+                    Sign In to Resonate
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : isMobile && currentView === 'explore' ? (
+            <div style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', position: 'relative' }}>
+                <input 
+                  type="text" 
+                  placeholder="Artists, songs, or playlists..." 
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '16px', outline: 'none' }}
+                />
+                <button 
+                  onClick={() => {
+                    const phrase = prompt("Speak now to voice search...");
+                    if (phrase) {
+                      setSearchQuery(phrase);
+                      handleSearch(phrase);
+                    }
+                  }}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 19v4M8 23h8"/></svg>
+                </button>
+              </div>
+
+              {searchQuery ? (
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>Search Results</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {searchResults.length === 0 ? (
+                      <div style={{ color: 'var(--yt-text-secondary)' }}>No results found.</div>
+                    ) : (
+                      searchResults.map(track => (
+                        <div key={track.id} className="song-row-card" onClick={() => handlePlayTrackImmediate(track)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>
+                          <img src={track.thumbnailUrl} alt={track.title} style={{ width: '48px', height: '48px', borderRadius: '4px', objectFit: 'cover' }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.title}</div>
+                            <div style={{ color: 'var(--yt-text-secondary)', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artist}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h4 style={{ fontSize: '14px', textTransform: 'uppercase', color: 'var(--yt-text-secondary)', fontWeight: 700, marginBottom: '12px', letterSpacing: '0.5px' }}>Trending Suggestions</h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+                    {['Lofi Beats', 'Gaming Mix 2026', 'Chill Instrumentals', 'Workout Hits', 'Bollywood Beats'].map(term => (
+                      <button 
+                        key={term} 
+                        onClick={() => {
+                          setSearchQuery(term);
+                          handleSearch(term);
+                        }}
+                        style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '13px', cursor: 'pointer' }}
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : currentView === 'universal_library' ? (
             <UniversalLibrary
               onPlayTrack={(track) => {
                 handlePlayTrackImmediate({
@@ -468,26 +561,28 @@ function App() {
           )}
         </main>
 
-        {/* Lyrics or Queue sidebar overlay */}
-        <LyricsAndQueue
-          showLyrics={showLyrics}
-          showQueue={showQueue}
-          currentTrack={currentTrack}
-          queue={queue}
-          currentIndex={currentIndex}
-          onSelectFromQueue={(index) => {
-            setCurrentIndex(index);
-            setCurrentTrack(queue[index]);
-            setIsPlaying(true);
-            setProgress(0);
-          }}
-          onClearQueue={() => {
-            setQueue([]);
-            setCurrentTrack(null);
-            setIsPlaying(false);
-          }}
-          progress={progress}
-        />
+        {/* Lyrics or Queue sidebar overlay (Only on Desktop) */}
+        {!isMobile && (
+          <LyricsAndQueue
+            showLyrics={showLyrics}
+            showQueue={showQueue}
+            currentTrack={currentTrack}
+            queue={queue}
+            currentIndex={currentIndex}
+            onSelectFromQueue={(index) => {
+              setCurrentIndex(index);
+              setCurrentTrack(queue[index]);
+              setIsPlaying(true);
+              setProgress(0);
+            }}
+            onClearQueue={() => {
+              setQueue([]);
+              setCurrentTrack(null);
+              setIsPlaying(false);
+            }}
+            progress={progress}
+          />
+        )}
       </div>
 
       {/* Persistent Audio Player Controls (Bottom) */}
@@ -513,6 +608,32 @@ function App() {
         likedTracks={likedTracks}
         onToggleLike={handleToggleLike}
       />
+
+      {/* Mobile Bottom Navigation Bar */}
+      {isMobile && (
+        <div className="bottom-nav">
+          <button className={`nav-tab-btn ${currentView === 'home' ? 'active' : ''}`} onClick={() => pushView('home')}>
+            <Home size={20} />
+            <span>Home</span>
+          </button>
+          <button className={`nav-tab-btn ${currentView === 'explore' ? 'active' : ''}`} onClick={() => pushView('explore')}>
+            <Search size={20} />
+            <span>Search</span>
+          </button>
+          <button className={`nav-tab-btn ${currentView === 'library' ? 'active' : ''}`} onClick={() => pushView('library')}>
+            <Library size={20} />
+            <span>Library</span>
+          </button>
+          <button className={`nav-tab-btn ${currentView === 'universal_library' ? 'active' : ''}`} onClick={() => pushView('universal_library')}>
+            <RefreshCw size={20} />
+            <span>Universal</span>
+          </button>
+          <button className={`nav-tab-btn ${currentView === 'profile' ? 'active' : ''}`} onClick={() => pushView('profile')}>
+            <User size={20} />
+            <span>Profile</span>
+          </button>
+        </div>
+      )}
 
       {/* Create Playlist Modal overlay */}
       {isModalOpen && (

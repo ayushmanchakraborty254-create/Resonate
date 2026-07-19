@@ -1,0 +1,26 @@
+{
+  "short_name": "Resonate",
+  "name": "Resonate - Universal Music Sync",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3b5.png",
+      "type": "image/png",
+      "sizes": "72x72"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/128x128/1f3b5.png",
+      "type": "image/png",
+      "sizes": "128x128"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/512x512/1f3b5.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#030303",
+  "theme_color": "#ff0000",
+  "display": "standalone",
+  "orientation": "any"
+}

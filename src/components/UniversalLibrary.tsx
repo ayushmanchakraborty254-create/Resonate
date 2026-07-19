@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Music, RefreshCw, Shield, ShieldAlert, CheckCircle, 
-  Trash2, Play, Sparkles, FolderHeart, Disc, AlertTriangle
+  Trash2, Play, Sparkles, FolderHeart, Disc, AlertTriangle,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import type { UnifiedTrack, UnifiedPlaylist } from '../types';
 import { syncManager } from '../utils/syncManager';
 import { db } from '../utils/db';
 import { personalization } from '../utils/personalization';
+import { useBreakpoint } from '../utils/responsive';
 
 interface UniversalLibraryProps {
   onPlayTrack: (track: any) => void;
@@ -152,12 +154,16 @@ export const UniversalLibrary: React.FC<UniversalLibraryProps> = ({ onPlayTrack 
     }
   };
 
+  const { isMobile } = useBreakpoint();
+  const [mobileSubView, setMobileSubView] = useState<'connections' | 'songs' | 'playlists' | 'recommendations' | null>(null);
+  const currentTab = isMobile ? mobileSubView : activeTab;
+
   const displayedPlaylists = showOnlyMusic 
     ? syncedPlaylists.filter(p => p.isMusic !== false)
     : syncedPlaylists;
 
   return (
-    <div style={{ padding: '8px' }}>
+    <div style={{ padding: '8px', paddingBottom: isMobile ? '80px' : '24px' }}>
       <h2 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <Music size={28} style={{ color: 'var(--yt-accent)' }} /> Universal Library
       </h2>
@@ -165,16 +171,82 @@ export const UniversalLibrary: React.FC<UniversalLibraryProps> = ({ onPlayTrack 
         Unified browse and account synchronizer for Spotify, Google YouTube, and Apple Music.
       </p>
 
-      {/* Tabs Menu */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '24px', paddingBottom: '8px' }}>
-        <button className={`pill ${activeTab === 'connections' ? 'active' : ''}`} onClick={() => setActiveTab('connections')}>Connections</button>
-        <button className={`pill ${activeTab === 'songs' ? 'active' : ''}`} onClick={() => setActiveTab('songs')}>Unified Songs ({syncedTracks.length})</button>
-        <button className={`pill ${activeTab === 'playlists' ? 'active' : ''}`} onClick={() => setActiveTab('playlists')}>Playlists ({syncedPlaylists.length})</button>
-        <button className={`pill ${activeTab === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveTab('recommendations')}>Daily Mix & Recommendations</button>
-      </div>
+      {isMobile && !mobileSubView ? (
+        /* MOBILE VERTICAL CATEGORIES INDEX */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Sync Dashboard Status */}
+          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--yt-text-secondary)', textTransform: 'uppercase' }}>Last Sync Time</div>
+                <div style={{ fontWeight: 600, fontSize: '14px', marginTop: '2px' }}>{lastSync}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--yt-text-secondary)', textTransform: 'uppercase' }}>Status</div>
+                <div style={{ fontWeight: 600, fontSize: '14px', marginTop: '2px', color: syncStatus === 'success' ? '#2e7d32' : syncStatus === 'warning' ? '#f57c00' : 'var(--yt-text-secondary)' }}>
+                  {syncStatus === 'success' ? 'Synchronized' : syncStatus === 'warning' ? 'Warning' : 'Unsynchronized'}
+                </div>
+              </div>
+            </div>
+            {isSyncing && (
+              <div style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', height: '6px', marginBottom: '16px', overflow: 'hidden' }}>
+                <div style={{ width: `${syncProgress}%`, backgroundColor: 'var(--yt-accent)', height: '100%', transition: 'width 0.3s ease' }}></div>
+              </div>
+            )}
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSyncNow} 
+              disabled={isSyncing || syncManager.isSyncing}
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', fontSize: '14px', fontWeight: 600 }}
+            >
+              Sync Music Library
+            </button>
+          </div>
+
+          {/* Categories Groups */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+            <div onClick={() => setMobileSubView('connections')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>Connections & Profiles</div>
+              <ChevronRight size={18} style={{ color: 'var(--yt-text-secondary)' }} />
+            </div>
+            <div onClick={() => setMobileSubView('playlists')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>Playlists ({displayedPlaylists.length})</div>
+              <ChevronRight size={18} style={{ color: 'var(--yt-text-secondary)' }} />
+            </div>
+            <div onClick={() => setMobileSubView('songs')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>Songs ({syncedTracks.length})</div>
+              <ChevronRight size={18} style={{ color: 'var(--yt-text-secondary)' }} />
+            </div>
+            <div onClick={() => setMobileSubView('recommendations')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>Recommendations & Moods</div>
+              <ChevronRight size={18} style={{ color: 'var(--yt-text-secondary)' }} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* DETAIL VIEW OR DESKTOP */
+        <>
+          {isMobile && (
+            <button 
+              onClick={() => setMobileSubView(null)} 
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: 'var(--yt-accent)', cursor: 'pointer', fontWeight: 600, fontSize: '14px', marginBottom: '16px', padding: '4px 0' }}
+            >
+              <ChevronLeft size={16} /> Back to Library Categories
+            </button>
+          )}
+
+          {!isMobile && (
+            /* Tabs Menu (Desktop) */
+            <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '24px', paddingBottom: '8px' }}>
+              <button className={`pill ${activeTab === 'connections' ? 'active' : ''}`} onClick={() => setActiveTab('connections')}>Connections</button>
+              <button className={`pill ${activeTab === 'songs' ? 'active' : ''}`} onClick={() => setActiveTab('songs')}>Unified Songs ({syncedTracks.length})</button>
+              <button className={`pill ${activeTab === 'playlists' ? 'active' : ''}`} onClick={() => setActiveTab('playlists')}>Playlists ({syncedPlaylists.length})</button>
+              <button className={`pill ${activeTab === 'recommendations' ? 'active' : ''}`} onClick={() => setActiveTab('recommendations')}>Daily Mix & Recommendations</button>
+            </div>
+          )}
 
       {/* Connection Panel */}
-      {activeTab === 'connections' && (
+      {currentTab === 'connections' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
           {/* Sync Dashboard Status */}
@@ -362,7 +434,7 @@ export const UniversalLibrary: React.FC<UniversalLibraryProps> = ({ onPlayTrack 
       )}
 
       {/* Unified Songs Tab */}
-      {activeTab === 'songs' && (
+      {currentTab === 'songs' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {syncedTracks.length === 0 ? (
             <div style={{ color: 'var(--yt-text-secondary)', fontSize: '14px', padding: '24px 0' }}>
@@ -403,7 +475,7 @@ export const UniversalLibrary: React.FC<UniversalLibraryProps> = ({ onPlayTrack 
       )}
 
       {/* Synced Playlists */}
-      {activeTab === 'playlists' && (
+      {currentTab === 'playlists' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {displayedPlaylists.length === 0 ? (
             <div style={{ color: 'var(--yt-text-secondary)', fontSize: '14px', padding: '24px 0' }}>
@@ -448,7 +520,7 @@ export const UniversalLibrary: React.FC<UniversalLibraryProps> = ({ onPlayTrack 
       )}
 
       {/* Recommendations & Mixes */}
-      {activeTab === 'recommendations' && (
+      {currentTab === 'recommendations' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* Daily Mix */}
@@ -524,6 +596,8 @@ export const UniversalLibrary: React.FC<UniversalLibraryProps> = ({ onPlayTrack 
           )}
 
         </div>
+      )}
+      </>
       )}
     </div>
   );

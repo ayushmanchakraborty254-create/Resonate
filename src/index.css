@@ -1075,8 +1075,8 @@ body {
   color: #fff;
 }
 
-/* Responsive fixes */
-@media (max-width: 900px) {
+/* Responsive Layout overrides */
+@media (max-width: 1024px) {
   .app-container {
     grid-template-columns: 80px 1fr;
     --sidebar-width: 80px;
@@ -1091,4 +1091,94 @@ body {
     justify-content: center;
     padding: 12px;
   }
+}
+
+@media (max-width: 767px) {
+  .app-container.mobile-layout {
+    grid-template-rows: 56px 1fr 56px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "navbar"
+      "main"
+      "bottomnav";
+  }
+
+  .main-content {
+    padding: 12px 12px 140px 12px !important; /* space for mini player + bottom nav */
+    overflow-y: auto;
+    height: 100%;
+  }
+
+  .playlist-grid, .feed-grid {
+    grid-template-columns: repeat(auto-fill, minmax(clamp(130px, 22vw, 180px), 1fr)) !important;
+    gap: clamp(12px, 3vw, 16px) !important;
+  }
+}
+
+/* Bottom Navigation Bar (Mobile) */
+.bottom-nav {
+  grid-area: bottomnav;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  height: 56px;
+  padding-bottom: env(safe-area-inset-bottom);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99;
+}
+
+.nav-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--yt-text-secondary);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  height: 100%;
+  padding: 6px 0;
+  transition: color 0.2s ease;
+}
+
+.nav-tab-btn.active {
+  color: #fff;
+}
+
+/* Skeletons Pulsing Animation */
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+}
+
+.pulse {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Mobile Player Slide transition animations */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.mobile-full-player {
+  animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mobile-full-player.half {
+  top: 50vh !important;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+  border-top: 1px solid rgba(255,255,255,0.06);
 }

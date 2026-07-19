@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Music, Disc, LogOut, User as UserIcon } from 'lucide-react';
 import type { Track } from '../types';
 import { POPULAR_TRACKS } from '../utils/youtube';
+import { useBreakpoint } from '../utils/responsive';
 
 interface NavbarProps {
   onSearch: (query: string) => void;
@@ -20,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onLogout,
 }) => {
+  const { isMobile } = useBreakpoint();
   const [query, setQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<Track[]>([]);
@@ -71,82 +73,86 @@ export const Navbar: React.FC<NavbarProps> = ({
         </a>
       </div>
 
-      <div className="nav-center" ref={dropdownRef}>
-        <form onSubmit={handleSubmit}>
-          <div className="search-box">
-            <Search size={18} className="search-icon" style={{ color: 'var(--yt-text-secondary)' }} />
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search songs, albums, artists"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-            />
-          </div>
-        </form>
-
-        {showSuggestions && suggestions.length > 0 && (
-          <div className="search-suggestions">
-            {suggestions.map((track) => (
-              <div
-                key={track.id}
-                className="suggestion-item"
-                onClick={() => {
-                  onPlayTrackImmediate(track);
-                  setQuery(track.title);
-                  setShowSuggestions(false);
+      {!isMobile && (
+        <div className="nav-center" ref={dropdownRef}>
+          <form onSubmit={handleSubmit}>
+            <div className="search-box">
+              <Search size={18} className="search-icon" style={{ color: 'var(--yt-text-secondary)' }} />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search songs, albums, artists"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setShowSuggestions(true);
                 }}
-              >
-                <Music size={14} style={{ color: 'var(--yt-text-secondary)' }} />
-                <div>
-                  <div style={{ fontWeight: 500 }}>{track.title}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--yt-text-secondary)' }}>
-                    {track.artist}
+                onFocus={() => setShowSuggestions(true)}
+              />
+            </div>
+          </form>
+
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="search-suggestions">
+              {suggestions.map((track) => (
+                <div
+                  key={track.id}
+                  className="suggestion-item"
+                  onClick={() => {
+                    onPlayTrackImmediate(track);
+                    setQuery(track.title);
+                    setShowSuggestions(false);
+                  }}
+                >
+                  <Music size={14} style={{ color: 'var(--yt-text-secondary)' }} />
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{track.title}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--yt-text-secondary)' }}>
+                      {track.artist}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      <div className="nav-right" ref={profileRef}>
-        {user ? (
-          <div className="profile-dropdown-container">
-            <div className="avatar" style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowDropdown(!showDropdown)}>
-              {user.avatar && (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) ? (
-                <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              ) : (
-                user.avatar || user.name.charAt(0).toUpperCase()
+      {!isMobile && (
+        <div className="nav-right" ref={profileRef}>
+          {user ? (
+            <div className="profile-dropdown-container">
+              <div className="avatar" style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowDropdown(!showDropdown)}>
+                {user.avatar && (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) ? (
+                  <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                ) : (
+                  user.avatar || user.name.charAt(0).toUpperCase()
+                )}
+              </div>
+              {showDropdown && (
+                <div className="profile-dropdown">
+                  <div className="profile-info">
+                    <div className="profile-name">{user.name}</div>
+                    <div className="profile-email">{user.email}</div>
+                  </div>
+                  <button className="dropdown-item" onClick={() => { setView('library'); setShowDropdown(false); }}>
+                    <UserIcon size={16} />
+                    My Library
+                  </button>
+                  <button className="dropdown-item dropdown-item-danger" onClick={() => { onLogout(); setShowDropdown(false); }}>
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
               )}
             </div>
-            {showDropdown && (
-              <div className="profile-dropdown">
-                <div className="profile-info">
-                  <div className="profile-name">{user.name}</div>
-                  <div className="profile-email">{user.email}</div>
-                </div>
-                <button className="dropdown-item" onClick={() => { setView('library'); setShowDropdown(false); }}>
-                  <UserIcon size={16} />
-                  My Library
-                </button>
-                <button className="dropdown-item dropdown-item-danger" onClick={() => { onLogout(); setShowDropdown(false); }}>
-                  <LogOut size={16} />
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <button className="btn btn-primary" onClick={onOpenAuth}>
-            Sign In
-          </button>
-        )}
-      </div>
+          ) : (
+            <button className="btn btn-primary" onClick={onOpenAuth}>
+              Sign In
+            </button>
+          )}
+        </div>
+      )}
     </nav>
   );
 };

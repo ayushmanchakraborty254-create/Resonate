@@ -15,9 +15,22 @@
     <script src="https://sdk.scdn.co/spotify-player.js" async defer></script>
     <!-- Apple MusicKit JS -->
     <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async defer></script>
+    <meta name="theme-color" content="#ff0000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('ServiceWorker registration successful:', reg.scope))
+            .catch(err => console.log('ServiceWorker registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>

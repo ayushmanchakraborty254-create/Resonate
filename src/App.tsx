@@ -5,11 +5,11 @@ import { PlayerBar } from './components/PlayerBar';
 import { MainFeed } from './components/MainFeed';
 import { LyricsAndQueue } from './components/LyricsAndQueue';
 import { AuthModal } from './components/AuthModal';
-import type { Track, Playlist } from './types';
+import type { Track, Playlist, UnifiedTrack, UnifiedPlaylist } from './types';
 import { POPULAR_TRACKS, searchYouTube } from './utils/youtube';
-import { YouTubeProvider } from './utils/syncManager';
-
-const youtubeProvider = new YouTubeProvider();
+import { syncManager } from './utils/syncManager';
+import { UniversalLibrary } from './components/UniversalLibrary';
+import { personalization } from './utils/personalization';
 
 // Color themes mapped to each track's visual identity to simulate Material You dynamic theme
 const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }> = {
@@ -151,35 +151,63 @@ function App() {
     }
   }, [user]);
 
-  const executeSyncSilent = async (accessToken: string) => {
+  const executeSyncSilent = async () => {
     try {
-      const syncedPlaylists = await youtubeProvider.fetchPlaylists(accessToken);
-      const syncedLikes = await youtubeProvider.fetchLikedSongs(accessToken);
+      const { playlists: syncedPlaylists, tracks: syncedTracks } = await syncManager.syncAllConnected();
+      
+      const appPlaylists = syncedPlaylists.map((pl: UnifiedPlaylist) => ({
+        id: pl.id,
+        name: pl.name,
+        description: pl.description,
+        createdAt: pl.createdAt,
+        tracks: pl.tracks.map((t: UnifiedTrack) => ({
+          id: t.id.split(':')[1] || t.id,
+          title: t.title,
+          artist: t.artist,
+          album: t.album,
+          duration: t.duration,
+          thumbnailUrl: t.thumbnailUrl,
+          youtubeUrl: t.source === 'youtube' ? t.externalUrl || `https://www.youtube.com/watch?v=${t.id}` : `https://www.youtube.com/watch?v=${t.id}`,
+          lyrics: `[Enjoy listening to ${t.title} on Resonate!]`
+        }))
+      }));
+
+      console.log("Before state update - Previous playlist count:", playlists.length);
+      console.log("Incoming playlist count:", appPlaylists.length);
+
+      // Deduplicate before updating state by playlist ID
+      const uniqueIncomingPlaylists = Array.from(
+        new Map(appPlaylists.map(p => [p.id, p])).values()
+      );
 
       setPlaylists((prev) => {
-        const custom = prev.filter((p) => !p.id.startsWith('yt-sync-'));
-        return [...custom, ...syncedPlaylists];
+        // Correct prefix filter to strip previously synced playlists (yt-playlist- instead of yt-sync-)
+        const custom = prev.filter((p) => !p.id.startsWith('yt-playlist-') && !p.id.startsWith('sp-playlist-') && !p.id.startsWith('am-playlist-'));
+        const nextState = [...custom, ...uniqueIncomingPlaylists];
+        console.log("Final state length (playlists count):", nextState.length);
+        return nextState;
       });
 
-      if (syncedLikes.length > 0) {
-        setLikedTracks((prev) => {
-          const merged = [...prev];
-          syncedLikes.forEach((track) => {
-            if (!merged.some((t) => t.id === track.id)) {
-              merged.push({
-                id: track.id,
-                title: track.title,
-                artist: track.artist,
-                duration: track.duration,
-                thumbnailUrl: track.thumbnailUrl,
-                youtubeUrl: track.youtubeUrl,
-                lyrics: `[Enjoy listening to ${track.title} on Resonate!]`
-              });
-            }
-          });
-          return merged;
+      const appLikes = syncedTracks.map((t: UnifiedTrack) => ({
+        id: t.id.split(':')[1] || t.id,
+        title: t.title,
+        artist: t.artist,
+        album: t.album,
+        duration: t.duration,
+        thumbnailUrl: t.thumbnailUrl,
+        youtubeUrl: t.source === 'youtube' ? t.externalUrl || `https://www.youtube.com/watch?v=${t.id}` : `https://www.youtube.com/watch?v=${t.id}`,
+        lyrics: `[Enjoy listening to ${t.title} on Resonate!]`
+      }));
+      
+      setLikedTracks((prev) => {
+        const merged = [...prev];
+        appLikes.forEach((track: Track) => {
+          if (!merged.some((t: Track) => t.id === track.id)) {
+            merged.push(track);
+          }
         });
-      }
+        return merged;
+      });
     } catch (e) {
       console.warn('Silent sync failed:', e);
     }
@@ -187,32 +215,54 @@ function App() {
 
   // Automatically sync playlists when a Google user logs in, or clear them on logout
   useEffect(() => {
-    if (user?.isGoogle) {
-      const token = localStorage.getItem('resonate_google_access_token');
-      const expiry = localStorage.getItem('resonate_google_token_expiry');
-      if (token && expiry && Date.now() < Number(expiry)) {
-        executeSyncSilent(token);
-      }
+    if (user) {
+      executeSyncSilent();
     } else {
       // Clear synced playlists on logout
-      setPlaylists((prev) => prev.filter((p) => !p.id.startsWith('yt-sync-')));
+      setPlaylists((prev) => prev.filter((p) => !p.id.startsWith('yt-sync-') && !p.id.startsWith('sp-playlist-') && !p.id.startsWith('am-playlist-')));
     }
   }, [user]);
 
   // Background periodic sync (every 15 minutes)
   useEffect(() => {
-    if (!user?.isGoogle) return;
+    if (!user) return;
 
     const interval = setInterval(() => {
-      const token = localStorage.getItem('resonate_google_access_token');
-      const expiry = localStorage.getItem('resonate_google_token_expiry');
-      if (token && expiry && Date.now() < Number(expiry)) {
-        executeSyncSilent(token);
-      }
+      executeSyncSilent();
     }, 15 * 60 * 1000); // 15 mins
 
     return () => clearInterval(interval);
   }, [user]);
+
+  // Parse Spotify OAuth Callback Hash on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      const expiresIn = params.get('expires_in');
+      
+      if (accessToken) {
+        localStorage.setItem('resonate_spotify_access_token', accessToken);
+        const expiryTime = Date.now() + (Number(expiresIn) || 3600) * 1000;
+        localStorage.setItem('resonate_spotify_token_expiry', expiryTime.toString());
+        window.history.replaceState(null, '', window.location.origin + '/');
+        alert('Spotify API Connected successfully!');
+        setView('universal_library');
+      }
+    }
+  }, []);
+
+  // Track Playback session events for personalization
+  useEffect(() => {
+    if (!currentTrack) return;
+    personalization.trackPlayStart(currentTrack.id);
+    
+    return () => {
+      // Record a 60s mock listening session to update analytics database
+      personalization.trackPlaySession(currentTrack.id, 60, currentTrack.duration || 240, false);
+    };
+  }, [currentTrack]);
 
   // Apply Dynamic Theme when currentTrack changes
   useEffect(() => {
@@ -344,86 +394,20 @@ function App() {
 
   // Sync Playlists from Google/YouTube using official API
   const handleSyncPlaylists = async () => {
-    if (!user || !user.isGoogle) {
-      setIsAuthModalOpen(true);
-      return;
+    try {
+      await executeSync();
+    } catch (e: any) {
+      alert(`Sync failed: ${e.message || e}`);
     }
-
-    const token = localStorage.getItem('resonate_google_access_token');
-    const expiry = localStorage.getItem('resonate_google_token_expiry');
-
-    if (!token || !expiry || Date.now() > Number(expiry)) {
-      // Token is missing or expired! Re-prompt user scopes using Google GSI Token flow
-      const gWindow = window as any;
-      if (gWindow.google && gWindow.google.accounts && gWindow.google.accounts.oauth2) {
-        try {
-          const clientId = localStorage.getItem('resonate_google_client_id') || 
-                           import.meta.env.VITE_GOOGLE_CLIENT_ID || 
-                           '605009533283-r6tg33nkq8i24n6qh8gkds8cdgknk2a6.apps.googleusercontent.com';
-                           
-          const client = gWindow.google.accounts.oauth2.initTokenClient({
-            client_id: clientId,
-            scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly',
-            callback: async (tokenResponse: any) => {
-              if (tokenResponse.error) {
-                alert(`Authentication failed: ${tokenResponse.error}`);
-                return;
-              }
-              const newToken = tokenResponse.access_token;
-              localStorage.setItem('resonate_google_access_token', newToken);
-              localStorage.setItem('resonate_google_token_expiry', (Date.now() + tokenResponse.expires_in * 1000).toString());
-              
-              await executeSync(newToken);
-            }
-          });
-          client.requestAccessToken();
-        } catch (e) {
-          console.error(e);
-          alert('Failed to request Google Access Token');
-        }
-      } else {
-        alert('Google API library is still loading. Please try again.');
-      }
-      return;
-    }
-
-    await executeSync(token);
   };
 
-  const executeSync = async (accessToken: string) => {
+  const executeSync = async () => {
     try {
-      const syncedPlaylists = await youtubeProvider.fetchPlaylists(accessToken);
-      const syncedLikes = await youtubeProvider.fetchLikedSongs(accessToken);
-
-      setPlaylists((prev) => {
-        const custom = prev.filter((p) => !p.id.startsWith('yt-sync-'));
-        return [...custom, ...syncedPlaylists];
-      });
-
-      if (syncedLikes.length > 0) {
-        setLikedTracks((prev) => {
-          const merged = [...prev];
-          syncedLikes.forEach((track) => {
-            if (!merged.some((t) => t.id === track.id)) {
-              merged.push({
-                id: track.id,
-                title: track.title,
-                artist: track.artist,
-                duration: track.duration,
-                thumbnailUrl: track.thumbnailUrl,
-                youtubeUrl: track.youtubeUrl,
-                lyrics: `[Enjoy listening to ${track.title} on Resonate!]`
-              });
-            }
-          });
-          return merged;
-        });
-      }
-
-      alert('Sync completed successfully! Your Google/YouTube music library is updated.');
+      await executeSyncSilent();
+      alert('Sync completed successfully! Your music library is updated.');
     } catch (e) {
       console.error('Sync failed:', e);
-      alert('Failed to sync library. Please ensure your Google account configuration is correct.');
+      alert('Failed to sync library. Please ensure your account configurations are correct.');
     }
   };
 
@@ -453,18 +437,35 @@ function App() {
       {/* Main Content Layout containing Feed and Drawer */}
       <div className="main-layout" style={{ gridArea: 'main' }}>
         <main className="main-content">
-          <MainFeed
-            view={currentView}
-            searchQuery={searchQuery}
-            searchResults={searchResults}
-            playlists={playlists}
-            selectedPlaylistId={selectedPlaylistId}
-            likedTracks={likedTracks}
-            onPlayTrack={handlePlayTrack}
-            onAddTrackToPlaylist={handleAddTrackToPlaylist}
-            onRemovePlaylist={handleRemovePlaylist}
-            onRemoveTrackFromPlaylist={handleRemoveTrackFromPlaylist}
-          />
+          {currentView === 'universal_library' ? (
+            <UniversalLibrary
+              onPlayTrack={(track) => {
+                handlePlayTrackImmediate({
+                  id: track.id.split(':')[1] || track.id,
+                  title: track.title,
+                  artist: track.artist,
+                  album: track.album,
+                  duration: track.duration,
+                  thumbnailUrl: track.thumbnailUrl,
+                  youtubeUrl: track.source === 'youtube' ? track.externalUrl : `https://www.youtube.com/watch?v=${track.id}`,
+                  lyrics: `[Enjoy listening to ${track.title} on Resonate!]`
+                });
+              }}
+            />
+          ) : (
+            <MainFeed
+              view={currentView}
+              searchQuery={searchQuery}
+              searchResults={searchResults}
+              playlists={playlists}
+              selectedPlaylistId={selectedPlaylistId}
+              likedTracks={likedTracks}
+              onPlayTrack={handlePlayTrack}
+              onAddTrackToPlaylist={handleAddTrackToPlaylist}
+              onRemovePlaylist={handleRemovePlaylist}
+              onRemoveTrackFromPlaylist={handleRemoveTrackFromPlaylist}
+            />
+          )}
         </main>
 
         {/* Lyrics or Queue sidebar overlay */}

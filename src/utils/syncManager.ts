@@ -1,226 +1,615 @@
+import type { UnifiedTrack, UnifiedPlaylist } from '../types';
+import { db } from './db';
+import { deduplicator } from './deduplicator';
+import { playlistClassifier } from './classifier';
 
-export interface SyncedTrack {
-  id: string;
-  title: string;
-  artist: string;
-  duration: number;
-  thumbnailUrl: string;
-  youtubeUrl: string;
-}
 
-export interface SyncedPlaylist {
-  id: string;
-  name: string;
-  description?: string;
-  tracks: SyncedTrack[];
-  createdAt: string;
+export interface UnifiedSyncResult {
+  playlists: UnifiedPlaylist[];
+  likedSongs: UnifiedTrack[];
 }
 
 export interface MusicProvider {
-  name: string;
-  fetchPlaylists(accessToken: string): Promise<SyncedPlaylist[]>;
-  fetchLikedSongs(accessToken: string): Promise<SyncedTrack[]>;
+  name: 'youtube' | 'spotify' | 'applemusic';
+  connect(): Promise<boolean>;
+  disconnect(): Promise<void>;
+  syncLibrary(): Promise<UnifiedSyncResult>;
+  getPlaylists(): Promise<UnifiedPlaylist[]>;
+  getLikedSongs(): Promise<UnifiedTrack[]>;
+  search(query: string): Promise<UnifiedTrack[]>;
 }
 
-// Category ID 10 is designated for "Music" on YouTube
-const YOUTUBE_MUSIC_CATEGORY_ID = "10";
-
-// Keyword lists for basic classification filtering
-const MUSIC_KEYWORDS = [
-  'music', 'song', 'songs', 'album', 'lofi', 'beats', 'beat', 'rap', 'pop', 
-  'playlist', 'karaoke', 'jazz', 'rock', 'synthwave', 'chill', 'gym', 'workout',
-  'instrumental', 'soundtrack', 'ost', 'mix', 'remix', 'concert', 'live', 'covers'
-];
-
-const NON_MUSIC_KEYWORDS = [
-  'tutorial', 'coding', 'programming', 'lecture', 'gaming', 'walkthrough', 
-  'gameplay', 'podcast', 'movie', 'episode', 'course', 'shorts', 'news', 
-  'education', 'react', 'javascript', 'learn', 'how to', 'review'
-];
-
+// -------------------------------------------------------------
+// YouTube Data API Provider
+// -------------------------------------------------------------
 export class YouTubeProvider implements MusicProvider {
-  name = "YouTube";
+  name = 'youtube' as const;
+  private categoryMusicId = '10';
 
-  // Checks if a playlist title/desc is music-related
-  private isMusicMetadata(title: string, desc: string): boolean {
-    const text = `${title} ${desc}`.toLowerCase();
-    
-    // Check strong exclusions first
-    const hasExcludeKeyword = NON_MUSIC_KEYWORDS.some(kw => text.includes(kw));
-    if (hasExcludeKeyword) return false;
-
-    // Check positive matches
-    return MUSIC_KEYWORDS.some(kw => text.includes(kw));
+  async connect(): Promise<boolean> {
+    const token = localStorage.getItem('resonate_google_access_token');
+    const expiry = localStorage.getItem('resonate_google_token_expiry');
+    return !!token && !!expiry && Date.now() < Number(expiry);
   }
 
-  // Verifies if the videos inside a playlist belong to category 10 (Music)
-  private async verifyPlaylistIsMusic(playlistId: string, accessToken: string): Promise<boolean> {
+  async disconnect(): Promise<void> {
+    localStorage.removeItem('resonate_google_access_token');
+    localStorage.removeItem('resonate_google_token_expiry');
+  }
+
+  private isMusicMetadata(title: string, desc: string): boolean {
+    const text = `${title} ${desc}`.toLowerCase();
+    const excludeKeywords = ['tutorial', 'coding', 'programming', 'lecture', 'gaming', 'podcast', 'course', 'news'];
+    const includeKeywords = ['music', 'song', 'lofi', 'beats', 'mix', 'remix', 'playlist', 'album', 'ost'];
+    if (excludeKeywords.some(kw => text.includes(kw))) return false;
+    return includeKeywords.some(kw => text.includes(kw));
+  }
+
+  async getPlaylists(): Promise<UnifiedPlaylist[]> {
+    const token = localStorage.getItem('resonate_google_access_token');
+    if (!token) throw new Error('Missing Google Auth Token');
+
+    const url = `https://www.googleapis.com/youtube/v3/playlists?mine=true&part=snippet&maxResults=50`;
+
     try {
-      // 1. Fetch first 10 items from the playlist
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistId}&part=snippet&maxResults=10`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` }
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        let errMsg = `HTTP Status: ${res.status}`;
+        try {
+          const errData = await res.json();
+          errMsg = errData.error?.message || JSON.stringify(errData);
+        } catch (_) {}
+
+        console.log("Google returned: Error payload");
+        console.error("YouTube Playlists Request Failed:", {
+          url,
+          status: res.status,
+          error: errMsg
+        });
+
+        // Detect if API is disabled or not configured
+        if (res.status === 403) {
+          throw new Error(`YouTube API Configuration Error (HTTP 403): ${errMsg}. Please verify that the 'YouTube Data API v3' is enabled inside your Google Cloud Developer Console.`);
         }
-      );
-      if (!response.ok) return false;
+        throw new Error(`YouTube API Playlists Fetch Failed: ${errMsg}`);
+      }
 
-      const data = await response.json();
-      if (!data.items || data.items.length === 0) return false;
+      const data = await res.json();
+      
+      // If Google returns zero playlists, print response and throw warning
+      if (!data.items || data.items.length === 0) {
+        console.log("Google returned: Empty response list", data);
+        console.log("YouTube Playlists Request Returned Empty Response:", {
+          url,
+          status: res.status,
+          response: data
+        });
+        throw new Error("No YouTube playlists found in this account. Please verify that your account has playlists or that the YouTube Data API is active.");
+      }
 
-      const videoIds = data.items.map((item: any) => item.snippet?.resourceId?.videoId).filter(Boolean);
-      if (videoIds.length === 0) return false;
+      // Logging details as requested
+      console.log("Google returned:");
+      console.log("Playlist count:", data.items.length);
+      console.log("Playlist IDs:", data.items.map((i: any) => i.id));
+      console.log("Total playlists returned by Google:", data.items.length);
+      console.log("Playlist names:", data.items.map((i: any) => i.snippet?.title));
+      console.log("Before filtering count:", data.items.length);
+      
+      const list: UnifiedPlaylist[] = [];
+      let totalTracksImported = 0;
+      let musicPlaylistsImported = 0;
+      let playlistsSkipped = 0;
+      const skippedPlaylistsSummary: { name: string; reason: string }[] = [];
 
-      // 2. Fetch video details to verify categoryId
-      const videoResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?id=${videoIds.join(',')}&part=snippet`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` }
+      for (const item of data.items) {
+        const title = item.snippet?.title || '';
+        const desc = item.snippet?.description || '';
+        const tracks = await this.getPlaylistTracks(item.id);
+        
+        // Query heuristic classifier
+        const classification = await playlistClassifier.classify(item.id, title, desc, tracks);
+        
+        if (classification.isMusic) {
+          musicPlaylistsImported++;
+        } else {
+          playlistsSkipped++;
+          skippedPlaylistsSummary.push({ name: title, reason: classification.reason });
         }
-      );
-      if (!videoResponse.ok) return false;
 
-      const videoData = await videoResponse.json();
-      if (!videoData.items) return false;
+        totalTracksImported += tracks.length;
+        list.push({
+          id: `yt-playlist-${item.id}`,
+          name: title,
+          description: desc,
+          tracks,
+          source: 'youtube',
+          createdAt: item.snippet?.publishedAt || new Date().toISOString(),
+          thumbnailUrl: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url,
+          isMusic: classification.isMusic
+        });
+      }
 
-      // Check if any of the videos are categorized under Category 10 (Music)
-      const musicVideosCount = videoData.items.filter(
-        (video: any) => video.snippet?.categoryId === YOUTUBE_MUSIC_CATEGORY_ID
-      ).length;
+      console.log("After filtering count:", list.length);
+      console.log("YouTube Playlists Import Classification Complete:", {
+        totalFetched: data.items.length,
+        musicPlaylistsImported,
+        playlistsSkipped,
+        skippedSummary: skippedPlaylistsSummary
+      });
 
-      // If at least 40% of the videos are categorized as music, classify it as music
-      return (musicVideosCount / videoIds.length) >= 0.4;
-    } catch (error) {
-      console.warn(`Error verifying playlist ${playlistId} content:`, error);
-      return false;
+      return list;
+    } catch (e: any) {
+      console.error('Error fetching YouTube playlists:', e);
+      throw e;
     }
   }
 
-  // Fetch playlist tracks from YouTube
-  private async fetchPlaylistTracks(playlistId: string, accessToken: string): Promise<SyncedTrack[]> {
-    try {
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistId}&part=snippet&maxResults=30`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        }
-      );
-      if (!response.ok) return [];
+  private async getPlaylistTracks(playlistId: string): Promise<UnifiedTrack[]> {
+    const token = localStorage.getItem('resonate_google_access_token');
+    if (!token) return [];
+    const url = `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistId}&part=snippet&maxResults=25`;
 
-      const data = await response.json();
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        let errMsg = `HTTP Status: ${res.status}`;
+        try {
+          const errData = await res.json();
+          errMsg = errData.error?.message || JSON.stringify(errData);
+        } catch (_) {}
+        console.error("YouTube PlaylistItems Request Failed:", { url, status: res.status, error: errMsg });
+        throw new Error(`YouTube PlaylistItems API Error: ${errMsg}`);
+      }
+
+      const data = await res.json();
+      const tracks = data.items ? data.items.map((item: any) => {
+        const videoId = item.snippet?.resourceId?.videoId || '';
+        return {
+          id: videoId,
+          title: item.snippet?.title || 'Unknown Title',
+          artist: item.snippet?.videoOwnerChannelTitle || item.snippet?.channelTitle || 'Unknown Artist',
+          duration: 240,
+          thumbnailUrl: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || `https://img.youtube.com/vi/${videoId}/0.jpg`,
+          source: 'youtube',
+          externalUrl: `https://www.youtube.com/watch?v=${videoId}`,
+          availableSources: [`yo:${videoId}`]
+        };
+      }).filter((t: UnifiedTrack) => t.id !== '') : [];
+
+      console.log("YouTube PlaylistItems Request Succeeded:", {
+        url,
+        playlistId,
+        status: res.status,
+        tracksImported: tracks.length
+      });
+
+      return tracks;
+    } catch (e: any) {
+      console.error(`Error fetching playlistTracks for ${playlistId}:`, e);
+      throw e;
+    }
+  }
+
+  async getLikedSongs(): Promise<UnifiedTrack[]> {
+    const token = localStorage.getItem('resonate_google_access_token');
+    if (!token) return [];
+    const url = `https://www.googleapis.com/youtube/v3/videos?myRating=like&part=snippet&maxResults=25`;
+
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        let errMsg = `HTTP Status: ${res.status}`;
+        try {
+          const errData = await res.json();
+          errMsg = errData.error?.message || JSON.stringify(errData);
+        } catch (_) {}
+        console.error("YouTube LikedVideos Request Failed:", { url, status: res.status, error: errMsg });
+        throw new Error(`YouTube LikedVideos API Error: ${errMsg}`);
+      }
+
+      const data = await res.json();
+      const likes = data.items ? data.items.filter((video: any) => {
+        return video.snippet?.categoryId === this.categoryMusicId || this.isMusicMetadata(video.snippet?.title, video.snippet?.description);
+      }).map((video: any) => {
+        const videoId = video.id;
+        return {
+          id: videoId,
+          title: video.snippet?.title || 'Unknown Title',
+          artist: video.snippet?.channelTitle || 'Unknown Artist',
+          duration: 240,
+          thumbnailUrl: video.snippet?.thumbnails?.medium?.url || video.snippet?.thumbnails?.default?.url || `https://img.youtube.com/vi/${videoId}/0.jpg`,
+          source: 'youtube',
+          externalUrl: `https://www.youtube.com/watch?v=${videoId}`,
+          availableSources: [`yo:${videoId}`]
+        };
+      }) : [];
+
+      console.log("YouTube LikedVideos Request Succeeded:", {
+        url,
+        status: res.status,
+        likesImported: likes.length
+      });
+
+      return likes;
+    } catch (e: any) {
+      console.error('Error fetching YouTube Liked songs:', e);
+      throw e;
+    }
+  }
+
+  async search(query: string): Promise<UnifiedTrack[]> {
+    const token = localStorage.getItem('resonate_google_access_token');
+    if (!token) return [];
+    try {
+      const res = await fetch(`https://www.googleapis.com/youtube/v3/search?q=${encodeURIComponent(query)}&part=snippet&type=video&videoCategoryId=10&maxResults=10`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
       if (!data.items) return [];
 
       return data.items.map((item: any) => {
-        const snippet = item.snippet;
-        const videoId = snippet?.resourceId?.videoId;
+        const videoId = item.id?.videoId || '';
         return {
-          id: videoId || '',
-          title: snippet?.title || 'Unknown Title',
-          artist: snippet?.videoOwnerChannelTitle || snippet?.channelTitle || 'Unknown Artist',
-          duration: 240, // YouTube Data API v3 does not return durations in snippet; default to standard 4 mins
-          thumbnailUrl: snippet?.thumbnails?.medium?.url || snippet?.thumbnails?.default?.url || `https://img.youtube.com/vi/${videoId}/0.jpg`,
-          youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+          id: videoId,
+          title: item.snippet?.title || 'Unknown Title',
+          artist: item.snippet?.channelTitle || 'Unknown Artist',
+          duration: 240,
+          thumbnailUrl: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || `https://img.youtube.com/vi/${videoId}/0.jpg`,
+          source: 'youtube',
+          externalUrl: `https://www.youtube.com/watch?v=${videoId}`,
+          availableSources: [`yo:${videoId}`]
         };
-      }).filter((t: SyncedTrack) => t.id !== '');
+      });
     } catch (e) {
-      console.error(`Error fetching tracks for playlist ${playlistId}:`, e);
       return [];
     }
   }
 
-  // Fetch User's playlists from YouTube
-  async fetchPlaylists(accessToken: string): Promise<SyncedPlaylist[]> {
+  async syncLibrary(): Promise<UnifiedSyncResult> {
+    const playlists = await this.getPlaylists();
+    const likedSongs = await this.getLikedSongs();
+    console.log("Fetched playlists:", playlists.length);
+    console.log(playlists);
+    return { playlists, likedSongs };
+  }
+}
+
+// -------------------------------------------------------------
+// Spotify Provider (OAuth Web API)
+// -------------------------------------------------------------
+export class SpotifyProvider implements MusicProvider {
+  name = 'spotify' as const;
+
+  async connect(): Promise<boolean> {
+    const token = localStorage.getItem('resonate_spotify_access_token');
+    const expiry = localStorage.getItem('resonate_spotify_token_expiry');
+    return !!token && !!expiry && Date.now() < Number(expiry);
+  }
+
+  async disconnect(): Promise<void> {
+    localStorage.removeItem('resonate_spotify_access_token');
+    localStorage.removeItem('resonate_spotify_token_expiry');
+  }
+
+  // Fetch helper handles token checking & API errors
+  private async fetchSpotify(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const token = localStorage.getItem('resonate_spotify_access_token');
+    if (!token) throw new Error('Missing Spotify Auth Token');
+
+    const headers = {
+      ...options.headers,
+      Authorization: `Bearer ${token}`
+    };
+
+    const res = await fetch(`https://api.spotify.com/v1/${endpoint}`, { ...options, headers });
+    
+    // Automatically throw for re-authentication prompting on expired credentials (401 status)
+    if (res.status === 401) {
+      localStorage.removeItem('resonate_spotify_access_token');
+      localStorage.removeItem('resonate_spotify_token_expiry');
+      throw new Error('Spotify Credentials expired. Please reconnect.');
+    }
+    return res;
+  }
+
+  async getPlaylists(): Promise<UnifiedPlaylist[]> {
     try {
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlists?mine=true&part=snippet,contentDetails&maxResults=50`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`YouTube API returned status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const res = await this.fetchSpotify('me/playlists?limit=50');
+      if (!res.ok) return [];
+      const data = await res.json();
       if (!data.items) return [];
 
-      const musicPlaylists: SyncedPlaylist[] = [];
-
+      const list: UnifiedPlaylist[] = [];
       for (const item of data.items) {
-        const snippet = item.snippet;
-        const playlistId = item.id;
-        const title = snippet?.title || '';
-        const desc = snippet?.description || '';
+        const tracks = await this.getPlaylistTracks(item.id);
+        list.push({
+          id: `sp-playlist-${item.id}`,
+          name: item.name,
+          description: item.description || 'Synced playlist from Spotify',
+          tracks,
+          source: 'spotify',
+          createdAt: new Date().toISOString(),
+          thumbnailUrl: item.images?.[0]?.url
+        });
+      }
+      return list;
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  }
 
-        // Match metadata keywords or verify through video category analysis
-        const isMusicMeta = this.isMusicMetadata(title, desc);
-        const isMusicContent = isMusicMeta || (await this.verifyPlaylistIsMusic(playlistId, accessToken));
+  private async getPlaylistTracks(playlistId: string): Promise<UnifiedTrack[]> {
+    try {
+      const res = await this.fetchSpotify(`playlists/${playlistId}/tracks?limit=30`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.items) return [];
 
-        if (isMusicContent) {
-          // Fetch the tracks for this playlist
-          const tracks = await this.fetchPlaylistTracks(playlistId, accessToken);
-          if (tracks.length > 0) {
-            musicPlaylists.push({
-              id: `yt-sync-${playlistId}`, // sync identifier
-              name: title,
-              description: desc || 'Synced playlist from YouTube',
-              tracks,
-              createdAt: snippet?.publishedAt || new Date().toISOString(),
+      return data.items.map((item: any) => {
+        const track = item.track;
+        if (!track) return null;
+        return {
+          id: track.id,
+          title: track.name,
+          artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+          album: track.album?.name,
+          duration: Math.floor(track.duration_ms / 1000),
+          thumbnailUrl: track.album?.images?.[0]?.url || '',
+          source: 'spotify',
+          externalUrl: track.external_urls?.spotify,
+          isrc: track.external_ids?.isrc,
+          availableSources: [`sp:${track.id}`]
+        };
+      }).filter(Boolean) as UnifiedTrack[];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async getLikedSongs(): Promise<UnifiedTrack[]> {
+    try {
+      const res = await this.fetchSpotify('me/tracks?limit=50');
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.items) return [];
+
+      return data.items.map((item: any) => {
+        const track = item.track;
+        return {
+          id: track.id,
+          title: track.name,
+          artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+          album: track.album?.name,
+          duration: Math.floor(track.duration_ms / 1000),
+          thumbnailUrl: track.album?.images?.[0]?.url || '',
+          source: 'spotify',
+          externalUrl: track.external_urls?.spotify,
+          isrc: track.external_ids?.isrc,
+          availableSources: [`sp:${track.id}`]
+        };
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async search(query: string): Promise<UnifiedTrack[]> {
+    try {
+      const res = await this.fetchSpotify(`search?q=${encodeURIComponent(query)}&type=track&limit=10`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.tracks?.items) return [];
+
+      return data.tracks.items.map((track: any) => ({
+        id: track.id,
+        title: track.name,
+        artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+        album: track.album?.name,
+        duration: Math.floor(track.duration_ms / 1000),
+        thumbnailUrl: track.album?.images?.[0]?.url || '',
+        source: 'spotify',
+        externalUrl: track.external_urls?.spotify,
+        isrc: track.external_ids?.isrc,
+        availableSources: [`sp:${track.id}`]
+      }));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async syncLibrary(): Promise<UnifiedSyncResult> {
+    const playlists = await this.getPlaylists();
+    const likedSongs = await this.getLikedSongs();
+    return { playlists, likedSongs };
+  }
+}
+
+// -------------------------------------------------------------
+// Apple Music Provider (MusicKit JS)
+// -------------------------------------------------------------
+export class AppleMusicProvider implements MusicProvider {
+  name = 'applemusic' as const;
+
+  async connect(): Promise<boolean> {
+    const userToken = localStorage.getItem('resonate_apple_user_token');
+    const devToken = localStorage.getItem('resonate_apple_developer_token');
+    return !!userToken && !!devToken;
+  }
+
+  async disconnect(): Promise<void> {
+    localStorage.removeItem('resonate_apple_user_token');
+    localStorage.removeItem('resonate_apple_developer_token');
+  }
+
+  async getPlaylists(): Promise<UnifiedPlaylist[]> {
+    // Falls back to premium mock data if no real MusicKit credentials are configured
+    const isMock = !(await this.connect());
+    if (isMock) {
+      return [
+        {
+          id: 'am-playlist-mock1',
+          name: 'My Apple Music Chill (Mock)',
+          description: 'A mock synced playlist from Apple Music',
+          tracks: [
+            {
+              id: 'am-track-mock1',
+              title: 'Count Stars (Apple Version)',
+              artist: 'OneRepublic',
+              duration: 283,
+              thumbnailUrl: 'https://img.youtube.com/vi/hT_nvWreIhg/0.jpg',
+              source: 'applemusic',
+              availableSources: ['am:track-mock1', 'yo:hT_nvWreIhg']
+            }
+          ],
+          source: 'applemusic',
+          createdAt: new Date().toISOString()
+        }
+      ];
+    }
+    // Apple Music SDK library logic would bind window.MusicKit here
+    return [];
+  }
+
+  async getLikedSongs(): Promise<UnifiedTrack[]> {
+    return [];
+  }
+
+  async search(_query: string): Promise<UnifiedTrack[]> {
+    return [];
+  }
+
+  async syncLibrary(): Promise<UnifiedSyncResult> {
+    const playlists = await this.getPlaylists();
+    const likedSongs = await this.getLikedSongs();
+    return { playlists, likedSongs };
+  }
+}
+
+// -------------------------------------------------------------
+// Central Registry & Sync Manager
+// -------------------------------------------------------------
+export class SyncManager {
+  private providers: Record<string, MusicProvider> = {};
+  public isSyncing = false;
+  public progress = 0;
+  public errors: string[] = [];
+  private activeSyncPromise: Promise<{ playlists: UnifiedPlaylist[]; tracks: UnifiedTrack[] }> | null = null;
+
+  constructor() {
+    this.registerProvider(new YouTubeProvider());
+    this.registerProvider(new SpotifyProvider());
+    this.registerProvider(new AppleMusicProvider());
+  }
+
+  registerProvider(provider: MusicProvider) {
+    this.providers[provider.name] = provider;
+  }
+
+  getProvider(name: string): MusicProvider | undefined {
+    return this.providers[name];
+  }
+
+  async syncAllConnected(): Promise<{ playlists: UnifiedPlaylist[]; tracks: UnifiedTrack[] }> {
+    if (this.activeSyncPromise) {
+      console.log("Duplicate sync request ignored");
+      return this.activeSyncPromise;
+    }
+
+    this.activeSyncPromise = this.executeSyncAll();
+    
+    try {
+      const result = await this.activeSyncPromise;
+      return result;
+    } finally {
+      this.activeSyncPromise = null;
+    }
+  }
+
+  private async executeSyncAll(): Promise<{ playlists: UnifiedPlaylist[]; tracks: UnifiedTrack[] }> {
+    console.log("Sync started");
+    this.isSyncing = true;
+    this.progress = 0;
+    this.errors = [];
+
+    const rawPlaylists: UnifiedPlaylist[] = [];
+    const rawTracks: UnifiedTrack[] = [];
+    const connectedProviders: string[] = [];
+
+    try {
+      const activeProviders = Object.values(this.providers);
+      let stepCount = 0;
+
+      for (const provider of activeProviders) {
+        const isConnected = await provider.connect();
+        if (isConnected) {
+          connectedProviders.push(provider.name);
+          try {
+            this.progress = Math.floor((stepCount / activeProviders.length) * 100);
+            console.log(`${provider.constructor.name}.syncLibrary() entered`);
+            const results = await provider.syncLibrary();
+            rawPlaylists.push(...results.playlists);
+            rawTracks.push(...results.likedSongs);
+            
+            // Collect all tracks inside the playlists to cache them as well
+            results.playlists.forEach(pl => {
+              rawTracks.push(...pl.tracks);
             });
+          } catch (err: any) {
+            console.warn(`${provider.name} provider sync failed:`, err);
+            this.errors.push(`${provider.name}: ${err.message || err}`);
           }
         }
+        stepCount++;
       }
 
-      return musicPlaylists;
+      this.progress = 70;
+
+      // 1. Deduplicate Catalog
+      const deduplicatedTracks = deduplicator.deduplicate(rawTracks);
+
+      this.progress = 90;
+
+      // 2. Cache in IndexedDB for offline support
+      await db.clear('tracks');
+      for (const track of deduplicatedTracks) {
+        await db.put('tracks', track);
+      }
+
+      await db.clear('playlists');
+      for (const pl of rawPlaylists) {
+        // Map the playlist tracks to their deduplicated counterparts
+        pl.tracks = pl.tracks.map(t => {
+          const match = deduplicatedTracks.find(dt => dt.availableSources.some(s => s.endsWith(t.id)));
+          return match || t;
+        });
+        await db.put('playlists', pl);
+      }
+
+      // Record Sync Status in localStorage
+      localStorage.setItem('resonate_last_sync_time', Date.now().toString());
+      localStorage.setItem('resonate_sync_status', this.errors.length > 0 ? 'warning' : 'success');
+
+      this.progress = 100;
+      console.log("Sync finished");
+      return { playlists: rawPlaylists, tracks: deduplicatedTracks };
     } catch (error) {
-      console.error('Error fetching YouTube playlists:', error);
+      console.log("Sync cancelled due to error:", error);
       throw error;
-    }
-  }
-
-  // Fetch User's Liked videos (filtering for Category 10 / Music)
-  async fetchLikedSongs(accessToken: string): Promise<SyncedTrack[]> {
-    try {
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?myRating=like&part=snippet&maxResults=50`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`YouTube Liked videos returned status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (!data.items) return [];
-
-      // Filter liked videos for Music Category ID (10) or metadata keywords
-      const musicLikes = data.items.filter((video: any) => {
-        const categoryId = video.snippet?.categoryId;
-        if (categoryId === YOUTUBE_MUSIC_CATEGORY_ID) return true;
-
-        const title = video.snippet?.title || '';
-        const desc = video.snippet?.description || '';
-        return this.isMusicMetadata(title, desc);
-      });
-
-      return musicLikes.map((video: any) => {
-        const snippet = video.snippet;
-        const videoId = video.id;
-        return {
-          id: videoId || '',
-          title: snippet?.title || 'Unknown Title',
-          artist: snippet?.channelTitle || 'Unknown Artist',
-          duration: 240,
-          thumbnailUrl: snippet?.thumbnails?.medium?.url || snippet?.thumbnails?.default?.url || `https://img.youtube.com/vi/${videoId}/0.jpg`,
-          youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
-        };
-      });
-    } catch (error) {
-      console.error('Error fetching YouTube Liked songs:', error);
-      return [];
+    } finally {
+      this.isSyncing = false;
     }
   }
 }
+
+export const syncManager = new SyncManager();

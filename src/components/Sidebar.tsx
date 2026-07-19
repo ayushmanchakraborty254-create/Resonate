@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Compass, Library, Plus, ListMusic, Heart, RefreshCw } from 'lucide-react';
+import { Home, Compass, Library, Plus, ListMusic, Heart, RefreshCw, Music } from 'lucide-react';
 import type { Playlist } from '../types';
 
 interface SidebarProps {
@@ -21,8 +21,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   user,
   onSyncPlaylists,
 }) => {
-  const customPlaylists = playlists.filter((p) => !p.id.startsWith('yt-sync-'));
-  const syncedPlaylists = playlists.filter((p) => p.id.startsWith('yt-sync-'));
+  const syncedPlaylists = playlists.filter((p) => p.id.startsWith('yt-playlist-') || p.id.startsWith('sp-playlist-') || p.id.startsWith('am-playlist-'));
+  const customPlaylists = playlists.filter((p) => !p.id.startsWith('yt-playlist-') && !p.id.startsWith('sp-playlist-') && !p.id.startsWith('am-playlist-'));
 
   return (
     <aside className="sidebar">
@@ -48,6 +48,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <Library size={20} />
         <span>Library</span>
+      </div>
+
+      <div
+        className={`sidebar-item ${currentView === 'universal_library' ? 'active' : ''}`}
+        onClick={() => setView('universal_library')}
+      >
+        <Music size={20} />
+        <span>Universal Library</span>
       </div>
 
       <div className="sidebar-divider" />

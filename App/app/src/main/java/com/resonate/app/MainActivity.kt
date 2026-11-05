@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity() {
 
         // 4. Configure AssetLoader for loading bundled web app assets securely
         val assetLoader = WebViewAssetLoader.Builder()
+            .setDomain("resonate.app")
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
 
@@ -117,8 +118,8 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        // 6. Load bundled web app dist
-        webView.loadUrl("file:///android_asset/dist/index.html")
+        // 6. Load bundled web app dist via secure local domain (bypasses all file:// restrictions)
+        webView.loadUrl("https://resonate.app/assets/dist/index.html")
     }
 
     override fun onDestroy() {

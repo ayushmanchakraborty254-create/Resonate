@@ -440,7 +440,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 onTouchEnd={swipeHandlers.onTouchEnd}
                 style={{
                   position: 'fixed',
-                  bottom: '56px',
+                  bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
                   left: 0,
                   right: 0,
                   height: '60px',

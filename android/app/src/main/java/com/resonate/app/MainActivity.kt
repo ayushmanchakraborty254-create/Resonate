@@ -118,3 +118,4 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("file:///android_asset/dist/index.html")
     }
 }
+

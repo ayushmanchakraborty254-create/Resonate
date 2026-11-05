@@ -2,6 +2,7 @@ import type { UnifiedTrack, UnifiedPlaylist } from '../types';
 import { db } from './db';
 import { deduplicator } from './deduplicator';
 import { playlistClassifier } from './classifier';
+import { SpotifyAuthManager } from './spotifyAuth';
 
 
 export interface UnifiedSyncResult {
@@ -291,19 +292,16 @@ export class SpotifyProvider implements MusicProvider {
   name = 'spotify' as const;
 
   async connect(): Promise<boolean> {
-    const token = localStorage.getItem('resonate_spotify_access_token');
-    const expiry = localStorage.getItem('resonate_spotify_token_expiry');
-    return !!token && !!expiry && Date.now() < Number(expiry);
+    return await SpotifyAuthManager.isConnected();
   }
 
   async disconnect(): Promise<void> {
-    localStorage.removeItem('resonate_spotify_access_token');
-    localStorage.removeItem('resonate_spotify_token_expiry');
+    SpotifyAuthManager.disconnect();
   }
 
-  // Fetch helper handles token checking & API errors
+  // Fetch helper handles token checking, silent auto-refresh & API errors
   private async fetchSpotify(endpoint: string, options: RequestInit = {}): Promise<Response> {
-    const token = localStorage.getItem('resonate_spotify_access_token');
+    const token = await SpotifyAuthManager.getValidAccessToken();
     if (!token) throw new Error('Missing Spotify Auth Token');
 
     const headers = {
@@ -313,10 +311,16 @@ export class SpotifyProvider implements MusicProvider {
 
     const res = await fetch(`https://api.spotify.com/v1/${endpoint}`, { ...options, headers });
     
-    // Automatically throw for re-authentication prompting on expired credentials (401 status)
+    // Automatically attempt silent refresh on 401
     if (res.status === 401) {
-      localStorage.removeItem('resonate_spotify_access_token');
-      localStorage.removeItem('resonate_spotify_token_expiry');
+      const refreshedToken = await SpotifyAuthManager.refreshAccessToken();
+      if (refreshedToken) {
+        return fetch(`https://api.spotify.com/v1/${endpoint}`, {
+          ...options,
+          headers: { ...options.headers, Authorization: `Bearer ${refreshedToken}` }
+        });
+      }
+      SpotifyAuthManager.disconnect();
       throw new Error('Spotify Credentials expired. Please reconnect.');
     }
     return res;
@@ -509,7 +513,7 @@ export class SyncManager {
   constructor() {
     this.registerProvider(new YouTubeProvider());
     this.registerProvider(new SpotifyProvider());
-    this.registerProvider(new AppleMusicProvider());
+    // Apple Music is decoupled/paused per user request (no active developer token)
   }
 
   registerProvider(provider: MusicProvider) {

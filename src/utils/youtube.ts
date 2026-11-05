@@ -105,7 +105,277 @@ export const POPULAR_TRACKS: Track[] = [
   }
 ];
 
-// Helper to query Invidious public instance or fallback to popular tracks
+// Curated collections from user references (Pages 5, 6, 7, 8)
+export const NOSTALGIC_SHELF = [
+  {
+    id: 'nost-1',
+    title: "00s Bollywood Romance",
+    subtitle: "Alka Yagnik, Pritam, Sonu Nigam, Shreya Ghoshal",
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
+    trackQuery: '00s Bollywood Romance songs'
+  },
+  {
+    id: 'nost-2',
+    title: "10s Bollywood Romance Hits",
+    subtitle: "Arijit Singh, Pritam, Vishal-Shekhar, Atif Aslam",
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    trackQuery: '10s Bollywood Romance Hits'
+  },
+  {
+    id: 'nost-3',
+    title: "90s Chill: Bollywood",
+    subtitle: "Kumar Sanu, Alka Yagnik, Udit Narayan",
+    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80',
+    trackQuery: '90s Chill Bollywood'
+  },
+  {
+    id: 'nost-4',
+    title: "'90s Indian Pop",
+    subtitle: "Shankar Mahadevan, K.K., Lucky Ali",
+    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80',
+    trackQuery: '90s Indian Pop classics'
+  },
+  {
+    id: 'nost-5',
+    title: "10s Bollywood Dance",
+    subtitle: "Neha Kakkar, Vishal-Shekhar",
+    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80',
+    trackQuery: '10s Bollywood Dance party songs'
+  },
+  {
+    id: 'nost-6',
+    title: "The Hits: '10s",
+    subtitle: "Drake, Rihanna, Justin Bieber, Nicki Minaj",
+    thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80',
+    trackQuery: 'The Hits 2010s playlist'
+  }
+];
+
+export const NEW_RELEASES_SHELF: Track[] = [
+  {
+    id: 'new-rel-1',
+    title: 'Jailer 2 (Original Motion Picture Theme)',
+    artist: 'Anirudh Ravichander',
+    album: 'Jailer 2 Album',
+    duration: 218,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[Instrumental Theme of Jailer 2]'
+  },
+  {
+    id: 'new-rel-2',
+    title: 'Halo - Never Forget',
+    artist: 'Mathias Fritsche',
+    album: 'Halo Never Forget Single',
+    duration: 245,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[Halo Never Forget Piano Version]'
+  },
+  {
+    id: 'new-rel-3',
+    title: 'Transformers (Symphonic Suite)',
+    artist: 'Imperial Orchestra',
+    album: 'Transformers Symphonic EP',
+    duration: 310,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[Transformers Orchestral Score]'
+  },
+  {
+    id: 'new-rel-4',
+    title: "I'll Do It",
+    artist: 'TommyMuzzic',
+    album: "I'll Do It - Album",
+    duration: 195,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
+    lyrics: "[Enjoy listening to I'll Do It!]"
+  },
+  {
+    id: 'new-rel-5',
+    title: 'Winter Light',
+    artist: 'Ludovico Einaudi',
+    album: 'Winter Light EP',
+    duration: 260,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[Ludovico Einaudi Winter Light Piano]'
+  },
+  {
+    id: 'new-rel-6',
+    title: "Don't Walk Away (Zara Zara)",
+    artist: 'Arjun & Shirley Setia',
+    album: 'Zara Zara Single',
+    duration: 228,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80',
+    lyrics: "[Zara Zara Bahekta Hai - Arjun & Shirley Setia]"
+  }
+];
+
+export const COMMUNITY_PLAYLISTS = [
+  {
+    id: 'comm-1',
+    name: 'Road trip',
+    creator: 'AutoFidelity • 188k views',
+    tracks: [
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80' }
+    ]
+  },
+  {
+    id: 'comm-2',
+    name: 'best song',
+    creator: 'Om Mali • 191k views',
+    tracks: [
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&auto=format&fit=crop&q=80' }
+    ]
+  },
+  {
+    id: 'comm-3',
+    name: 'bollywood chill vibes',
+    creator: 'Aisha Kunigal • 503k views',
+    tracks: [
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80' }
+    ]
+  },
+  {
+    id: 'comm-4',
+    name: 'Bollywood Offbeats',
+    creator: 'anotherAbhishek • 2.2m views',
+    tracks: [
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80' }
+    ]
+  },
+  {
+    id: 'comm-5',
+    name: 'hindi bangers',
+    creator: 'A Random Guy • 315k views',
+    tracks: [
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80' }
+    ]
+  }
+];
+
+export const MUSIC_VIDEOS_SHELF: Array<{ id: string; title: string; artist: string; views: string; thumbnailUrl: string; duration: number }> = [
+  {
+    id: 'mv-1',
+    title: "Hedwig's Theme (Piano Arrangement)",
+    artist: 'Patrik Pietschmann',
+    views: '30m views',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=500&auto=format&fit=crop&q=80',
+    duration: 275
+  },
+  {
+    id: 'mv-2',
+    title: 'KALYANI (Official Music Video)',
+    artist: 'ARJN, KDS, FIFTY4 & Ronn',
+    views: '59m views',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+    duration: 215
+  },
+  {
+    id: 'mv-3',
+    title: 'Satranga - Animal | Melodious Flute Cover',
+    artist: 'Swarnim Maharjan',
+    views: '104k views',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=500&auto=format&fit=crop&q=80',
+    duration: 258
+  },
+  {
+    id: 'mv-4',
+    title: "It's A Man's Man's Man's World (Live)",
+    artist: 'James Brown & Luciano Pavarotti',
+    views: '141m views',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80',
+    duration: 334
+  }
+];
+
+export const QUICK_PICKS_EXPANDED: Track[] = [
+  {
+    id: 'qp-1',
+    title: 'Die With A Smile (Live in Las Vegas)',
+    artist: 'Lady Gaga & Bruno Mars',
+    duration: 251,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[Die With A Smile - Lady Gaga & Bruno Mars]'
+  },
+  {
+    id: 'qp-2',
+    title: 'a thousand years',
+    artist: 'Christina Perri',
+    duration: 285,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[A Thousand Years - Christina Perri]'
+  },
+  {
+    id: 'qp-3',
+    title: 'Until I Found You',
+    artist: 'Stephen Sanchez',
+    duration: 177,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[Until I Found You - Stephen Sanchez]'
+  },
+  {
+    id: 'qp-4',
+    title: 'KALYANI',
+    artist: 'ARJN, KDS, FIFTY4',
+    duration: 215,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[KALYANI - ARJN, KDS, FIFTY4]'
+  },
+  {
+    id: 'qp-5',
+    title: 'Cornfield Chase',
+    artist: 'Hans Zimmer',
+    duration: 236,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[Interstellar - Cornfield Chase by Hans Zimmer]'
+  },
+  {
+    id: 'qp-6',
+    title: 'The One That Got Away',
+    artist: 'Katy Perry',
+    duration: 227,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[The One That Got Away - Katy Perry]'
+  },
+  {
+    id: 'qp-7',
+    title: 'See You Again (feat. Charlie Puth)',
+    artist: 'Wiz Khalifa',
+    duration: 230,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[See You Again - Wiz Khalifa ft Charlie Puth]'
+  },
+  {
+    id: 'qp-8',
+    title: '7 Years (Later) [Live]',
+    artist: 'Lukas Graham',
+    duration: 239,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[7 Years - Lukas Graham]'
+  },
+  {
+    id: 'qp-9',
+    title: 'Treat You Better',
+    artist: 'Shawn Mendes',
+    duration: 187,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
+    lyrics: '[Treat You Better - Shawn Mendes]'
+  }
+];
+
 export async function searchYouTube(query: string): Promise<Track[]> {
   if (!query || query.trim() === '') {
     return POPULAR_TRACKS;

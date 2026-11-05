@@ -11,10 +11,12 @@ import {
   ListMusic,
   FileText,
   Heart,
+  PictureInPicture2,
 } from 'lucide-react';
 import type { Track } from '../types';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import { useBreakpoint } from '../utils/responsive';
+import { floatingPlayer } from '../utils/floatingPlayer';
 
 interface PlayerBarProps {
   currentTrack: Track | null;
@@ -74,6 +76,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(0.5);
+
+  // Smooth dragging slider states (fixes jumping / unresponsive slider bug)
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragProgress, setDragProgress] = useState(0);
 
   const { isMobile } = useBreakpoint();
   const [mobilePlayerState, setMobilePlayerState] = useState<'mini' | 'half' | 'full'>('mini');
@@ -173,15 +179,46 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     }
   }, [isPlaying]);
 
-  // Track progress updates
+  // Synchronize duration when track changes
+  useEffect(() => {
+    if (currentTrack?.duration) {
+      setDuration(currentTrack.duration);
+    }
+  }, [currentTrack]);
+
+  // Synchronize with Floating Player (PiP)
+  useEffect(() => {
+    floatingPlayer.setActions({
+      onTogglePlay: () => setIsPlaying(!isPlaying),
+      onNext,
+      onPrev,
+      onSeek: (seconds: number) => {
+        setProgress(seconds);
+        if (playerRef.current && playerRef.current.seekTo) {
+          playerRef.current.seekTo(seconds, true);
+        }
+      },
+    });
+  }, [isPlaying, onNext, onPrev]);
+
+  useEffect(() => {
+    floatingPlayer.updateState({
+      currentTrack,
+      isPlaying,
+      progress: isDragging ? dragProgress : progress,
+      duration: duration || currentTrack?.duration || 180,
+    });
+  }, [currentTrack, isPlaying, progress, duration, isDragging, dragProgress]);
+
+  // Track progress updates (only update display if user is not actively dragging the thumb)
   useEffect(() => {
     if (isPlaying) {
       progressIntervalRef.current = setInterval(() => {
-        if (playerRef.current && playerRef.current.getCurrentTime && playerRef.current.getDuration) {
+        if (!isDragging && playerRef.current && playerRef.current.getCurrentTime && playerRef.current.getDuration) {
           const curr = Math.floor(playerRef.current.getCurrentTime());
-          const dur = Math.floor(playerRef.current.getDuration());
+          const dur = Math.floor(playerRef.current.getDuration() || currentTrack?.duration || 0);
           setProgress(curr);
-          setDuration(dur);
+          if (dur > 0) setDuration(dur);
         }
       }, 500);
     } else {
@@ -195,13 +232,24 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [isPlaying]);
+  }, [isPlaying, isDragging, currentTrack]);
 
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value);
-    setProgress(val);
+  // Smooth seeker drag handlers
+  const handleSliderMouseDown = () => {
+    setIsDragging(true);
+    setDragProgress(progress);
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value, 10);
+    setDragProgress(val);
+  };
+
+  const handleSliderMouseUp = () => {
+    setIsDragging(false);
+    setProgress(dragProgress);
     if (playerRef.current && playerRef.current.seekTo) {
-      playerRef.current.seekTo(val, true);
+      playerRef.current.seekTo(dragProgress, true);
     }
   };
 
@@ -304,22 +352,37 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             </div>
 
             <div className="progress-container">
-              <span>{formatTime(progress)}</span>
+              <span>{formatTime(isDragging ? dragProgress : progress)}</span>
               <input
                 type="range"
                 className="slider"
                 min={0}
-                max={duration || 180}
-                value={progress}
-                onChange={handleProgressChange}
+                max={duration || currentTrack?.duration || 180}
+                value={isDragging ? dragProgress : progress}
+                onMouseDown={handleSliderMouseDown}
+                onTouchStart={handleSliderMouseDown}
+                onChange={handleSliderChange}
+                onMouseUp={handleSliderMouseUp}
+                onTouchEnd={handleSliderMouseUp}
                 disabled={!currentTrack}
+                title="Seek track position"
               />
-              <span>{formatTime(duration)}</span>
+              <span>{formatTime(duration || currentTrack?.duration || 0)}</span>
             </div>
           </div>
 
           {/* Extra Controls (Right) */}
           <div className="player-right">
+            {/* Float Mini-Player button (Picture-in-Picture) */}
+            <button
+              className="icon-btn"
+              onClick={() => floatingPlayer.toggle()}
+              disabled={!currentTrack}
+              title="Float Mini Player (Picture-in-Picture on tab/window switch)"
+            >
+              <PictureInPicture2 size={18} />
+            </button>
+
             <button
               className={`icon-btn ${showLyrics ? 'active' : ''}`}
               onClick={() => {
@@ -327,7 +390,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 if (!showLyrics) setShowQueue(false);
               }}
               disabled={!currentTrack}
-              title="Lyrics"
+              title="Full-Screen Ambient Lyrics"
             >
               <FileText size={18} />
             </button>
@@ -517,14 +580,18 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         type="range" 
                         className="slider"
                         min={0} 
-                        max={duration || 180} 
-                        value={progress} 
-                        onChange={handleProgressChange} 
+                        max={duration || currentTrack.duration || 180} 
+                        value={isDragging ? dragProgress : progress} 
+                        onMouseDown={handleSliderMouseDown}
+                        onTouchStart={handleSliderMouseDown}
+                        onChange={handleSliderChange}
+                        onMouseUp={handleSliderMouseUp}
+                        onTouchEnd={handleSliderMouseUp}
                         style={{ width: '100%', marginBottom: '8px' }} 
                       />
                       <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--yt-text-secondary)' }}>
-                        <span>{formatTime(progress)}</span>
-                        <span>{formatTime(duration)}</span>
+                        <span>{formatTime(isDragging ? dragProgress : progress)}</span>
+                        <span>{formatTime(duration || currentTrack.duration || 0)}</span>
                       </div>
                     </div>
 

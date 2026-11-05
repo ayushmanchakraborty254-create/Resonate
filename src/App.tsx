@@ -5,6 +5,12 @@ import { PlayerBar } from './components/PlayerBar';
 import { MainFeed } from './components/MainFeed';
 import { LyricsAndQueue } from './components/LyricsAndQueue';
 import { AuthModal } from './components/AuthModal';
+import { LyricsModal } from './components/LyricsModal';
+import { MusicRecognizerModal } from './components/MusicRecognizerModal';
+import { ListenTogetherModal } from './components/ListenTogetherModal';
+import { StatsModal } from './components/StatsModal';
+import { HistoryModal } from './components/HistoryModal';
+import { SpotifyAuthManager } from './utils/spotifyAuth';
 import type { Track, Playlist, UnifiedTrack, UnifiedPlaylist } from './types';
 import { POPULAR_TRACKS, searchYouTube } from './utils/youtube';
 import { syncManager } from './utils/syncManager';
@@ -83,9 +89,13 @@ function App() {
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Side panels states
+  // Side panels & New Feature Modals
   const [showLyrics, setShowLyrics] = useState<boolean>(false);
   const [showQueue, setShowQueue] = useState<boolean>(false);
+  const [isListenTogetherOpen, setIsListenTogetherOpen] = useState<boolean>(false);
+  const [isStatsOpen, setIsStatsOpen] = useState<boolean>(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [isRecognizerOpen, setIsRecognizerOpen] = useState<boolean>(false);
 
   // Playlist Creator Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -236,23 +246,23 @@ function App() {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Parse Spotify OAuth Callback Hash on mount
+  // Spotify OAuth Callback & Auto-Sync on App Open / Relaunch
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token=')) {
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get('access_token');
-      const expiresIn = params.get('expires_in');
-      
-      if (accessToken) {
-        localStorage.setItem('resonate_spotify_access_token', accessToken);
-        const expiryTime = Date.now() + (Number(expiresIn) || 3600) * 1000;
-        localStorage.setItem('resonate_spotify_token_expiry', expiryTime.toString());
-        window.history.replaceState(null, '', window.location.origin + '/');
-        alert('Spotify API Connected successfully!');
-        setView('universal_library');
+    (async () => {
+      const handled = await SpotifyAuthManager.handleCallback();
+      if (handled) {
+        alert('Spotify API Connected! Syncing libraries...');
       }
-    }
+      // Auto-sync library every time app is relaunched/reopened
+      executeSyncSilent();
+    })();
+
+    const handleFocus = () => {
+      // Background auto-sync on window return
+      executeSyncSilent();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // Track Playback session events for personalization
@@ -423,6 +433,10 @@ function App() {
         user={user}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={() => setUser(null)}
+        onOpenListenTogether={() => setIsListenTogetherOpen(true)}
+        onOpenStats={() => setIsStatsOpen(true)}
+        onOpenHistory={() => setIsHistoryOpen(true)}
+        onOpenRecognizer={() => setIsRecognizerOpen(true)}
       />
 
       {/* Side Navigation Bar */}
@@ -561,10 +575,10 @@ function App() {
           )}
         </main>
 
-        {/* Lyrics or Queue sidebar overlay (Only on Desktop) */}
-        {!isMobile && (
+        {/* Queue sidebar overlay (Only on Desktop when requested) */}
+        {!isMobile && showQueue && (
           <LyricsAndQueue
-            showLyrics={showLyrics}
+            showLyrics={false}
             showQueue={showQueue}
             currentTrack={currentTrack}
             queue={queue}
@@ -671,6 +685,51 @@ function App() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={(u) => setUser(u)}
+      />
+
+      {/* Full-Screen Ambient Blurred Lyrics Modal */}
+      <LyricsModal
+        isOpen={showLyrics}
+        onClose={() => setShowLyrics(false)}
+        currentTrack={currentTrack}
+        isPlaying={isPlaying}
+        onTogglePlay={() => setIsPlaying(!isPlaying)}
+        onNext={handleNext}
+        onPrev={handlePrev}
+        progress={progress}
+        duration={currentTrack?.duration || 180}
+        onSeek={(secs) => setProgress(secs)}
+      />
+
+      {/* Music Recognizer Modal (Metrolist / Shazam Engine) */}
+      <MusicRecognizerModal
+        isOpen={isRecognizerOpen}
+        onClose={() => setIsRecognizerOpen(false)}
+        onPlayTrackImmediate={handlePlayTrackImmediate}
+      />
+
+      {/* Listen Together Modal (Host/Join Rooms) */}
+      <ListenTogetherModal
+        isOpen={isListenTogetherOpen}
+        onClose={() => setIsListenTogetherOpen(false)}
+        currentTrack={currentTrack}
+        isPlaying={isPlaying}
+        onPlayTrackImmediate={handlePlayTrackImmediate}
+        onTogglePlay={() => setIsPlaying(!isPlaying)}
+      />
+
+      {/* Stats Modal (Listening Insights) */}
+      <StatsModal
+        isOpen={isStatsOpen}
+        onClose={() => setIsStatsOpen(false)}
+        onPlayTrackImmediate={handlePlayTrackImmediate}
+      />
+
+      {/* History Modal (Listening Log) */}
+      <HistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        onPlayTrackImmediate={handlePlayTrackImmediate}
       />
     </div>
   );

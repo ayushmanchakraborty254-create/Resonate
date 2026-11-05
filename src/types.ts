@@ -5,7 +5,7 @@ export interface Track {
   album?: string;
   duration: number; // in seconds
   thumbnailUrl: string;
-  youtubeUrl: string;
+  youtubeUrl?: string;
   lyrics?: string;
 }
 

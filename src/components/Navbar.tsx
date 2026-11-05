@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Music, Disc, LogOut, User as UserIcon } from 'lucide-react';
+import { Search, Music, Disc, LogOut, User as UserIcon, Mic, Radio, BarChart2, History } from 'lucide-react';
 import type { Track } from '../types';
 import { POPULAR_TRACKS } from '../utils/youtube';
 import { useBreakpoint } from '../utils/responsive';
@@ -11,6 +11,10 @@ interface NavbarProps {
   user: { name: string; email: string; avatar?: string; isGoogle?: boolean } | null;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenListenTogether?: () => void;
+  onOpenStats?: () => void;
+  onOpenHistory?: () => void;
+  onOpenRecognizer?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -20,6 +24,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   user,
   onOpenAuth,
   onLogout,
+  onOpenListenTogether,
+  onOpenStats,
+  onOpenHistory,
+  onOpenRecognizer,
 }) => {
   const { isMobile } = useBreakpoint();
   const [query, setQuery] = useState('');
@@ -119,7 +127,95 @@ export const Navbar: React.FC<NavbarProps> = ({
       )}
 
       {!isMobile && (
-        <div className="nav-right" ref={profileRef}>
+        <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }} ref={profileRef}>
+          {/* Music Recognizer Button (Shazam / Metrolist Engine) */}
+          <button
+            onClick={onOpenRecognizer}
+            className="icon-btn"
+            style={{
+              backgroundColor: 'rgba(141, 168, 214, 0.15)',
+              color: '#8da8d6',
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'transform 0.2s',
+            }}
+            title="Recognize Music (Metrolist / Shazam Engine)"
+          >
+            <Mic size={18} />
+          </button>
+
+          {/* Listen Together Button */}
+          <button
+            onClick={onOpenListenTogether}
+            className="icon-btn"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: '#fff',
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'transform 0.2s',
+            }}
+            title="Listen Together"
+          >
+            <Radio size={18} />
+          </button>
+
+          {/* Stats Button */}
+          <button
+            onClick={onOpenStats}
+            className="icon-btn"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: '#fff',
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'transform 0.2s',
+            }}
+            title="Stats"
+          >
+            <BarChart2 size={18} />
+          </button>
+
+          {/* History Button */}
+          <button
+            onClick={onOpenHistory}
+            className="icon-btn"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: '#fff',
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'transform 0.2s',
+            }}
+            title="History"
+          >
+            <History size={18} />
+          </button>
+
           {user ? (
             <div className="profile-dropdown-container">
               <div className="avatar" style={{ cursor: 'pointer', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowDropdown(!showDropdown)}>

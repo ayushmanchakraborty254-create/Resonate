@@ -1,6 +1,7 @@
 import React from 'react';
-import { Home, Compass, Library, Plus, ListMusic, Heart, RefreshCw, Music } from 'lucide-react';
+import { Home, Compass, Library, Plus, Heart, RefreshCw, Music } from 'lucide-react';
 import type { Playlist } from '../types';
+import { PlaylistCover } from './PlaylistCover';
 
 interface SidebarProps {
   currentView: string;
@@ -96,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setView('playlist');
           }}
         >
-          <ListMusic size={20} />
+          <PlaylistCover tracks={playlist.tracks} size={22} rounded="4px" />
           <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
             {playlist.name}
           </span>
@@ -107,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {syncedPlaylists.length > 0 && (
         <>
           <div className="sidebar-divider" />
-          <div className="sidebar-header">YouTube Synced</div>
+          <div className="sidebar-header">Synced Playlists</div>
           {syncedPlaylists.map((playlist) => (
             <div
               key={playlist.id}
@@ -117,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setView('playlist');
               }}
             >
-              <ListMusic size={20} style={{ color: '#ff0000' }} />
+              <PlaylistCover tracks={playlist.tracks} size={22} rounded="4px" />
               <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                 {playlist.name}
               </span>

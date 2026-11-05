@@ -587,7 +587,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         onChange={handleSliderChange}
                         onMouseUp={handleSliderMouseUp}
                         onTouchEnd={handleSliderMouseUp}
-                        style={{ width: '100%', marginBottom: '8px' }} 
+                        style={{ width: '100%', marginBottom: '8px', touchAction: 'none' }} 
                       />
                       <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--yt-text-secondary)' }}>
                         <span>{formatTime(isDragging ? dragProgress : progress)}</span>
@@ -626,9 +626,32 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-around', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
                       <button 
                         onClick={() => setLocalShowLyrics(!localShowLyrics)} 
-                        style={{ background: 'none', border: 'none', color: localShowLyrics ? 'var(--yt-accent)' : 'var(--yt-text-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+                        style={{ background: 'none', border: 'none', color: localShowLyrics ? 'var(--yt-accent)' : 'var(--yt-text-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         <FileText size={16} /> Lyrics
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setMobilePlayerState('mini');
+                          setShowLyrics(true);
+                        }} 
+                        style={{ background: 'none', border: 'none', color: showLyrics ? 'var(--yt-accent)' : 'var(--yt-text-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, cursor: 'pointer' }}
+                        title="Full-Screen Ambient Lyrics"
+                      >
+                        <FileText size={16} /> Ambient
+                      </button>
+                      <button 
+                        onClick={() => floatingPlayer.toggle()} 
+                        style={{ background: 'none', border: 'none', color: 'var(--yt-text-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, cursor: 'pointer' }}
+                        title="Picture-in-Picture Float Player"
+                      >
+                        <PictureInPicture2 size={16} /> Float
+                      </button>
+                      <button 
+                        onClick={() => setMobilePlayerState('half')} 
+                        style={{ background: 'none', border: 'none', color: 'var(--yt-text-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        <ListMusic size={16} /> Queue
                       </button>
                       <button 
                         onClick={() => {

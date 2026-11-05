@@ -19,7 +19,9 @@ import { personalization } from './utils/personalization';
 import { useBreakpoint } from './utils/responsive';
 import { useNavigation } from './utils/navigation';
 import type { ActiveView } from './utils/navigation';
-import { Home, Search, Library, RefreshCw, User } from 'lucide-react';
+import { Home, Search, Library, RefreshCw, User, BarChart2, History as HistoryIcon, Mic, Radio, Download, Music } from 'lucide-react';
+
+const ANDROID_APK_URL = 'https://github.com/ayushmanchakraborty254-create/Resonate/releases/download/latest/Resonate-v1.0.0.apk';
 
 // Color themes mapped to each track's visual identity to simulate Material You dynamic theme
 const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }> = {
@@ -456,8 +458,8 @@ function App() {
       <div className="main-layout" style={{ gridArea: 'main' }}>
         <main className="main-content">
           {currentView === 'profile' ? (
-            <div style={{ padding: '24px 16px', maxWidth: '600px', margin: '0 auto' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+            <div style={{ padding: '24px 16px', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                 <div style={{ width: '96px', height: '96px', borderRadius: '50%', backgroundColor: 'var(--yt-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: 'bold', color: '#fff', overflow: 'hidden', boxShadow: '0 8px 24px var(--yt-accent-glow)' }}>
                   {user ? (user.avatar ? <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : user.name[0].toUpperCase()) : <User size={48} />}
                 </div>
@@ -467,19 +469,166 @@ function App() {
                 </div>
               </div>
 
-              {user ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Quick Actions & Features Hub for Mobile & Tablet */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <h4 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--yt-text-secondary)', fontWeight: 700, margin: '8px 4px 4px 4px' }}>
+                  Features & Tools
+                </h4>
+
+                {/* Music Recognizer */}
+                <div
+                  onClick={() => setIsRecognizerOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(141, 168, 214, 0.08)',
+                    border: '1px solid rgba(141, 168, 214, 0.2)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(141, 168, 214, 0.2)', color: '#8da8d6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Mic size={22} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Music Recognizer</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Identify songs playing around you</div>
+                  </div>
+                </div>
+
+                {/* Listen Together */}
+                <div
+                  onClick={() => setIsListenTogetherOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(167, 139, 250, 0.08)',
+                    border: '1px solid rgba(167, 139, 250, 0.2)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(167, 139, 250, 0.2)', color: '#c4b5fd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Radio size={22} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Listen Together</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Host or join a group music room</div>
+                  </div>
+                </div>
+
+                {/* Listening Stats */}
+                <div
+                  onClick={() => setIsStatsOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BarChart2 size={22} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Listening Stats</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Analytics, top artists & duration breakdown</div>
+                  </div>
+                </div>
+
+                {/* History */}
+                <div
+                  onClick={() => setIsHistoryOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                    border: '1px solid rgba(245, 158, 11, 0.2)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <HistoryIcon size={22} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Listening History</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Browse recently played tracks</div>
+                  </div>
+                </div>
+
+                {/* Direct Android APK Download */}
+                <div
+                  onClick={() => window.open(ANDROID_APK_URL, '_blank')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                    border: '1px solid rgba(34, 197, 94, 0.25)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Download size={22} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 700, fontSize: '15px', color: '#4ade80' }}>Download Android App (.apk)</span>
+                      <span style={{ fontSize: '10px', backgroundColor: '#22c55e', color: '#000', padding: '2px 6px', borderRadius: '10px', fontWeight: 800 }}>v1.0.0</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Download directly from GitHub releases without Android Studio</div>
+                  </div>
+                </div>
+
+                {/* Universal Library */}
+                <div
+                  onClick={() => pushView('universal_library')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(236, 72, 153, 0.08)',
+                    border: '1px solid rgba(236, 72, 153, 0.2)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(236, 72, 153, 0.2)', color: '#f472b6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Music size={22} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Universal Library & Sync</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Spotify, YouTube & cloud playlists</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Actions */}
+              <div style={{ marginTop: '8px' }}>
+                {user ? (
                   <button className="btn btn-secondary" onClick={() => setUser(null)} style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 600 }}>
                     Sign Out Account
                   </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                ) : (
                   <button className="btn btn-primary" onClick={() => setIsAuthModalOpen(true)} style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 600 }}>
                     Sign In to Resonate
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ) : isMobile && currentView === 'explore' ? (
             <div style={{ padding: '16px' }}>

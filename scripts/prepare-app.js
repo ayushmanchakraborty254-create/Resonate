@@ -12,3 +12,4 @@ if (!fs.existsSync(distDir)) {
 fs.mkdirSync(targetDir, { recursive: true });
 fs.cpSync(distDir, targetDir, { recursive: true });
 console.log('✓ Successfully synced dist/ to App/app/src/main/assets/dist/');
+

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Resonate</string>
+    <style name="Theme.Resonate" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:statusBarColor">#0a0a0a</item>
+        <item name="android:navigationBarColor">#0a0a0a</item>
+        <item name="android:windowBackground">#0a0a0a</item>
+    </style>
+</resources>

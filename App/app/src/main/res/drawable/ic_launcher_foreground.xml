@@ -1,0 +1,58 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Vinyl Groove Glow -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#26ffffff"
+        android:strokeWidth="1.5"
+        android:pathData="M54,18 A36,36 0 1,1 53.99,18 Z" />
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#1affffff"
+        android:strokeWidth="1"
+        android:pathData="M54,24 A30,30 0 1,1 53.99,24 Z" />
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#26ffffff"
+        android:strokeWidth="1.2"
+        android:pathData="M54,30 A24,24 0 1,1 53.99,30 Z" />
+
+    <!-- Center Vinyl Disc Label with Crimson / Violet Gradient -->
+    <path
+        android:fillColor="#ff0055"
+        android:pathData="M54,34 A20,20 0 1,1 53.99,34 Z" />
+
+    <!-- Inner Core Disc -->
+    <path
+        android:fillColor="#8b5cf6"
+        android:pathData="M54,42 A12,12 0 1,1 53.99,42 Z" />
+
+    <!-- Resonate Audio Wave / Note Motif (White) -->
+    <!-- Equalizer Sound Wave Bars -->
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M43,49 L46,49 L46,59 L43,59 Z" />
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M48,44 L51,44 L51,64 L48,64 Z" />
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M53,40 L56,40 L56,68 L53,68 Z" />
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M58,45 L61,45 L61,63 L58,63 Z" />
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M63,50 L66,50 L66,58 L63,58 Z" />
+
+    <!-- Center Spindle Dot -->
+    <path
+        android:fillColor="#0a0a0f"
+        android:pathData="M54,52 A2.5,2.5 0 1,1 53.99,52 Z" />
+</vector>

@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Android build ignores
+.gradle/
+build/
+**/build/
+*.apk
+*.aab
+local.properties
+**/local.properties

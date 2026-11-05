@@ -56,7 +56,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
       title: 'Tere Bina',
       artist: 'Jigar Saraiya, Priya Saraiya',
       duration: 252,
-      thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=200&auto=format&fit=crop&q=80',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=200&auto=format&fit=crop&q=80',
       lyrics: '[Enjoy listening to Tere Bina on Resonate!]',
     },
   ];

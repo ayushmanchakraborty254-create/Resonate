@@ -585,7 +585,7 @@ export const MusicRecognizerModal: React.FC<MusicRecognizerModalProps> = ({
                     title: 'Hedwig\'s Theme (From "Harry Potter") [Piano Version]',
                     artist: 'Patrik Pietschmann',
                     album: 'Hedwig\'s Theme (From "Harry Potter") [Piano Version] - Single',
-                    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=500&auto=format&fit=crop&q=80',
+                    thumbnailUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=500&auto=format&fit=crop&q=80',
                     recognizedAt: Date.now(),
                   };
                   musicRecognizer.saveToHistory(demoTrack);

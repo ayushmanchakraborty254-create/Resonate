@@ -10,6 +10,7 @@ import { MusicRecognizerModal } from './components/MusicRecognizerModal';
 import { ListenTogetherModal } from './components/ListenTogetherModal';
 import { StatsModal } from './components/StatsModal';
 import { HistoryModal } from './components/HistoryModal';
+import { AppDownloadModal } from './components/AppDownloadModal';
 import { SpotifyAuthManager } from './utils/spotifyAuth';
 import type { Track, Playlist, UnifiedTrack, UnifiedPlaylist } from './types';
 import { POPULAR_TRACKS, searchYouTube } from './utils/youtube';
@@ -20,8 +21,6 @@ import { useBreakpoint } from './utils/responsive';
 import { useNavigation } from './utils/navigation';
 import type { ActiveView } from './utils/navigation';
 import { Home, Search, Library, RefreshCw, User, BarChart2, History as HistoryIcon, Mic, Radio, Download, Music } from 'lucide-react';
-
-const ANDROID_APK_URL = 'https://github.com/ayushmanchakraborty254-create/Resonate/releases/download/latest/Resonate-v1.0.0.apk';
 
 // Color themes mapped to each track's visual identity to simulate Material You dynamic theme
 const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }> = {
@@ -95,6 +94,7 @@ function App() {
   const [isStatsOpen, setIsStatsOpen] = useState<boolean>(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
   const [isRecognizerOpen, setIsRecognizerOpen] = useState<boolean>(false);
+  const [isDownloadApkOpen, setIsDownloadApkOpen] = useState<boolean>(false);
 
   // Playlist Creator Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -566,7 +566,7 @@ function App() {
 
                 {/* Direct Android APK Download */}
                 <div
-                  onClick={() => window.open(ANDROID_APK_URL, '_blank')}
+                  onClick={() => setIsDownloadApkOpen(true)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -878,6 +878,12 @@ function App() {
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         onPlayTrackImmediate={handlePlayTrackImmediate}
+      />
+
+      {/* APK & App Download Hub Modal */}
+      <AppDownloadModal
+        isOpen={isDownloadApkOpen}
+        onClose={() => setIsDownloadApkOpen(false)}
       />
     </div>
   );

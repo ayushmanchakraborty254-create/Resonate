@@ -1,5 +1,5 @@
-import React from 'react';
-import { Play, Trash2, Heart, Music, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, Trash2, Heart, Music, Sparkles, Flame, Radio, Disc, Compass } from 'lucide-react';
 import type { Track, Playlist } from '../types';
 import { 
   POPULAR_TRACKS,
@@ -10,6 +10,7 @@ import {
   QUICK_PICKS_EXPANDED
 } from '../utils/youtube';
 import { PlaylistCover } from './PlaylistCover';
+import { ArtisticCover } from './ArtisticCover';
 
 interface MainFeedProps {
   view: string;
@@ -37,6 +38,9 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   onRemoveTrackFromPlaylist,
 }) => {
   const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId);
+  const [selectedMood, setSelectedMood] = useState('All');
+
+  const MOOD_PILLS = ['All', 'Energize', 'Relax', 'Focus', 'Commute', 'Party', 'Nostalgia', 'Bollywood'];
 
   // Explore categories
   const exploreCategories = [
@@ -129,29 +133,40 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   if (view === 'home') {
     return (
       <div style={{ width: '100%', maxWidth: '100%' }}>
-        {/* Pills container */}
+        {/* Interactive Mood Filter Pills */}
         <div className="pills-container">
-          <div className="pill active">Energize</div>
-          <div className="pill">Relax</div>
-          <div className="pill">Focus</div>
-          <div className="pill">Commute</div>
-          <div className="pill">Party</div>
+          {MOOD_PILLS.map((pill) => (
+            <div
+              key={pill}
+              className={`pill ${selectedMood === pill ? 'active' : ''}`}
+              onClick={() => setSelectedMood(pill)}
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              {pill}
+            </div>
+          ))}
         </div>
 
         {/* Listen Again Shelf */}
         <div className="home-section">
           <div className="section-title">
-            <span>Listen Again</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={18} style={{ color: '#fbbf24' }} />
+              Listen Again
+            </span>
           </div>
           <div className="shelf-scroll">
             {POPULAR_TRACKS.slice(0, 5).map((track) => (
               <div key={track.id} className="song-card" onClick={() => onPlayTrack(track)}>
-                <div className="card-img-container">
-                  <img src={track.thumbnailUrl} className="card-img" alt={track.title} />
-                  <div className="play-hover-btn">
-                    <Play size={20} fill="#fff" style={{ transform: 'translateX(1px)' }} />
-                  </div>
-                </div>
+                <ArtisticCover
+                  title={track.title}
+                  subtitle={track.artist}
+                  thumbnailUrl={track.thumbnailUrl}
+                  tag="POPULAR"
+                  size="100%"
+                  rounded="10px"
+                  showVinyl={true}
+                />
                 <div className="card-title">{track.title}</div>
                 <div className="card-subtitle">{track.artist}</div>
               </div>
@@ -162,7 +177,10 @@ export const MainFeed: React.FC<MainFeedProps> = ({
         {/* 1. Brb, Being Nostalgic! (Page 5 of PDF) */}
         <div className="home-section">
           <div className="section-title">
-            <span>Brb, Being Nostalgic!</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Flame size={18} style={{ color: '#f43f5e' }} />
+              Brb, Being Nostalgic!
+            </span>
           </div>
           <div className="shelf-scroll">
             {NOSTALGIC_SHELF.map((item) => (
@@ -177,16 +195,24 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                     album: 'Nostalgic Classics',
                     duration: 260,
                     thumbnailUrl: item.thumbnailUrl,
+                    tag: item.tag,
+                    gradient: item.gradient,
+                    accentColor: item.accentColor,
                     lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
                   });
                 }}
               >
-                <div className="card-img-container">
-                  <img src={item.thumbnailUrl} className="card-img" alt={item.title} />
-                  <div className="play-hover-btn">
-                    <Play size={20} fill="#fff" style={{ transform: 'translateX(1px)' }} />
-                  </div>
-                </div>
+                <ArtisticCover
+                  title={item.title}
+                  subtitle={item.subtitle}
+                  thumbnailUrl={item.thumbnailUrl}
+                  tag={item.tag}
+                  gradient={item.gradient}
+                  accentColor={item.accentColor}
+                  size="100%"
+                  rounded="10px"
+                  showVinyl={true}
+                />
                 <div className="card-title">{item.title}</div>
                 <div className="card-subtitle">{item.subtitle}</div>
               </div>
@@ -197,17 +223,25 @@ export const MainFeed: React.FC<MainFeedProps> = ({
         {/* 2. New Releases (Page 5 of PDF) */}
         <div className="home-section">
           <div className="section-title">
-            <span>New releases</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Disc size={18} style={{ color: '#38bdf8' }} />
+              New releases
+            </span>
           </div>
           <div className="shelf-scroll">
             {NEW_RELEASES_SHELF.map((track) => (
               <div key={track.id} className="song-card" onClick={() => onPlayTrack(track)}>
-                <div className="card-img-container">
-                  <img src={track.thumbnailUrl} className="card-img" alt={track.title} />
-                  <div className="play-hover-btn">
-                    <Play size={20} fill="#fff" style={{ transform: 'translateX(1px)' }} />
-                  </div>
-                </div>
+                <ArtisticCover
+                  title={track.title}
+                  subtitle={track.artist}
+                  thumbnailUrl={track.thumbnailUrl}
+                  tag={track.tag}
+                  gradient={track.gradient}
+                  accentColor={track.accentColor}
+                  size="100%"
+                  rounded="10px"
+                  showVinyl={true}
+                />
                 <div className="card-title">{track.title}</div>
                 <div className="card-subtitle">{track.artist}</div>
               </div>
@@ -218,7 +252,10 @@ export const MainFeed: React.FC<MainFeedProps> = ({
         {/* 3. Trending Community Playlists (Page 6 of PDF with 2x2 Collage Covers) */}
         <div className="home-section">
           <div className="section-title">
-            <span>Trending community playlists</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Radio size={18} style={{ color: '#a855f7' }} />
+              Trending community playlists
+            </span>
           </div>
           <div className="shelf-scroll">
             {COMMUNITY_PLAYLISTS.map((pl) => (
@@ -237,7 +274,13 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                 }}
               >
                 <div style={{ width: '100%', aspectRatio: '1', marginBottom: '10px' }}>
-                  <PlaylistCover tracks={pl.tracks} size="100%" rounded="8px" />
+                  <PlaylistCover
+                    tracks={pl.tracks}
+                    name={pl.name}
+                    creator={pl.creator}
+                    size="100%"
+                    rounded="10px"
+                  />
                 </div>
                 <div className="card-title">{pl.name}</div>
                 <div className="card-subtitle">{pl.creator}</div>
@@ -249,7 +292,10 @@ export const MainFeed: React.FC<MainFeedProps> = ({
         {/* 4. Quick Picks (Page 7 of PDF) */}
         <div className="home-section">
           <div className="section-title">
-            <span>Quick picks</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Compass size={18} style={{ color: '#10b981' }} />
+              Quick picks
+            </span>
           </div>
           <div 
             style={{
@@ -260,7 +306,29 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           >
             {QUICK_PICKS_EXPANDED.map((track) => (
               <div key={track.id} className="track-row" onClick={() => onPlayTrack(track)}>
-                <img src={track.thumbnailUrl} className="track-row-img" alt={track.title} />
+                <div
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <img
+                    src={track.thumbnailUrl}
+                    className="track-row-img"
+                    alt={track.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
                 <div className="track-row-info">
                   <div className="track-row-title">{track.title}</div>
                   <div className="track-row-subtitle">{track.artist}</div>
@@ -295,7 +363,14 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                 }}
               >
                 <div style={{ position: 'relative', width: '100%', height: '160px', borderRadius: '12px', overflow: 'hidden', marginBottom: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
-                  <img src={video.thumbnailUrl} alt={video.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img
+                    src={video.thumbnailUrl}
+                    alt={video.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
+                    }}
+                  />
                   <div
                     style={{
                       position: 'absolute',
@@ -341,7 +416,13 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   }}
                 >
                   <div style={{ width: '100%', aspectRatio: '1', marginBottom: '10px' }}>
-                    <PlaylistCover tracks={playlist.tracks} size="100%" rounded="8px" />
+                    <PlaylistCover
+                      tracks={playlist.tracks}
+                      name={playlist.name}
+                      creator={`${playlist.tracks.length} Songs`}
+                      size="100%"
+                      rounded="10px"
+                    />
                   </div>
                   <div className="card-title">{playlist.name}</div>
                   <div className="card-subtitle">{playlist.tracks.length} Songs</div>

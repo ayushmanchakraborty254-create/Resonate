@@ -105,48 +105,77 @@ export const POPULAR_TRACKS: Track[] = [
   }
 ];
 
-// Curated collections from user references (Pages 5, 6, 7, 8)
-export const NOSTALGIC_SHELF = [
+// Curated collections from user references with rich artistic flair & reliable imagery
+export interface ShelfItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  thumbnailUrl: string;
+  tag?: string;
+  gradient?: string;
+  accentColor?: string;
+  trackQuery?: string;
+}
+
+export const NOSTALGIC_SHELF: ShelfItem[] = [
   {
     id: 'nost-1',
     title: "00s Bollywood Romance",
     subtitle: "Alka Yagnik, Pritam, Sonu Nigam, Shreya Ghoshal",
-    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    tag: 'BOLLYWOOD 00s',
+    gradient: 'linear-gradient(135deg, #f43f5e 0%, #a855f7 50%, #3b82f6 100%)',
+    accentColor: 'rgba(244, 63, 94, 0.45)',
     trackQuery: '00s Bollywood Romance songs'
   },
   {
     id: 'nost-2',
     title: "10s Bollywood Romance Hits",
     subtitle: "Arijit Singh, Pritam, Vishal-Shekhar, Atif Aslam",
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80',
+    tag: 'ARIJIT HITS',
+    gradient: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)',
+    accentColor: 'rgba(99, 102, 241, 0.45)',
     trackQuery: '10s Bollywood Romance Hits'
   },
   {
     id: 'nost-3',
     title: "90s Chill: Bollywood",
     subtitle: "Kumar Sanu, Alka Yagnik, Udit Narayan",
-    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=400&auto=format&fit=crop&q=80',
+    tag: '90s NOSTALGIA',
+    gradient: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #7c2d12 100%)',
+    accentColor: 'rgba(245, 158, 11, 0.45)',
     trackQuery: '90s Chill Bollywood'
   },
   {
     id: 'nost-4',
     title: "'90s Indian Pop",
     subtitle: "Shankar Mahadevan, K.K., Lucky Ali",
-    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&auto=format&fit=crop&q=80',
+    tag: 'RETRO POP',
+    gradient: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #06b6d4 100%)',
+    accentColor: 'rgba(236, 72, 153, 0.45)',
     trackQuery: '90s Indian Pop classics'
   },
   {
     id: 'nost-5',
     title: "10s Bollywood Dance",
     subtitle: "Neha Kakkar, Vishal-Shekhar",
-    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&auto=format&fit=crop&q=80',
+    tag: 'CLUB ANTHEM',
+    gradient: 'linear-gradient(135deg, #f43f5e 0%, #8b5cf6 50%, #06b6d4 100%)',
+    accentColor: 'rgba(244, 63, 94, 0.45)',
     trackQuery: '10s Bollywood Dance party songs'
   },
   {
     id: 'nost-6',
     title: "The Hits: '10s",
     subtitle: "Drake, Rihanna, Justin Bieber, Nicki Minaj",
-    thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=400&auto=format&fit=crop&q=80',
+    tag: 'GLOBAL CHART',
+    gradient: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)',
+    accentColor: 'rgba(59, 130, 246, 0.45)',
     trackQuery: 'The Hits 2010s playlist'
   }
 ];
@@ -158,7 +187,10 @@ export const NEW_RELEASES_SHELF: Track[] = [
     artist: 'Anirudh Ravichander',
     album: 'Jailer 2 Album',
     duration: 218,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&auto=format&fit=crop&q=80',
+    tag: 'CINEMATIC HEAT',
+    gradient: 'linear-gradient(135deg, #dc2626 0%, #7f1d1d 60%, #0f172a 100%)',
+    accentColor: 'rgba(220, 38, 38, 0.45)',
     lyrics: '[Instrumental Theme of Jailer 2]'
   },
   {
@@ -167,7 +199,10 @@ export const NEW_RELEASES_SHELF: Track[] = [
     artist: 'Mathias Fritsche',
     album: 'Halo Never Forget Single',
     duration: 245,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&auto=format&fit=crop&q=80',
+    tag: 'GAMING ICONIC',
+    gradient: 'linear-gradient(135deg, #0284c7 0%, #1e1b4b 60%, #030712 100%)',
+    accentColor: 'rgba(2, 132, 199, 0.45)',
     lyrics: '[Halo Never Forget Piano Version]'
   },
   {
@@ -176,7 +211,10 @@ export const NEW_RELEASES_SHELF: Track[] = [
     artist: 'Imperial Orchestra',
     album: 'Transformers Symphonic EP',
     duration: 310,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80',
+    tag: 'SYMPHONIC EPIC',
+    gradient: 'linear-gradient(135deg, #4f46e5 0%, #312e81 60%, #0f172a 100%)',
+    accentColor: 'rgba(79, 70, 229, 0.45)',
     lyrics: '[Transformers Orchestral Score]'
   },
   {
@@ -185,7 +223,10 @@ export const NEW_RELEASES_SHELF: Track[] = [
     artist: 'TommyMuzzic',
     album: "I'll Do It - Album",
     duration: 195,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    tag: 'VIRAL PHONK',
+    gradient: 'linear-gradient(135deg, #9333ea 0%, #6b21a8 60%, #18181b 100%)',
+    accentColor: 'rgba(147, 51, 234, 0.45)',
     lyrics: "[Enjoy listening to I'll Do It!]"
   },
   {
@@ -194,7 +235,10 @@ export const NEW_RELEASES_SHELF: Track[] = [
     artist: 'Ludovico Einaudi',
     album: 'Winter Light EP',
     duration: 260,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=400&auto=format&fit=crop&q=80',
+    tag: 'NEOCLASSICAL',
+    gradient: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 50%, #0f172a 100%)',
+    accentColor: 'rgba(56, 189, 248, 0.45)',
     lyrics: '[Ludovico Einaudi Winter Light Piano]'
   },
   {
@@ -203,7 +247,10 @@ export const NEW_RELEASES_SHELF: Track[] = [
     artist: 'Arjun & Shirley Setia',
     album: 'Zara Zara Single',
     duration: 228,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=400&auto=format&fit=crop&q=80',
+    tag: 'FUSION LO-FI',
+    gradient: 'linear-gradient(135deg, #f97316 0%, #c2410c 50%, #431407 100%)',
+    accentColor: 'rgba(249, 115, 22, 0.45)',
     lyrics: "[Zara Zara Bahekta Hai - Arjun & Shirley Setia]"
   }
 ];
@@ -217,7 +264,7 @@ export const COMMUNITY_PLAYLISTS = [
       { thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80' },
       { thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80' },
       { thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80' },
-      { thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80' }
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80' }
     ]
   },
   {
@@ -238,7 +285,7 @@ export const COMMUNITY_PLAYLISTS = [
     tracks: [
       { thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80' },
       { thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80' },
-      { thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80' },
+      { thumbnailUrl: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=300&auto=format&fit=crop&q=80' },
       { thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80' }
     ]
   },
@@ -272,7 +319,7 @@ export const MUSIC_VIDEOS_SHELF: Array<{ id: string; title: string; artist: stri
     title: "Hedwig's Theme (Piano Arrangement)",
     artist: 'Patrik Pietschmann',
     views: '30m views',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=500&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=500&auto=format&fit=crop&q=80',
     duration: 275
   },
   {
@@ -355,7 +402,7 @@ export const QUICK_PICKS_EXPANDED: Track[] = [
     title: 'See You Again (feat. Charlie Puth)',
     artist: 'Wiz Khalifa',
     duration: 230,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=300&auto=format&fit=crop&q=80',
     lyrics: '[See You Again - Wiz Khalifa ft Charlie Puth]'
   },
   {

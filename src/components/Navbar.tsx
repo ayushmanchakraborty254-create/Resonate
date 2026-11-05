@@ -6,8 +6,7 @@ import {
 import type { Track } from '../types';
 import { POPULAR_TRACKS } from '../utils/youtube';
 import { useBreakpoint } from '../utils/responsive';
-
-const ANDROID_APK_URL = 'https://github.com/ayushmanchakraborty254-create/Resonate/releases/download/latest/Resonate-v1.0.0.apk';
+import { AppDownloadModal } from './AppDownloadModal';
 
 interface NavbarProps {
   onSearch: (query: string) => void;
@@ -41,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -87,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const handleDownloadApk = () => {
-    window.open(ANDROID_APK_URL, '_blank');
+    setShowDownloadModal(true);
   };
 
   // Close suggestions and profile dropdown when clicking outside
@@ -758,6 +758,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       )}
+
+      {/* APK & App Download Hub Modal */}
+      <AppDownloadModal
+        isOpen={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        onInstallPwa={handleInstallApp}
+      />
     </>
   );
 };

@@ -1,22 +1,76 @@
-import React from 'react';
-import { Music } from 'lucide-react';
+import React, { useState } from 'react';
+import { Music, Disc } from 'lucide-react';
+import { ArtisticCover } from './ArtisticCover';
 
 interface PlaylistCoverProps {
   tracks?: Array<{ thumbnailUrl?: string }>;
   thumbnailUrl?: string;
+  name?: string;
+  creator?: string;
   size?: number | string;
   className?: string;
   style?: React.CSSProperties;
   rounded?: number | string;
+  onClick?: () => void;
 }
+
+const QUAD_GRADIENTS = [
+  'linear-gradient(135deg, #f43f5e 0%, #a855f7 100%)',
+  'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+  'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
+  'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+];
+
+interface CollageTileProps {
+  url?: string;
+  index: number;
+}
+
+const CollageTile: React.FC<CollageTileProps> = ({ url, index }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (url && !hasError) {
+    return (
+      <img
+        src={url}
+        alt=""
+        onError={() => setHasError(true)}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          display: 'block',
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        background: QUAD_GRADIENTS[index % QUAD_GRADIENTS.length],
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Music size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+    </div>
+  );
+};
 
 export const PlaylistCover: React.FC<PlaylistCoverProps> = ({
   tracks,
   thumbnailUrl,
+  name = 'Playlist',
+  creator,
   size = '100%',
   className = '',
   style = {},
-  rounded = '8px',
+  rounded = '10px',
+  onClick,
 }) => {
   const validThumbnails = (tracks || [])
     .map((t) => t.thumbnailUrl)
@@ -28,78 +82,77 @@ export const PlaylistCover: React.FC<PlaylistCoverProps> = ({
     aspectRatio: '1',
     borderRadius: rounded,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     position: 'relative',
     flexShrink: 0,
+    boxShadow: '0 6px 18px rgba(0, 0, 0, 0.45)',
     ...style,
   };
 
-  // 1. If 4 or more track thumbnails are available, create 2x2 collage
+  // 1. If 4 or more track thumbnails are available, create an aesthetic 2x2 collage
   if (validThumbnails.length >= 4) {
     return (
-      <div className={`playlist-cover-collage ${className}`} style={containerStyle}>
+      <div
+        className={`playlist-cover-collage ${className}`}
+        style={containerStyle}
+        onClick={onClick}
+      >
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gridTemplateRows: '1fr 1fr',
+            gap: '1.5px',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
             width: '100%',
             height: '100%',
           }}
         >
           {validThumbnails.slice(0, 4).map((thumb, index) => (
-            <img
-              key={index}
-              src={thumb}
-              alt=""
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
-              }}
-              onError={(e) => {
-                // Fallback to placeholder color on image load failure
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
+            <CollageTile key={index} url={thumb} index={index} />
           ))}
+        </div>
+
+        {/* Center Frosted Glass Spindle Emblem */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            border: '1.5px solid rgba(255, 255, 255, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+            pointerEvents: 'none',
+          }}
+        >
+          <Disc size={16} style={{ color: '#fff' }} />
         </div>
       </div>
     );
   }
 
-  // 2. Single custom thumbnail URL
-  const singleImage = thumbnailUrl || (validThumbnails.length > 0 ? validThumbnails[0] : null);
+  // 2. Single custom thumbnail URL or 1-3 tracks -> Delegate to ArtisticCover for rock-solid presentation
+  const singleImage = thumbnailUrl || (validThumbnails.length > 0 ? validThumbnails[0] : undefined);
 
-  if (singleImage) {
-    return (
-      <div className={`playlist-cover-single ${className}`} style={containerStyle}>
-        <img
-          src={singleImage}
-          alt=""
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-          }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
-          }}
-        />
-      </div>
-    );
-  }
-
-  // 3. Fallback placeholder
   return (
-    <div className={`playlist-cover-placeholder ${className}`} style={containerStyle}>
-      <Music size={typeof size === 'number' ? Math.round(size * 0.4) : 32} style={{ color: 'var(--yt-text-secondary)', opacity: 0.6 }} />
-    </div>
+    <ArtisticCover
+      title={name}
+      subtitle={creator}
+      thumbnailUrl={singleImage}
+      tag="PLAYLIST"
+      size={size}
+      rounded={typeof rounded === 'number' ? `${rounded}px` : rounded}
+      className={className}
+      style={style}
+      onClick={onClick}
+    />
   );
 };
-

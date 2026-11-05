@@ -7,6 +7,9 @@ export interface Track {
   thumbnailUrl: string;
   youtubeUrl?: string;
   lyrics?: string;
+  tag?: string;
+  gradient?: string;
+  accentColor?: string;
 }
 
 export interface Playlist {

@@ -267,9 +267,10 @@ body {
 
 .shelf-scroll {
   display: flex;
-  gap: 16px;
+  gap: 22px;
   overflow-x: auto;
-  padding-bottom: 12px;
+  overflow-y: visible;
+  padding: 8px 36px 18px 4px;
   scroll-behavior: smooth;
 }
 
@@ -279,10 +280,10 @@ body {
 
 /* Card item */
 .song-card {
-  flex: 0 0 170px;
+  flex: 0 0 176px;
   cursor: pointer;
   position: relative;
-  transition: transform 0.2s;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .song-card:hover {

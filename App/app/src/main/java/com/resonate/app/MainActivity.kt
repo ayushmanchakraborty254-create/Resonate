@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
@@ -29,22 +28,24 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Make status & navigation bars immersive dark matching Resonate design
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.parseColor("#0a0a0a")
-        window.navigationBarColor = Color.parseColor("#0a0a0a")
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.setSystemBarsAppearance(
-                0,
-                android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-            )
-        }
-
+        // 1. Initialize WebView and set content view FIRST (ensures DecorView is attached)
         webView = WebView(this)
         setContentView(webView)
 
-        // Request RECORD_AUDIO for real-time Music Recognizer
+        // 2. Safe Window Insets and dark theme styling (after decorView is attached)
+        try {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            window.statusBarColor = Color.parseColor("#0a0a0a")
+            window.navigationBarColor = Color.parseColor("#0a0a0a")
+
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+            insetsController.isAppearanceLightStatusBars = false
+            insetsController.isAppearanceLightNavigationBars = false
+        } catch (_: Exception) {
+            // Graceful fallback for OEM-specific insets controllers
+        }
+
+        // 3. Audio recording permission for Music Recognizer
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // 4. Configure AssetLoader for loading bundled web app assets securely
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
@@ -65,6 +67,8 @@ class MainActivity : AppCompatActivity() {
             databaseEnabled = true
             allowFileAccess = true
             allowContentAccess = true
+            allowFileAccessFromFileURLs = true
+            allowUniversalAccessFromFileURLs = true
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
@@ -89,7 +93,6 @@ class MainActivity : AppCompatActivity() {
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
-                // Grant audio capture permission to Web Audio / Music Recognizer
                 request?.let {
                     val requestedResources = it.resources
                     for (resource in requestedResources) {
@@ -103,7 +106,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Handle Back button for in-app navigation
+        // 5. Back navigation dispatcher
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (webView.canGoBack()) {
@@ -114,8 +117,15 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        // Load bundled web app dist
+        // 6. Load bundled web app dist
         webView.loadUrl("file:///android_asset/dist/index.html")
     }
-}
 
+    override fun onDestroy() {
+        try {
+            webView.stopLoading()
+            webView.destroy()
+        } catch (_: Exception) {}
+        super.onDestroy()
+    }
+}

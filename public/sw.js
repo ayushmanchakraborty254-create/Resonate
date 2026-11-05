@@ -1,8 +1,9 @@
-const CACHE_NAME = 'resonate-shell-v1';
+const CACHE_NAME = 'resonate-shell-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/favicon.svg'
 ];
 
 self.addEventListener('install', (e) => {
@@ -32,12 +33,14 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // EXPLICIT FILTER: Do not cache streaming media or dynamic sync APIs
+  // Do not intercept external streaming media or heavy API calls
   if (
     e.request.method !== 'GET' ||
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('spotify.com') ||
     url.hostname.includes('apple.com') ||
+    url.hostname.includes('youtube.com') ||
+    url.hostname.includes('ytimg.com') ||
     url.pathname.includes('/videos') ||
     url.pathname.includes('/playlists') ||
     url.pathname.includes('/playlistItems')
@@ -46,30 +49,19 @@ self.addEventListener('fetch', (e) => {
   }
 
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch background refresh
-        fetch(e.request)
-          .then((networkResponse) => {
-            if (networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(e.request, networkResponse));
-            }
-          })
-          .catch(() => {});
-        return cachedResponse;
-      }
-
-      return fetch(e.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+    caches.match(e.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(e.request).then((response) => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
         }
-
-        const responseToCache = networkResponse.clone();
+        const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(e.request, responseToCache);
         });
-
-        return networkResponse;
+        return response;
+      }).catch(() => {
+        return caches.match('/index.html');
       });
     })
   );

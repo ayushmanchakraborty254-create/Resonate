@@ -1,114 +1,199 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Search, Play, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Search, Play, X, TrendingUp } from 'lucide-react';
 import { PlaylistCover } from './PlaylistCover';
-import type { Track } from '../types';
+import { db } from '../utils/db';
+import { POPULAR_TRACKS } from '../utils/youtube';
+import type { Track, Playlist } from '../types';
 
 interface StatsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPlayTrackImmediate: (track: Track) => void;
+  playlists?: Playlist[];
+  likedTracks?: Track[];
+}
+
+interface ComputedSongStat {
+  rank: number;
+  track: Track;
+  plays: number;
+  listenTime: string;
+}
+
+interface ComputedArtistStat {
+  rank: number;
+  name: string;
+  plays: string;
+  avatarUrl: string;
 }
 
 export const StatsModal: React.FC<StatsModalProps> = ({
   isOpen,
   onClose,
   onPlayTrackImmediate,
+  playlists = [],
 }) => {
   const [timeframe, setTimeframe] = useState<'Continuous' | '1 week' | '1 month' | '3 months' | '6 months'>('Continuous');
+  const [topSongs, setTopSongs] = useState<ComputedSongStat[]>([]);
+  const [topArtists, setTopArtists] = useState<ComputedArtistStat[]>([]);
+  const [topPlaylists, setTopPlaylists] = useState<Array<{ id: string; name: string; tracks: Track[] }>>([]);
+
+  // Calculate dynamic stats based on chosen timeframe and user listening history
+  const loadStats = async () => {
+    try {
+      const history: Array<{ trackId: string; timestamp: number; duration: number }> = await db.getAll('history');
+      const metrics: Array<{ id: string; playCount: number; totalListeningTime: number; lastPlayed: number }> = await db.getAll('metrics');
+      const allCachedTracks: Track[] = await db.getAll('tracks');
+
+      // 1. Timeframe Cutoff Filter
+      const now = Date.now();
+      let cutoffTime = 0;
+      if (timeframe === '1 week') cutoffTime = now - 7 * 86400 * 1000;
+      else if (timeframe === '1 month') cutoffTime = now - 30 * 86400 * 1000;
+      else if (timeframe === '3 months') cutoffTime = now - 90 * 86400 * 1000;
+      else if (timeframe === '6 months') cutoffTime = now - 180 * 86400 * 1000;
+
+      // Filter history sessions within cutoff
+      const filteredHistory = history.filter((h) => h.timestamp >= cutoffTime);
+
+      // Track play frequency map
+      const trackPlayMap: Record<string, { plays: number; totalTime: number }> = {};
+      filteredHistory.forEach((item) => {
+        if (!trackPlayMap[item.trackId]) {
+          trackPlayMap[item.trackId] = { plays: 0, totalTime: 0 };
+        }
+        trackPlayMap[item.trackId].plays += 1;
+        trackPlayMap[item.trackId].totalTime += item.duration || 60;
+      });
+
+      // Also merge all-time metrics if continuous or if history is fresh
+      metrics.forEach((m) => {
+        if (m.lastPlayed >= cutoffTime) {
+          if (!trackPlayMap[m.id]) {
+            trackPlayMap[m.id] = { plays: m.playCount || 1, totalTime: m.totalListeningTime || 180 };
+          } else {
+            trackPlayMap[m.id].plays = Math.max(trackPlayMap[m.id].plays, m.playCount || 1);
+            trackPlayMap[m.id].totalTime = Math.max(trackPlayMap[m.id].totalTime, m.totalListeningTime || 180);
+          }
+        }
+      });
+
+      // Find Track Metadata lookup
+      const findTrack = (id: string): Track => {
+        const found = allCachedTracks.find((t) => t.id === id || t.id.endsWith(id)) ||
+                      POPULAR_TRACKS.find((t) => t.id === id);
+        if (found) return found;
+        return {
+          id,
+          title: `Track #${id.slice(0, 8)}`,
+          artist: 'Popular Artist',
+          duration: 210,
+          thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
+          lyrics: `[Enjoy listening on Resonate!]`
+        };
+      };
+
+      const formatDuration = (secs: number) => {
+        const m = Math.floor(secs / 60);
+        const s = Math.floor(secs % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      };
+
+      // 2. Compute Top Songs
+      const sortedTrackIds = Object.keys(trackPlayMap).sort(
+        (a, b) => trackPlayMap[b].plays - trackPlayMap[a].plays
+      );
+
+      let computedSongs: ComputedSongStat[] = sortedTrackIds.slice(0, 10).map((id, index) => {
+        const tr = findTrack(id);
+        const stat = trackPlayMap[id];
+        return {
+          rank: index + 1,
+          track: tr,
+          plays: stat.plays,
+          listenTime: formatDuration(stat.totalTime),
+        };
+      });
+
+      // If user is brand new and has played few tracks, merge with popular listening tracks so charts are active
+      if (computedSongs.length < 3) {
+        const sampleTracks = POPULAR_TRACKS.slice(0, 6);
+        const baseline = sampleTracks.map((tr, idx) => ({
+          rank: computedSongs.length + idx + 1,
+          track: tr,
+          plays: Math.max(1, 5 - idx),
+          listenTime: formatDuration(tr.duration * Math.max(1, 5 - idx)),
+        }));
+        computedSongs = [...computedSongs, ...baseline].slice(0, 6);
+      }
+
+      setTopSongs(computedSongs);
+
+      // 3. Compute Top Artists
+      const artistMap: Record<string, { plays: number; totalTime: number; avatar: string }> = {};
+      computedSongs.forEach((item) => {
+        const artist = item.track.artist || 'Unknown Artist';
+        if (!artistMap[artist]) {
+          artistMap[artist] = { plays: 0, totalTime: 0, avatar: item.track.thumbnailUrl };
+        }
+        artistMap[artist].plays += item.plays;
+        artistMap[artist].totalTime += item.track.duration * item.plays;
+      });
+
+      const sortedArtists = Object.keys(artistMap)
+        .sort((a, b) => artistMap[b].plays - artistMap[a].plays)
+        .slice(0, 6);
+
+      const computedArtists: ComputedArtistStat[] = sortedArtists.map((name, idx) => ({
+        rank: idx + 1,
+        name,
+        plays: `${artistMap[name].plays} times • ${formatDuration(artistMap[name].totalTime)}`,
+        avatarUrl: artistMap[name].avatar,
+      }));
+
+      setTopArtists(computedArtists);
+
+      // 4. Compute Top Playlists with 2x2 Collage Covers
+      const userAndTopPlaylists: Array<{ id: string; name: string; tracks: Track[] }> = [];
+
+      // Include user's playlists if available
+      if (playlists.length > 0) {
+        playlists.slice(0, 3).forEach((pl) => {
+          userAndTopPlaylists.push({
+            id: pl.id,
+            name: pl.name,
+            tracks: pl.tracks,
+          });
+        });
+      }
+
+      // Add Weekly Most & Monthly Most (matching Page 4 of PDF)
+      userAndTopPlaylists.push(
+        {
+          id: 'weekly-most',
+          name: 'Weekly Most',
+          tracks: computedSongs.slice(0, 4).map((s) => s.track),
+        },
+        {
+          id: 'monthly-most',
+          name: 'Monthly Most',
+          tracks: POPULAR_TRACKS.slice(2, 6),
+        }
+      );
+
+      setTopPlaylists(userAndTopPlaylists.slice(0, 4));
+    } catch (e) {
+      console.warn('Failed to compute listening stats:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadStats();
+    }
+  }, [isOpen, timeframe, playlists]);
 
   if (!isOpen) return null;
-
-  // Stat sample playlists matching PDF Page 4 with real thumbnail assets
-  const topPlaylists = [
-    {
-      id: 'stat-pl-1',
-      name: 'Weekly Most',
-      tracks: [
-        { thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80' },
-        { thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80' },
-        { thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80' },
-        { thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=300&auto=format&fit=crop&q=80' },
-      ],
-    },
-    {
-      id: 'stat-pl-2',
-      name: 'Monthly Most',
-      tracks: [
-        { thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80' },
-        { thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&auto=format&fit=crop&q=80' },
-        { thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80' },
-        { thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80' },
-      ],
-    },
-  ];
-
-  // Top Songs matching Page 4
-  const topSongs: Array<{ rank: number; track: Track; plays: number; listenTime: string }> = [
-    {
-      rank: 1,
-      track: {
-        id: 'khat-track',
-        title: 'Khat',
-        artist: 'Jigar Saraiya, Priya Saraiya',
-        album: 'Khat - Single',
-        duration: 297,
-        thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
-        lyrics: '[Enjoy listening to Khat!]',
-      },
-      plays: 4,
-      listenTime: '19:25',
-    },
-    {
-      rank: 2,
-      track: {
-        id: 'dhun-track',
-        title: 'Dhun (Movie: Saiyaara)',
-        artist: 'Arijit Singh and Mithoon',
-        album: 'Saiyaara Soundtrack',
-        duration: 277,
-        thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
-        lyrics: '[Enjoy listening to Dhun!]',
-      },
-      plays: 3,
-      listenTime: '13:51',
-    },
-    {
-      rank: 3,
-      track: {
-        id: 'tere-bina-track',
-        title: 'Tere Bina',
-        artist: 'Jigar Saraiya, Priya Saraiya',
-        album: '1921',
-        duration: 252,
-        thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80',
-        lyrics: '[Enjoy listening to Tere Bina!]',
-      },
-      plays: 3,
-      listenTime: '12:38',
-    },
-  ];
-
-  // Top Artists matching Page 4
-  const topArtists = [
-    {
-      rank: 1,
-      name: 'Arijit Singh',
-      plays: '4 times • 17:54',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    },
-    {
-      rank: 2,
-      name: 'Mithoon',
-      plays: '3 times • 13:51',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-    },
-    {
-      rank: 3,
-      name: 'Bruno Mars',
-      plays: '5 times • 11:30',
-      avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=300&auto=format&fit=crop&q=80',
-    },
-  ];
 
   const timeframes: Array<'Continuous' | '1 week' | '1 month' | '3 months' | '6 months'> = [
     'Continuous',
@@ -117,6 +202,13 @@ export const StatsModal: React.FC<StatsModalProps> = ({
     '3 months',
     '6 months',
   ];
+
+  const handlePlayAll = () => {
+    if (topSongs.length > 0) {
+      onPlayTrackImmediate(topSongs[0].track);
+      onClose();
+    }
+  };
 
   return (
     <div
@@ -157,7 +249,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
           }}
         >
           <ArrowLeft size={22} />
-          <span>Stats</span>
+          <span>Stats & Insights</span>
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -182,12 +274,13 @@ export const StatsModal: React.FC<StatsModalProps> = ({
                 backgroundColor: timeframe === tf ? '#8da8d6' : 'rgba(255,255,255,0.05)',
                 color: timeframe === tf ? '#0f172a' : '#fff',
                 border: 'none',
-                padding: '8px 16px',
+                padding: '8px 18px',
                 borderRadius: '20px',
                 fontSize: '13px',
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
+                transition: 'all 0.2s',
               }}
             >
               {tf}
@@ -197,12 +290,31 @@ export const StatsModal: React.FC<StatsModalProps> = ({
 
         {/* 1. Playlists Shelf (with 2x2 collage covers) */}
         <div style={{ marginBottom: '36px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>2 playlists</h3>
-          <div style={{ display: 'flex', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <TrendingUp size={18} style={{ color: '#8da8d6' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>
+              {topPlaylists.length} Playlists • {timeframe}
+            </h3>
+          </div>
+          <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', paddingBottom: '12px' }}>
             {topPlaylists.map((pl) => (
-              <div key={pl.id} style={{ width: '160px', cursor: 'pointer' }}>
+              <div 
+                key={pl.id} 
+                style={{ width: '160px', flexShrink: 0, cursor: 'pointer' }}
+                onClick={() => {
+                  if (pl.tracks.length > 0) {
+                    onPlayTrackImmediate(pl.tracks[0]);
+                    onClose();
+                  }
+                }}
+              >
                 <PlaylistCover tracks={pl.tracks} size={160} rounded="12px" />
-                <div style={{ fontWeight: 700, fontSize: '14px', marginTop: '10px' }}>{pl.name}</div>
+                <div style={{ fontWeight: 700, fontSize: '14px', marginTop: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {pl.name}
+                </div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
+                  {pl.tracks.length} Songs
+                </div>
               </div>
             ))}
           </div>
@@ -211,21 +323,26 @@ export const StatsModal: React.FC<StatsModalProps> = ({
         {/* 2. Top Songs Shelf */}
         <div style={{ marginBottom: '36px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>16 Songs</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>
+              Top Songs • {timeframe}
+            </h3>
             <button
-              onClick={() => onPlayTrackImmediate(topSongs[0].track)}
+              onClick={handlePlayAll}
               style={{
                 background: 'rgba(255,255,255,0.08)',
                 border: 'none',
                 color: '#fff',
-                padding: '6px 14px',
+                padding: '8px 18px',
                 borderRadius: '16px',
                 fontSize: '12px',
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
               }}
             >
-              Play all
+              <Play size={14} fill="#fff" /> Play all
             </button>
           </div>
 
@@ -233,7 +350,10 @@ export const StatsModal: React.FC<StatsModalProps> = ({
             {topSongs.map(({ rank, track, plays, listenTime }) => (
               <div
                 key={track.id}
-                onClick={() => onPlayTrackImmediate(track)}
+                onClick={() => {
+                  onPlayTrackImmediate(track);
+                  onClose();
+                }}
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.05)',
@@ -244,7 +364,10 @@ export const StatsModal: React.FC<StatsModalProps> = ({
                   gap: '12px',
                   cursor: 'pointer',
                   position: 'relative',
+                  transition: 'transform 0.2s, background 0.2s',
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)')}
               >
                 <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden' }}>
                   <img src={track.thumbnailUrl} alt={track.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -266,7 +389,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
                     {rank}. {track.title}
                   </div>
                   <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>
-                    {plays} times • {listenTime}
+                    {plays} plays • {listenTime}
                   </div>
                 </div>
               </div>
@@ -276,10 +399,12 @@ export const StatsModal: React.FC<StatsModalProps> = ({
 
         {/* 3. Top Artists Shelf */}
         <div>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>15 Artists</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
+            Top Artists • {timeframe}
+          </h3>
           <div style={{ display: 'flex', gap: '28px', overflowX: 'auto', paddingBottom: '16px' }}>
             {topArtists.map((artist) => (
-              <div key={artist.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '120px' }}>
+              <div key={artist.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '120px', flexShrink: 0 }}>
                 <img
                   src={artist.avatarUrl}
                   alt={artist.name}

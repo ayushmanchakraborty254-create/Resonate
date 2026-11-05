@@ -723,6 +723,8 @@ function App() {
         isOpen={isStatsOpen}
         onClose={() => setIsStatsOpen(false)}
         onPlayTrackImmediate={handlePlayTrackImmediate}
+        playlists={playlists}
+        likedTracks={likedTracks}
       />
 
       {/* History Modal (Listening Log) */}

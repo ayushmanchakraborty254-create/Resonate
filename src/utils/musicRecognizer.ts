@@ -8,65 +8,70 @@ export interface RecognizedTrack {
   recognizedAt: number;
 }
 
-// Curated high-accuracy fingerprint acoustic database for instant offline / fallback identification
-const KNOWN_ACOUSTIC_SIGNATURES: RecognizedTrack[] = [
-  {
-    id: 'hedwigs-theme-piano',
-    title: 'Hedwig\'s Theme (From "Harry Potter") [Piano Version]',
-    artist: 'Patrik Pietschmann',
-    album: 'Hedwig\'s Theme (From "Harry Potter") [Piano Version] - Single',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-50712825e617?w=500&auto=format&fit=crop&q=80',
-    recognizedAt: Date.now(),
-  },
-  {
-    id: 'jugraafiya',
-    title: 'Jugraafiya (feat. Hrithik Roshan & Mrunal Thakur)',
-    artist: 'Jigar Saraiya, Priya Saraiya',
-    album: 'Super 30 (Original Motion Picture Soundtrack)',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
-    recognizedAt: Date.now(),
-  },
-  {
-    id: 'satranga-flute',
-    title: 'Satranga - Animal | Melodious Flute Cover',
-    artist: 'Swarnim Maharjan',
-    album: 'Animal Instrumental Expressions',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=500&auto=format&fit=crop&q=80',
-    recognizedAt: Date.now(),
-  },
-  {
-    id: 'interstellar-cornfield',
-    title: 'Cornfield Chase (Piano & Cello Arrangement)',
-    artist: 'Hans Zimmer',
-    album: 'Interstellar Soundtrack Suite',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop&q=80',
-    recognizedAt: Date.now(),
-  },
-  {
-    id: 'die-with-a-smile',
-    title: 'Die With A Smile (Live Acoustic Version)',
-    artist: 'Lady Gaga & Bruno Mars',
-    album: 'Die With A Smile - Single',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
-    recognizedAt: Date.now(),
-  },
-];
-
 export class MusicRecognizer {
   private mediaRecorder: MediaRecorder | null = null;
   private audioStream: MediaStream | null = null;
   private audioChunks: Blob[] = [];
+  private audioContext: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private volumeInterval: any = null;
+  private peakVolume = 0;
+  private volumeSamples: number[] = [];
 
   /**
-   * Start listening via microphone
+   * Start listening via microphone with real-time volume / silence monitoring
    */
-  async startListening(): Promise<void> {
+  async startListening(onVolumeUpdate?: (volume: number) => void): Promise<void> {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('Microphone access is not supported in this browser.');
     }
 
     this.audioChunks = [];
-    this.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.peakVolume = 0;
+    this.volumeSamples = [];
+
+    this.audioStream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: true,
+      }
+    });
+
+    // Setup Web Audio Analyser to measure true acoustic levels
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      this.audioContext = new AudioCtx();
+      const source = this.audioContext.createMediaStreamSource(this.audioStream);
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 512;
+      source.connect(this.analyser);
+
+      const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+
+      this.volumeInterval = setInterval(() => {
+        if (!this.analyser) return;
+        this.analyser.getByteFrequencyData(dataArray);
+
+        // Calculate Root-Mean-Square (RMS) amplitude
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += (dataArray[i] / 255) * (dataArray[i] / 255);
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+        this.volumeSamples.push(rms);
+        if (rms > this.peakVolume) {
+          this.peakVolume = rms;
+        }
+
+        if (onVolumeUpdate) {
+          onVolumeUpdate(Math.min(1, rms * 3));
+        }
+      }, 50);
+    } catch (e) {
+      console.warn('AudioContext volume monitoring setup failed:', e);
+    }
+
     this.mediaRecorder = new MediaRecorder(this.audioStream);
 
     this.mediaRecorder.ondataavailable = (e) => {
@@ -89,9 +94,33 @@ export class MusicRecognizer {
       }
 
       this.mediaRecorder.onstop = async () => {
-        // Clean up microphone stream
+        // Clean up intervals and streams
+        if (this.volumeInterval) {
+          clearInterval(this.volumeInterval);
+          this.volumeInterval = null;
+        }
+        if (this.audioContext && this.audioContext.state !== 'closed') {
+          try {
+            await this.audioContext.close();
+          } catch (_) {}
+          this.audioContext = null;
+        }
         this.audioStream?.getTracks().forEach((track) => track.stop());
         this.audioStream = null;
+
+        // 1. STRICT SILENCE CHECK:
+        // Calculate average volume during recording session
+        const avgVolume = this.volumeSamples.length > 0
+          ? this.volumeSamples.reduce((a, b) => a + b, 0) / this.volumeSamples.length
+          : 0;
+
+        console.log(`Audio session metrics: Peak=${this.peakVolume.toFixed(4)}, Avg=${avgVolume.toFixed(4)}`);
+
+        // If total audio is essentially silence or barely microphone noise (less than threshold)
+        if (this.peakVolume < 0.018 && avgVolume < 0.01) {
+          reject(new Error('No music detected. Please make sure music is playing clearly near your microphone and try again.'));
+          return;
+        }
 
         try {
           const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
@@ -111,6 +140,16 @@ export class MusicRecognizer {
    * Cancel ongoing listening session
    */
   cancel() {
+    if (this.volumeInterval) {
+      clearInterval(this.volumeInterval);
+      this.volumeInterval = null;
+    }
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      try {
+        this.audioContext.close();
+      } catch (_) {}
+      this.audioContext = null;
+    }
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       try {
         this.mediaRecorder.stop();
@@ -122,13 +161,57 @@ export class MusicRecognizer {
   }
 
   /**
-   * Query Shazam / Cloud acoustic engine with intelligent fallback
+   * Query AudD, Shazam, or Acoustic analysis engine
    */
   private async queryRecognitionEngine(audioBlob: Blob): Promise<RecognizedTrack> {
-    // Attempt Shazam Core via public / RapidAPI gateway if key present
+    const userAuddKey = localStorage.getItem('resonate_audd_api_key');
+    const auddToken = userAuddKey || 'test';
+
+    // 1. Query AudD Music Recognition API (supports webm/wav/mp3)
     try {
-      const rapidKey = localStorage.getItem('resonate_rapidapi_key');
-      if (rapidKey && audioBlob.size > 0) {
+      const formData = new FormData();
+      formData.append('file', audioBlob);
+      formData.append('api_token', auddToken);
+      formData.append('return', 'apple_music,spotify');
+
+      const res = await fetch('https://api.audd.io/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'success' && data.result) {
+          return {
+            id: `audd-${Date.now()}`,
+            title: data.result.title,
+            artist: data.result.artist,
+            album: data.result.album || data.result.title,
+            thumbnailUrl:
+              data.result.spotify?.album?.images?.[0]?.url ||
+              data.result.apple_music?.artwork?.url?.replace('{w}x{h}', '400x400') ||
+              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+            releaseDate: data.result.release_date,
+            recognizedAt: Date.now(),
+          };
+        } else if (data.status === 'error') {
+          console.warn('AudD API returned error:', data.error);
+          if (data.error?.error_code === 901) {
+            throw new Error('AudD token limit reached. Please add your free personal AudD API key in settings (gear icon).');
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.message && err.message.includes('AudD token limit')) {
+        throw err;
+      }
+      console.warn('AudD recognition query failed:', err);
+    }
+
+    // 2. Query RapidAPI Shazam Core if configured
+    const rapidKey = localStorage.getItem('resonate_rapidapi_key');
+    if (rapidKey) {
+      try {
         const formData = new FormData();
         formData.append('file', audioBlob, 'sample.wav');
 
@@ -149,27 +232,18 @@ export class MusicRecognizer {
               title: data.track.title || 'Unknown Title',
               artist: data.track.subtitle || 'Unknown Artist',
               album: data.track.sections?.[0]?.metadata?.[0]?.text || data.track.title,
-              thumbnailUrl: data.track.images?.coverart || KNOWN_ACOUSTIC_SIGNATURES[0].thumbnailUrl,
+              thumbnailUrl: data.track.images?.coverart || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
               recognizedAt: Date.now(),
             };
           }
         }
+      } catch (e) {
+        console.warn('RapidAPI Shazam request failed:', e);
       }
-    } catch (e) {
-      console.warn('Shazam API request bypassed:', e);
     }
 
-    // High-accuracy acoustic fallback based on audio characteristics
-    // (Picks high-quality instrumental & song matches matching Metrolist reference)
-    const randomMatch = KNOWN_ACOUSTIC_SIGNATURES[
-      Math.floor(Math.random() * KNOWN_ACOUSTIC_SIGNATURES.length)
-    ];
-
-    return {
-      ...randomMatch,
-      id: `rec-${Date.now()}`,
-      recognizedAt: Date.now(),
-    };
+    // No fake/dummy fallback: report exact failure so user knows real status
+    throw new Error('Music could not be identified from this sample. Please make sure the music is playing loud and clearly, or add an AudD / RapidAPI key in Settings.');
   }
 
   /**
@@ -204,4 +278,3 @@ export class MusicRecognizer {
 }
 
 export const musicRecognizer = new MusicRecognizer();
-

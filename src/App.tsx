@@ -39,6 +39,18 @@ const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }
 
 const DEFAULT_THEME = { primary: '#ff0000', glow: 'rgba(255, 0, 0, 0.2)', bg: '#070707' };
 
+function safeJsonParse<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw || raw === 'undefined' || raw === 'null') return fallback;
+    return JSON.parse(raw);
+  } catch (err) {
+    console.warn(`[Resonate] Resetting corrupted localStorage key: ${key}`, err);
+    try { localStorage.removeItem(key); } catch (_) {}
+    return fallback;
+  }
+}
+
 function App() {
   const { isMobile } = useBreakpoint();
   const { currentView, pushView, activePlaylistId: selectedPlaylistId, setSelectedPlaylistId } = useNavigation();
@@ -48,21 +60,12 @@ function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Track[]>([]);
 
-  // Persistent States
-  const [playlists, setPlaylists] = useState<Playlist[]>(() => {
-    const saved = localStorage.getItem('yt_music_playlists');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [likedTracks, setLikedTracks] = useState<Track[]>(() => {
-    const saved = localStorage.getItem('yt_music_liked');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Persistent States with safe parsing to prevent mobile blank screens
+  const [playlists, setPlaylists] = useState<Playlist[]>(() => safeJsonParse('yt_music_playlists', []));
+  const [likedTracks, setLikedTracks] = useState<Track[]>(() => safeJsonParse('yt_music_liked', []));
 
   // Playback States
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(() => {
-    const saved = localStorage.getItem('yt_music_current_track');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(() => safeJsonParse('yt_music_current_track', null));
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(() => {
     return Number(localStorage.getItem('yt_music_progress') || 0);
@@ -70,10 +73,7 @@ function App() {
   const [volume, setVolume] = useState<number>(() => {
     return Number(localStorage.getItem('yt_music_volume') || 0.5);
   });
-  const [queue, setQueue] = useState<Track[]>(() => {
-    const saved = localStorage.getItem('yt_music_queue');
-    return saved ? JSON.parse(saved) : POPULAR_TRACKS;
-  });
+  const [queue, setQueue] = useState<Track[]>(() => safeJsonParse('yt_music_queue', POPULAR_TRACKS));
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
     return Number(localStorage.getItem('yt_music_current_index') || 0);
   });
@@ -85,10 +85,7 @@ function App() {
   });
 
   // User & Auth States
-  const [user, setUser] = useState<{ name: string; email: string; avatar?: string; isGoogle?: boolean } | null>(() => {
-    const saved = localStorage.getItem('resonate_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<{ name: string; email: string; avatar?: string; isGoogle?: boolean } | null>(() => safeJsonParse('resonate_user', null));
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Side panels & New Feature Modals

@@ -45,3 +45,4 @@ Resize-Image $src 192 192 'public/icon-192.png'
 Resize-Image $src 64 64 'public/favicon.png'
 
 $src.Dispose()
+

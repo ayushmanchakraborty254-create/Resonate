@@ -56,5 +56,11 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.webkit:webkit:1.12.1")
     implementation("androidx.activity:activity-ktx:1.9.3")
+
+    val media3Version = "1.5.1"
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-session:$media3Version")
+    implementation("androidx.media3:media3-datasource:$media3Version")
+    implementation("androidx.media3:media3-common:$media3Version")
 }
 

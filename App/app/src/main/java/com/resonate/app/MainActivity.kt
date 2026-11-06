@@ -36,6 +36,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebViewAssetLoader
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -255,6 +257,126 @@ class MainActivity : AppCompatActivity() {
                     syncMediaSessionAndNotification(title, artist, album, art, isPlaying, duration, position)
                 }
             }
+        }
+
+        // ==========================================
+        // Media3 Native Playback Engine Bridge (Phase 1 & 2)
+        // ==========================================
+
+        private fun isTrustedOrigin(): Boolean {
+            val currentUrl = webView.url ?: return false
+            return currentUrl.startsWith("https://resonate.app")
+        }
+
+        private fun isValidAuthorizedStreamUrl(streamUrl: String): Boolean {
+            return try {
+                val uri = Uri.parse(streamUrl)
+                val scheme = uri.scheme?.lowercase() ?: return false
+                if (scheme != "https" && scheme != "android.resource") return false
+
+                val host = uri.host?.lowercase() ?: return false
+                // Reject loopback or private networks
+                if (host == "localhost" || host == "127.0.0.1" || host.startsWith("192.168.") ||
+                    host.startsWith("10.") || host.startsWith("172.16.") || host.endsWith(".local")
+                ) {
+                    return false
+                }
+                true
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun runNativeAudioSelfTest(): String {
+            if (!isTrustedOrigin()) return """{"success":false,"error":"Unauthorized origin"}"""
+            val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    this@MainActivity.startForegroundService(serviceIntent)
+                } else {
+                    this@MainActivity.startService(serviceIntent)
+                }
+            } catch (_: Exception) {}
+
+            val started = MediaPlaybackService.instance?.playTestStream() ?: false
+            return org.json.JSONObject().apply {
+                put("success", started)
+                put("track", MediaPlaybackService.TEST_TRACK_TITLE)
+                put("artist", MediaPlaybackService.TEST_TRACK_ARTIST)
+                put("streamUrl", MediaPlaybackService.AUTHORIZED_TEST_STREAM_URL)
+                put("engine", "AndroidX Media3 ExoPlayer")
+            }.toString()
+        }
+
+        @android.webkit.JavascriptInterface
+        fun getNativePlaybackStatus(): String {
+            if (!isTrustedOrigin()) return """{"error":"Unauthorized origin"}"""
+            val snapshot = MediaPlaybackService.instance?.getPlaybackSnapshot()
+            return if (snapshot != null) {
+                org.json.JSONObject().apply {
+                    put("isPlaying", snapshot.isPlaying)
+                    put("positionMs", snapshot.currentPositionMs)
+                    put("durationMs", snapshot.durationMs)
+                    put("bufferedPositionMs", snapshot.bufferedPositionMs)
+                    put("trackId", snapshot.currentTrackId)
+                    put("playbackState", snapshot.playbackState)
+                    put("isTestStream", snapshot.isTestStream)
+                }.toString()
+            } else {
+                """{"isPlaying":false,"status":"service_inactive"}"""
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun playTrackNative(
+            trackId: String,
+            title: String,
+            artist: String,
+            album: String,
+            artworkUrl: String,
+            streamUrl: String,
+            canCache: Boolean
+        ): Boolean {
+            if (!isTrustedOrigin()) return false
+            if (!isValidAuthorizedStreamUrl(streamUrl)) return false
+
+            val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    this@MainActivity.startForegroundService(serviceIntent)
+                } else {
+                    this@MainActivity.startService(serviceIntent)
+                }
+            } catch (_: Exception) {}
+
+            return MediaPlaybackService.instance?.playAuthorizedTrack(
+                trackId = trackId,
+                title = title,
+                artist = artist,
+                album = album,
+                artworkUrl = artworkUrl,
+                streamUrl = streamUrl,
+                clientCanCache = canCache
+            ) ?: false
+        }
+
+        @android.webkit.JavascriptInterface
+        fun pauseNative() {
+            if (!isTrustedOrigin()) return
+            MediaPlaybackService.instance?.pause()
+        }
+
+        @android.webkit.JavascriptInterface
+        fun resumeNative() {
+            if (!isTrustedOrigin()) return
+            MediaPlaybackService.instance?.resume()
+        }
+
+        @android.webkit.JavascriptInterface
+        fun seekNative(positionSeconds: Double) {
+            if (!isTrustedOrigin()) return
+            MediaPlaybackService.instance?.seekTo((positionSeconds * 1000).toLong())
         }
     }
 
@@ -543,6 +665,78 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.addJavascriptInterface(AppNativeBridge(), "ResonateNative")
+
+        // Enhanced Bridge Security (Requirement 1):
+        // Prefer WebViewCompat.addWebMessageListener with explicit trusted origin allowlist
+        // Chromium enforces this at the C++ process level, preventing cross-origin framing/injection attacks
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            val allowedOrigins = setOf("https://resonate.app")
+            try {
+                WebViewCompat.addWebMessageListener(
+                    webView,
+                    "ResonateNativeSecure",
+                    allowedOrigins
+                ) { _, message, _, _, replyProxy ->
+                    try {
+                        val raw = message.data ?: return@addWebMessageListener
+                        val json = org.json.JSONObject(raw)
+                        val action = json.optString("action")
+                        when (action) {
+                            "runSelfTest" -> {
+                                val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    this@MainActivity.startForegroundService(serviceIntent)
+                                } else {
+                                    this@MainActivity.startService(serviceIntent)
+                                }
+                                val started = MediaPlaybackService.instance?.playTestStream() ?: false
+                                val resp = org.json.JSONObject().apply {
+                                    put("success", started)
+                                    put("track", MediaPlaybackService.TEST_TRACK_TITLE)
+                                    put("artist", MediaPlaybackService.TEST_TRACK_ARTIST)
+                                    put("streamUrl", MediaPlaybackService.AUTHORIZED_TEST_STREAM_URL)
+                                    put("engine", "AndroidX Media3 ExoPlayer")
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+                            "getStatus" -> {
+                                val snapshot = MediaPlaybackService.instance?.getPlaybackSnapshot()
+                                val resp = if (snapshot != null) {
+                                    org.json.JSONObject().apply {
+                                        put("isPlaying", snapshot.isPlaying)
+                                        put("positionMs", snapshot.currentPositionMs)
+                                        put("durationMs", snapshot.durationMs)
+                                        put("bufferedPositionMs", snapshot.bufferedPositionMs)
+                                        put("trackId", snapshot.currentTrackId)
+                                        put("playbackState", snapshot.playbackState)
+                                        put("isTestStream", snapshot.isTestStream)
+                                    }
+                                } else {
+                                    org.json.JSONObject().apply {
+                                        put("isPlaying", false)
+                                        put("status", "service_inactive")
+                                    }
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+                            "pause" -> {
+                                MediaPlaybackService.instance?.pause()
+                                replyProxy.postMessage("""{"status":"paused"}""")
+                            }
+                            "resume" -> {
+                                MediaPlaybackService.instance?.resume()
+                                replyProxy.postMessage("""{"status":"resumed"}""")
+                            }
+                            "seek" -> {
+                                val posSec = json.optDouble("positionSeconds", 0.0)
+                                MediaPlaybackService.instance?.seekTo((posSec * 1000).toLong())
+                                replyProxy.postMessage("""{"status":"seeked"}""")
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
+        }
         webView.setBackgroundColor(Color.parseColor("#0a0a0a"))
 
         webView.setDownloadListener { url, _, _, _, _ ->

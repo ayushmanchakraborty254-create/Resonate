@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User as UserIcon, RefreshCw, Download, ArrowUpRight, CheckCircle2, 
-  Sparkles, ExternalLink, LogOut, ArrowLeft, Trash2
+  Sparkles, ExternalLink, LogOut, ArrowLeft, Trash2, Volume2, Play, Pause
 } from 'lucide-react';
 import { isNativeAndroidApp, checkGitHubReleaseUpdate, openExternalUrl, CURRENT_APP_VERSION, type UpdateInfo } from '../utils/appPlatform';
 
@@ -31,6 +31,44 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   useEffect(() => {
     handleCheckUpdate();
   }, []);
+
+  const [nativeTestStatus, setNativeTestStatus] = useState<string | null>(null);
+  const [isNativePlaying, setIsNativePlaying] = useState<boolean>(false);
+
+  const handleRunNativeSelfTest = () => {
+    try {
+      if ((window as any).ResonateNative?.runNativeAudioSelfTest) {
+        const raw = (window as any).ResonateNative.runNativeAudioSelfTest();
+        const resp = JSON.parse(raw);
+        if (resp.success) {
+          setNativeTestStatus(`Playing: ${resp.track} • Engine: ${resp.engine}`);
+          setIsNativePlaying(true);
+        } else {
+          setNativeTestStatus(`Failed to start: ${resp.error || 'Unknown error'}`);
+        }
+      } else {
+        setNativeTestStatus('ResonateNative bridge unavailable (Only active on Android APK)');
+      }
+    } catch (err: any) {
+      setNativeTestStatus(`Error: ${err.message}`);
+    }
+  };
+
+  const handleToggleNativeTest = () => {
+    try {
+      if (isNativePlaying) {
+        (window as any).ResonateNative?.pauseNative?.();
+        setIsNativePlaying(false);
+        setNativeTestStatus('Paused native test stream');
+      } else {
+        (window as any).ResonateNative?.resumeNative?.();
+        setIsNativePlaying(true);
+        setNativeTestStatus('Resumed native test stream');
+      }
+    } catch (err: any) {
+      setNativeTestStatus(`Error: ${err.message}`);
+    }
+  };
 
   const handleCheckUpdate = async () => {
     setIsCheckingUpdate(true);
@@ -470,6 +508,74 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
           <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.4)' }}>v1.0.0</span>
         </a>
+
+        {/* Media3 Native Playback Test Card (Phase 3 Diagnostic Tool) */}
+        {isNative && (
+          <div style={{
+            marginTop: '12px',
+            padding: '16px',
+            borderRadius: '14px',
+            backgroundColor: 'rgba(196, 181, 253, 0.08)',
+            border: '1px solid rgba(196, 181, 253, 0.25)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Volume2 size={18} style={{ color: '#c4b5fd' }} />
+              <div style={{ fontWeight: 700, fontSize: '14px', color: '#c4b5fd' }}>
+                Media3 Native Audio Engine (Phase 3 Test)
+              </div>
+            </div>
+            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)', marginBottom: '12px', lineHeight: 1.5 }}>
+              Tests Google's authorized royalty-free test stream (Jazz In Paris) directly through native AndroidX Media3 ExoPlayer & MediaSessionService.
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleRunNativeSelfTest}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%)',
+                  color: '#1e1b4b',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Play size={13} fill="#1e1b4b" />
+                <span>Start Royalty-Free Stream</span>
+              </button>
+              {isNativePlaying && (
+                <button
+                  onClick={handleToggleNativeTest}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#fff',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Pause size={13} fill="#fff" />
+                  <span>Pause Stream</span>
+                </button>
+              )}
+            </div>
+            {nativeTestStatus && (
+              <div style={{ marginTop: '10px', fontSize: '12px', color: '#c4b5fd', fontFamily: 'monospace' }}>
+                {nativeTestStatus}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

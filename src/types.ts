@@ -2,6 +2,7 @@ export interface Track {
   id: string; // YouTube Video ID
   title: string;
   artist: string;
+  subtitle?: string;
   album?: string;
   duration: number; // in seconds
   thumbnailUrl: string;
@@ -10,6 +11,7 @@ export interface Track {
   tag?: string;
   gradient?: string;
   accentColor?: string;
+  views?: string;
 }
 
 export interface Playlist {

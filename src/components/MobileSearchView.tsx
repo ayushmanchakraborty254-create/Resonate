@@ -41,11 +41,6 @@ export const MobileSearchView: React.FC<MobileSearchViewProps> = ({
   const [hasSearched, setHasSearched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    // Focus search input on mount
-    inputRef.current?.focus();
-  }, []);
-
   // Debounced suggestions as user types
   useEffect(() => {
     if (!query.trim()) {

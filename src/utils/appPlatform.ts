@@ -1,7 +1,7 @@
 // Platform detection, native bridge, and GitHub update checker
 
 export const CURRENT_APP_VERSION = 'v1.0.0';
-export const CURRENT_BUILD_COMMIT = 'b6afd5d';
+export const CURRENT_BUILD_COMMIT = 'b44b873';
 
 export interface UpdateInfo {
   hasUpdate: boolean;
@@ -11,6 +11,7 @@ export interface UpdateInfo {
   releaseNotes: string;
   downloadUrl?: string;
   htmlUrl: string;
+  releaseCommit?: string;
 }
 
 /**
@@ -84,9 +85,10 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
     } else if (rawTag.toLowerCase().includes('latest') || releaseName.toLowerCase().includes('auto-build')) {
       const currentCommit = CURRENT_BUILD_COMMIT.toLowerCase();
       const lastInstalled = (localStorage.getItem('resonate_installed_commit') || '').toLowerCase();
+      const isDismissed = localStorage.getItem('resonate_dismissed_update') === releaseCommit;
 
-      // If the release commit matches our current build commit or user just installed it, no false alert!
-      if (releaseCommit && (releaseCommit === currentCommit || releaseCommit === lastInstalled)) {
+      // If user dismissed this update, or already installed it, or matches current build, no update!
+      if (isDismissed || (releaseCommit && (releaseCommit === currentCommit || releaseCommit === lastInstalled))) {
         hasUpdate = false;
       } else if (releaseCommit && currentCommit && releaseCommit !== currentCommit) {
         hasUpdate = true;
@@ -111,7 +113,8 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
       releaseName: releaseName,
       releaseNotes: data.body || 'No release notes provided.',
       downloadUrl: apkDownloadUrl || data.html_url,
-      htmlUrl: data.html_url || 'https://github.com/ayushmanchakraborty254-create/Resonate/releases'
+      htmlUrl: data.html_url || 'https://github.com/ayushmanchakraborty254-create/Resonate/releases',
+      releaseCommit: releaseCommit
     };
   } catch (err) {
     console.warn('[Resonate] Update check failed or offline:', err);

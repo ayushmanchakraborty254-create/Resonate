@@ -1,9 +1,14 @@
-const CACHE_NAME = 'resonate-shell-v4';
+const CACHE_NAME = 'resonate-shell-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg'
+  '/favicon.png',
+  '/favicon.svg',
+  '/favicon.ico',
+  '/logo.png',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {

@@ -49,6 +49,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
+  const handleDismissUpdate = () => {
+    if (updateInfo?.releaseCommit) {
+      localStorage.setItem('resonate_dismissed_update', updateInfo.releaseCommit);
+    } else {
+      localStorage.setItem('resonate_dismissed_update', 'latest');
+    }
+    setUpdateCheckStatus('up-to-date');
+  };
+
   const handleUpdateNow = () => {
     if (!updateInfo) return;
     const targetUrl = updateInfo.downloadUrl || updateInfo.htmlUrl;
@@ -327,28 +336,46 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '12px' }}>
                 {updateInfo.releaseName || 'A new version with performance improvements is available on GitHub.'}
               </div>
-              <button
-                onClick={handleUpdateNow}
-                style={{
-                  width: '100%',
-                  padding: '10px 16px',
-                  borderRadius: '12px',
-                  backgroundColor: '#e50914',
-                  color: '#fff',
-                  border: 'none',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(229, 9, 20, 0.4)',
-                }}
-              >
-                <Download size={16} />
-                <span>Update Now</span>
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleUpdateNow}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    borderRadius: '12px',
+                    backgroundColor: '#e50914',
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(229, 9, 20, 0.4)',
+                  }}
+                >
+                  <Download size={15} />
+                  <span>Update Now</span>
+                </button>
+                <button
+                  onClick={handleDismissUpdate}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                  title="Mark as current"
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
           ) : updateCheckStatus === 'up-to-date' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4ade80', fontSize: '12px', marginTop: '6px' }}>

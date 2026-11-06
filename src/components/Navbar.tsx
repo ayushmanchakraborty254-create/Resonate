@@ -143,7 +143,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   type="text"
                   className="search-input"
                   placeholder="Search songs, artists..."
-                  autoFocus
                   value={query}
                   onChange={(e) => {
                     setQuery(e.target.value);

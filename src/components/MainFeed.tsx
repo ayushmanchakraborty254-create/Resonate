@@ -327,7 +327,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   onPlayTrack({
                     id: item.id,
                     title: item.title,
-                    artist: item.subtitle,
+                    artist: item.artist || item.subtitle || 'Artist',
                     album: 'Nostalgic Classics',
                     duration: 260,
                     thumbnailUrl: item.thumbnailUrl,
@@ -340,7 +340,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
               >
                 <ArtisticCover
                   title={item.title}
-                  subtitle={item.subtitle}
+                  subtitle={item.subtitle || item.artist}
                   thumbnailUrl={item.thumbnailUrl}
                   tag={item.tag}
                   gradient={item.gradient}
@@ -350,7 +350,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   showVinyl={true}
                 />
                 <div className="card-title">{item.title}</div>
-                <div className="card-subtitle">{item.subtitle}</div>
+                <div className="card-subtitle">{item.subtitle || item.artist}</div>
               </div>
             ))}
           </div>

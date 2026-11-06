@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/favicon.svg" alt="Resonate Logo" width="120" height="120" />
+  <img src="public/logo.png" alt="Resonate Logo" width="130" height="130" style="border-radius: 28px;" />
   <h1>Resonate — High-Fidelity Music Streaming & Audio Workstation</h1>
   <p><strong>Ad-free music streaming, synchronized multi-platform libraries, floating picture-in-picture player, Listen Together audio rooms, and real-time music recognizer for Android and Web.</strong></p>
 

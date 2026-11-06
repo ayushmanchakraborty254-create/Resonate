@@ -49,13 +49,16 @@ export function parseSynchronizedLyrics(rawLyrics: string, trackDuration: number
     // Sort by startTime
     parsed.sort((a, b) => a.startTime - b.startTime);
 
-    // Fill realistic end times
+    // Fill realistic end times with intelligent instrumental gap handling
     for (let i = 0; i < parsed.length; i++) {
       if (!parsed[i].isHeader) {
         if (i + 1 < parsed.length && !parsed[i + 1].isHeader) {
-          parsed[i].endTime = parsed[i + 1].startTime;
+          const gap = parsed[i + 1].startTime - parsed[i].startTime;
+          // If gap is normal singing cadence (<= 7s), line runs until next line begins.
+          // If there is an instrumental solo or interlude (> 7s), cap line ending at startTime + 5.5s
+          parsed[i].endTime = gap <= 7 ? parsed[i + 1].startTime : parsed[i].startTime + Math.min(gap, 5.5);
         } else {
-          parsed[i].endTime = Math.max(parsed[i].startTime + 3, trackDuration || 180);
+          parsed[i].endTime = parsed[i].startTime + 5;
         }
       }
     }

@@ -10,8 +10,9 @@ export function useTrackLyrics(currentTrack: Track | null): string {
       return;
     }
 
-    // If pre-seeded real lyrics exist and are not placeholder text
-    if (currentTrack.lyrics && !currentTrack.lyrics.includes('Enjoy listening to')) {
+    // If pre-seeded real lyrics exist AND contain valid synchronized LRC timestamps
+    const hasSyncTimestamps = Boolean(currentTrack.lyrics && /\[\d{2}:\d{2}/.test(currentTrack.lyrics));
+    if (hasSyncTimestamps && currentTrack.lyrics) {
       setLyrics(currentTrack.lyrics);
       return;
     }
@@ -33,22 +34,41 @@ export function useTrackLyrics(currentTrack: Track | null): string {
       .trim();
 
     let isCancelled = false;
+    const targetDuration = Math.round(currentTrack.duration || 0);
 
     async function fetchLyrics() {
       try {
+        // Query LRCLIB search API with clean title and artist
         const query = encodeURIComponent(`${cleanTitle} ${cleanArtist}`);
         const res = await fetch(`https://lrclib.net/api/search?q=${query}`, {
-          signal: AbortSignal.timeout(4000),
+          signal: AbortSignal.timeout(4500),
         });
 
         if (res.ok) {
           const results = await res.json();
           if (Array.isArray(results) && results.length > 0) {
-            const best = results.find((r: any) => r.syncedLyrics) || results[0];
-            const fetched = best.syncedLyrics || best.plainLyrics;
-            if (!isCancelled && fetched) {
-              setLyrics(fetched);
-              return;
+            // Filter to results that possess true synchronized LRC lyrics
+            const withSynced = results.filter((r: any) => Boolean(r.syncedLyrics && r.syncedLyrics.trim()));
+
+            if (withSynced.length > 0) {
+              // Rank by closest duration to audio track to ensure millisecond synchrony
+              if (targetDuration > 30) {
+                withSynced.sort((a, b) => {
+                  const diffA = Math.abs((a.duration || targetDuration) - targetDuration);
+                  const diffB = Math.abs((b.duration || targetDuration) - targetDuration);
+                  return diffA - diffB;
+                });
+              }
+              const bestSynced = withSynced[0].syncedLyrics;
+              if (!isCancelled && bestSynced) {
+                setLyrics(bestSynced);
+                return;
+              }
+            } else if (results[0].plainLyrics) {
+              if (!isCancelled) {
+                setLyrics(results[0].plainLyrics);
+                return;
+              }
             }
           }
         }

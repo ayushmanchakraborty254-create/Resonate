@@ -17,8 +17,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("sharedKey") {
+            storeFile = file("../debug.keystore")
+            storePassword = "androiddebugkey"
+            keyAlias = "androiddebugkey"
+            keyPassword = "androiddebugkey"
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("sharedKey")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -26,6 +36,7 @@ android {
             )
         }
         debug {
+            signingConfig = signingConfigs.getByName("sharedKey")
             isMinifyEnabled = false
             applicationIdSuffix = ""
         }

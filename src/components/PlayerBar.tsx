@@ -214,19 +214,129 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
       progress: isDragging ? dragProgress : progress,
       duration: duration || currentTrack?.duration || 180,
     });
-  }, [currentTrack, isPlaying, progress, duration, isDragging, dragProgress]);
 
-  // Track progress updates (only update display if user is not actively dragging the thumb)
+    // Native & Web MediaSession OS Integration (Lock screen, Quick Settings media tile, Android notification)
+    if (currentTrack && typeof window !== 'undefined') {
+      const totalDur = duration || currentTrack.duration || 180;
+      const currentPos = isDragging ? dragProgress : progress;
+
+      // 1. Android Native Notification Bridge
+      try {
+        if ((window as any).ResonateNative?.updateMediaNotification) {
+          (window as any).ResonateNative.updateMediaNotification(
+            currentTrack.title,
+            currentTrack.artist,
+            currentTrack.album || 'Resonate Music',
+            currentTrack.thumbnailUrl,
+            isPlaying,
+            totalDur,
+            currentPos
+          );
+        }
+      } catch (_) {}
+
+      // 2. Standard Web navigator.mediaSession
+      if ('mediaSession' in navigator) {
+        try {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: currentTrack.title,
+            artist: currentTrack.artist,
+            album: currentTrack.album || 'Resonate Music',
+            artwork: [
+              { src: currentTrack.thumbnailUrl, sizes: '96x96', type: 'image/jpeg' },
+              { src: currentTrack.thumbnailUrl, sizes: '128x128', type: 'image/jpeg' },
+              { src: currentTrack.thumbnailUrl, sizes: '256x256', type: 'image/jpeg' },
+              { src: currentTrack.thumbnailUrl, sizes: '512x512', type: 'image/jpeg' },
+            ],
+          });
+
+          navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+          navigator.mediaSession.setActionHandler('play', () => {
+            setIsPlaying(true);
+            if (playerRef.current?.playVideo) playerRef.current.playVideo();
+          });
+
+          navigator.mediaSession.setActionHandler('pause', () => {
+            setIsPlaying(false);
+            if (playerRef.current?.pauseVideo) playerRef.current.pauseVideo();
+          });
+
+          navigator.mediaSession.setActionHandler('previoustrack', () => {
+            onPrev();
+          });
+
+          navigator.mediaSession.setActionHandler('nexttrack', () => {
+            onNext();
+          });
+
+          navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (details.seekTime != null) {
+              setProgress(details.seekTime);
+              if (playerRef.current?.seekTo) {
+                playerRef.current.seekTo(details.seekTime, true);
+              }
+            }
+          });
+
+          if (totalDur > 0 && typeof (navigator.mediaSession as any).setPositionState === 'function') {
+            try {
+              (navigator.mediaSession as any).setPositionState({
+                duration: totalDur,
+                playbackRate: 1,
+                position: Math.min(totalDur, Math.max(0, currentPos)),
+              });
+            } catch (_) {}
+          }
+        } catch (_) {}
+      }
+    }
+  }, [currentTrack, isPlaying, progress, duration, isDragging, dragProgress, onNext, onPrev]);
+
+  // Two-way Remote Control Dispatcher (invoked by Native Android Notification Actions)
+  useEffect(() => {
+    (window as any).resonateRemoteControl = (action: string, param?: number) => {
+      if (action === 'play') {
+        setIsPlaying(true);
+        if (playerRef.current?.playVideo) playerRef.current.playVideo();
+      } else if (action === 'pause') {
+        setIsPlaying(false);
+        if (playerRef.current?.pauseVideo) playerRef.current.pauseVideo();
+      } else if (action === 'toggle') {
+        setIsPlaying(!isPlaying);
+        if (isPlaying) {
+          if (playerRef.current?.pauseVideo) playerRef.current.pauseVideo();
+        } else {
+          if (playerRef.current?.playVideo) playerRef.current.playVideo();
+        }
+      } else if (action === 'next') {
+        onNext();
+      } else if (action === 'prev') {
+        onPrev();
+      } else if (action === 'seek' && typeof param === 'number') {
+        setProgress(param);
+        if (playerRef.current?.seekTo) playerRef.current.seekTo(param, true);
+      }
+    };
+
+    return () => {
+      delete (window as any).resonateRemoteControl;
+    };
+  }, [isPlaying, setIsPlaying, onNext, onPrev]);
+
+  // Track progress updates (poll at 100ms with float precision for sub-second smooth sync)
   useEffect(() => {
     if (isPlaying) {
       progressIntervalRef.current = setInterval(() => {
         if (!isDragging && playerRef.current && playerRef.current.getCurrentTime && playerRef.current.getDuration) {
-          const curr = Math.floor(playerRef.current.getCurrentTime());
-          const dur = Math.floor(playerRef.current.getDuration() || currentTrack?.duration || 0);
-          setProgress(curr);
-          if (dur > 0) setDuration(dur);
+          const curr = playerRef.current.getCurrentTime();
+          const dur = playerRef.current.getDuration() || currentTrack?.duration || 0;
+          if (typeof curr === 'number' && !isNaN(curr)) {
+            setProgress(curr);
+          }
+          if (dur > 0) setDuration(Math.floor(dur));
         }
-      }, 500);
+      }, 100);
     } else {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -291,6 +401,13 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const effectiveProgress = isDragging ? dragProgress : progress;
+  const totalDuration = duration || currentTrack?.duration || 180;
+  const progressPercent = Math.min(100, Math.max(0, (effectiveProgress / Math.max(1, totalDuration)) * 100));
+  const progressFillStyle = {
+    background: `linear-gradient(to right, #ff3366 0%, #e50914 ${progressPercent}%, rgba(255, 255, 255, 0.18) ${progressPercent}%, rgba(255, 255, 255, 0.18) 100%)`,
   };
 
   return (
@@ -397,6 +514,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 onTouchEnd={handleSliderMouseUp}
                 disabled={!currentTrack}
                 title="Seek track position"
+                style={progressFillStyle}
               />
               <span>{formatTime(duration || currentTrack?.duration || 0)}</span>
             </div>
@@ -570,7 +688,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                   </button>
 
                   <button 
-                    onClick={() => setIsPlaying(!isPlaying)} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsPlaying(!isPlaying);
+                    }} 
                     style={{ 
                       background: 'rgba(255, 255, 255, 0.1)', 
                       border: '1px solid rgba(255, 255, 255, 0.15)', 
@@ -588,7 +709,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                   </button>
 
                   <button 
-                    onClick={onNext} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNext();
+                    }} 
                     style={{ 
                       background: 'none', 
                       border: 'none', 
@@ -598,6 +722,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       display: 'flex', 
                       alignItems: 'center' 
                     }}
+                    title="Next track"
                   >
                     <SkipForward size={18} />
                   </button>
@@ -728,7 +853,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         onChange={handleSliderChange}
                         onMouseUp={handleSliderMouseUp}
                         onTouchEnd={handleSliderMouseUp}
-                        style={{ width: '100%', marginBottom: '8px', touchAction: 'none' }} 
+                        style={{ width: '100%', marginBottom: '8px', touchAction: 'none', ...progressFillStyle }} 
                       />
                       <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--yt-text-secondary)', userSelect: 'none' }}>
                         <span>{formatTime(isDragging ? dragProgress : progress)}</span>
@@ -740,7 +865,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       <button className={`icon-btn ${isShuffle ? 'active' : ''}`} onClick={() => setIsShuffle(!isShuffle)}>
                         <Shuffle size={18} />
                       </button>
-                      <button className="icon-btn" onClick={onPrev} disabled={queue.length <= 1}>
+                      <button className="icon-btn" onClick={onPrev}>
                         <SkipBack size={24} />
                       </button>
                       <button className="icon-btn" onClick={() => seekRelative(-10)} title="Rewind 10s">
@@ -755,7 +880,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       <button className="icon-btn" onClick={() => seekRelative(10)} title="Forward 10s">
                         <RotateCw size={20} />
                       </button>
-                      <button className="icon-btn" onClick={onNext} disabled={queue.length <= 1}>
+                      <button className="icon-btn" onClick={onNext} title="Next track">
                         <SkipForward size={24} />
                       </button>
                       <button 
@@ -786,13 +911,6 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         title="Full-Screen Ambient Lyrics"
                       >
                         <FileText size={16} /> Ambient
-                      </button>
-                      <button 
-                        onClick={() => floatingPlayer.toggle()} 
-                        style={{ background: 'none', border: 'none', color: 'var(--yt-text-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, cursor: 'pointer' }}
-                        title="Picture-in-Picture Float Player"
-                      >
-                        <PictureInPicture2 size={16} /> Float
                       </button>
                       <button 
                         onClick={() => setMobilePlayerState('half')} 

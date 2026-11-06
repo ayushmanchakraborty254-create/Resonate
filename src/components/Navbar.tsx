@@ -394,48 +394,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Mobile Top Actions */}
             {isMobile && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {/* Music Recognizer Button (Prominent Glowing Mic) */}
-                <button
-                  onClick={onOpenRecognizer}
-                  style={{
-                    backgroundColor: 'rgba(141, 168, 214, 0.2)',
-                    color: '#8da8d6',
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '50%',
-                    border: '1px solid rgba(141, 168, 214, 0.45)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: '0 0 10px rgba(141, 168, 214, 0.25)',
-                  }}
-                  title="Recognize Music (Metrolist / Shazam Engine)"
-                >
-                  <Mic size={17} />
-                </button>
-
-                {/* Listen Together Radio Room Button */}
-                <button
-                  onClick={onOpenListenTogether}
-                  style={{
-                    backgroundColor: 'rgba(167, 139, 250, 0.18)',
-                    color: '#c4b5fd',
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '50%',
-                    border: '1px solid rgba(167, 139, 250, 0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: '0 0 10px rgba(167, 139, 250, 0.2)',
-                  }}
-                  title="Listen Together (Sync Rooms)"
-                >
-                  <Radio size={17} />
-                </button>
-
                 {/* Listening History */}
                 <button
                   onClick={onOpenHistory}

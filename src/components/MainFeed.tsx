@@ -46,6 +46,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   const { isMobile } = useBreakpoint();
   const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId);
   const [selectedMood, setSelectedMood] = useState('Podcasts');
+  const [speedDialPage, setSpeedDialPage] = useState(0);
+  const speedDialContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Verified Top Trending Music Hits (Curated music videos only, no shorts or non-music videos)
   const TRENDING_MUSIC_HITS = React.useMemo<Track[]>(() => [
@@ -138,6 +140,188 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       thumbnailUrl: 'https://img.youtube.com/vi/7wtfhZwyrcc/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=7wtfhZwyrcc',
       lyrics: `[Believer - Imagine Dragons]`
+    },
+    // Page 2: Global Chartbusters & Pop Classics
+    {
+      id: '34Na4j8AVgA',
+      title: 'Starboy',
+      artist: 'The Weeknd ft. Daft Punk',
+      album: 'Starboy',
+      duration: 230,
+      thumbnailUrl: 'https://img.youtube.com/vi/34Na4j8AVgA/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=34Na4j8AVgA',
+      lyrics: `[Starboy - The Weeknd ft. Daft Punk]`
+    },
+    {
+      id: 'hT_nvWreIhg',
+      title: 'Counting Stars',
+      artist: 'OneRepublic',
+      album: 'Native',
+      duration: 257,
+      thumbnailUrl: 'https://img.youtube.com/vi/hT_nvWreIhg/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=hT_nvWreIhg',
+      lyrics: `[Counting Stars - OneRepublic]`
+    },
+    {
+      id: '09R8_2nJwqc',
+      title: 'Sugar',
+      artist: 'Maroon 5',
+      album: 'V',
+      duration: 235,
+      thumbnailUrl: 'https://img.youtube.com/vi/09R8_2nJwqc/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=09R8_2nJwqc',
+      lyrics: `[Sugar - Maroon 5]`
+    },
+    {
+      id: 'PMivT7MJ41M',
+      title: 'That\'s What I Like',
+      artist: 'Bruno Mars',
+      album: '24K Magic',
+      duration: 206,
+      thumbnailUrl: 'https://img.youtube.com/vi/PMivT7MJ41M/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=PMivT7MJ41M',
+      lyrics: `[That's What I Like - Bruno Mars]`
+    },
+    {
+      id: 'rtOvBOTyX00',
+      title: 'A Thousand Years',
+      artist: 'Christina Perri',
+      album: 'The Twilight Saga: Breaking Dawn',
+      duration: 285,
+      thumbnailUrl: 'https://img.youtube.com/vi/rtOvBOTyX00/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=rtOvBOTyX00',
+      lyrics: `[A Thousand Years - Christina Perri]`
+    },
+    {
+      id: 'CevxZvSJLk8',
+      title: 'Roar',
+      artist: 'Katy Perry',
+      album: 'PRISM',
+      duration: 223,
+      thumbnailUrl: 'https://img.youtube.com/vi/CevxZvSJLk8/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=CevxZvSJLk8',
+      lyrics: `[Roar - Katy Perry]`
+    },
+    {
+      id: '9bZkp7q19f0',
+      title: 'GANGNAM STYLE',
+      artist: 'PSY',
+      album: 'PSY 6',
+      duration: 252,
+      thumbnailUrl: 'https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=9bZkp7q19f0',
+      lyrics: `[GANGNAM STYLE - PSY]`
+    },
+    {
+      id: 'PT2_F-1esPk',
+      title: 'Closer',
+      artist: 'The Chainsmokers ft. Halsey',
+      album: 'Collage',
+      duration: 245,
+      thumbnailUrl: 'https://img.youtube.com/vi/PT2_F-1esPk/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=PT2_F-1esPk',
+      lyrics: `[Closer - The Chainsmokers ft. Halsey]`
+    },
+    {
+      id: '2Vv-BfVoq4g',
+      title: 'Perfect',
+      artist: 'Ed Sheeran',
+      album: '÷ (Divide)',
+      duration: 263,
+      thumbnailUrl: 'https://img.youtube.com/vi/2Vv-BfVoq4g/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g',
+      lyrics: `[Perfect - Ed Sheeran]`
+    },
+    // Page 3: Acoustic Melodies, Bollywood & Soundtracks
+    {
+      id: 'z-diB996nWU',
+      title: 'Raabta',
+      artist: 'Arijit Singh',
+      album: 'Agent Vinod',
+      duration: 244,
+      thumbnailUrl: 'https://img.youtube.com/vi/z-diB996nWU/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=z-diB996nWU',
+      lyrics: `[Raabta - Arijit Singh]`
+    },
+    {
+      id: 'gPpQNzKP6-0',
+      title: 'Naadaniyan',
+      artist: 'Akshath',
+      album: 'Single',
+      duration: 172,
+      thumbnailUrl: 'https://img.youtube.com/vi/gPpQNzKP6-0/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=gPpQNzKP6-0',
+      lyrics: `[Naadaniyan - Akshath]`
+    },
+    {
+      id: '1X_2X1Z_m6I',
+      title: 'Mere Naam Tu',
+      artist: 'Abhay Jodhpurkar',
+      album: 'Zero',
+      duration: 338,
+      thumbnailUrl: 'https://img.youtube.com/vi/1X_2X1Z_m6I/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=1X_2X1Z_m6I',
+      lyrics: `[Mere Naam Tu - Zero]`
+    },
+    {
+      id: '1F3hm6MfR1k',
+      title: 'Hukum',
+      artist: 'Anirudh Ravichander',
+      album: 'Jailer',
+      duration: 207,
+      thumbnailUrl: 'https://img.youtube.com/vi/1F3hm6MfR1k/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
+      lyrics: `[Hukum - Anirudh]`
+    },
+    {
+      id: 'UDVtMYqUAyw',
+      title: 'Interstellar Theme',
+      artist: 'Patrik Pietschmann',
+      album: 'Piano Covers',
+      duration: 288,
+      thumbnailUrl: 'https://img.youtube.com/vi/UDVtMYqUAyw/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=UDVtMYqUAyw',
+      lyrics: `[Interstellar Theme - Patrik Pietschmann]`
+    },
+    {
+      id: 'CFPLIaMpGrY',
+      title: 'golden hour',
+      artist: 'JVKE',
+      album: 'this is what ____ feels like',
+      duration: 209,
+      thumbnailUrl: 'https://img.youtube.com/vi/CFPLIaMpGrY/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=CFPLIaMpGrY',
+      lyrics: `[golden hour - JVKE]`
+    },
+    {
+      id: 'kxyY185k12I',
+      title: 'Khat',
+      artist: 'Jigar Saraiya, Priya Saraiya',
+      album: 'Single',
+      duration: 297,
+      thumbnailUrl: 'https://img.youtube.com/vi/kxyY185k12I/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=kxyY185k12I',
+      lyrics: `[Khat - Jigar Saraiya, Priya Saraiya]`
+    },
+    {
+      id: 'GTXRRZTCNPE',
+      title: 'Hedwig\'s Theme',
+      artist: 'John Williams',
+      album: 'Harry Potter OST',
+      duration: 310,
+      thumbnailUrl: 'https://img.youtube.com/vi/GTXRRZTCNPE/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=GTXRRZTCNPE',
+      lyrics: `[Hedwig's Theme - John Williams]`
+    },
+    {
+      id: 'mRD0-GxqHVo',
+      title: 'Heat Waves',
+      artist: 'Glass Animals',
+      album: 'Dreamland',
+      duration: 238,
+      thumbnailUrl: 'https://img.youtube.com/vi/mRD0-GxqHVo/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=mRD0-GxqHVo',
+      lyrics: `[Heat Waves - Glass Animals]`
     }
   ], []);
 
@@ -176,16 +360,16 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     return filtered;
   }, [isUserLoggedIn, playlists, likedTracks]);
 
-  // Speed Dial (Quick dial 3x3):
+  // Speed Dial (Quick dial 3x3 with 3 swipeable pages, 27 total tracks):
   // 1. If logged in with scanned playlists/favourites: use their verified playlist tracks
   // 2. If not logged in: strictly use verified trending music hits (no unauthenticated random history/shorts)
   const speedDialTracks = React.useMemo<Track[]>(() => {
     if (isUserLoggedIn && userPlaylistTracks.length >= 4) {
-      const preferred = userPlaylistTracks.slice(0, 9);
-      if (preferred.length < 9) {
+      const preferred = userPlaylistTracks.slice(0, 27);
+      if (preferred.length < 27) {
         const pIds = new Set(preferred.map((p) => p.id));
         const fillers = TRENDING_MUSIC_HITS.filter((f) => !pIds.has(f.id));
-        return [...preferred, ...fillers].slice(0, 9);
+        return [...preferred, ...fillers].slice(0, 27);
       }
       return preferred;
     }
@@ -313,82 +497,146 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           ))}
         </div>
 
-        {/* Speed Dial 3x3 Grid (Reference Match: Image 5) */}
+        {/* Speed Dial 3x3 Swipeable Carousel (Universal: Web & Mobile) */}
         <div className="home-section" style={{ marginBottom: '24px' }}>
-          <div className="section-title" style={{ marginBottom: '12px' }}>
+          <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <span style={{ fontSize: '20px', fontWeight: 800, color: '#93c5fd' }}>
               Speed dial
+            </span>
+            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+              Page {speedDialPage + 1} of 3
             </span>
           </div>
 
           <div
+            ref={speedDialContainerRef}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              if (el.clientWidth > 0) {
+                const page = Math.round(el.scrollLeft / el.clientWidth);
+                if (page !== speedDialPage && page >= 0 && page <= 2) {
+                  setSpeedDialPage(page);
+                }
+              }
+            }}
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))',
-              gap: '12px'
+              display: 'flex',
+              overflowX: 'auto',
+              scrollSnapType: 'x mandatory',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-x',
+              gap: '16px',
             }}
           >
-            {speedDialTracks.map((track) => (
-              <div
-                key={track.id}
-                onClick={() => onPlayTrack(track)}
-                style={{
-                  position: 'relative',
-                  aspectRatio: '1',
-                  borderRadius: '10px',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  backgroundColor: '#181a20'
-                }}
-              >
-                <ArtisticCover
-                  title={track.title}
-                  subtitle={track.artist}
-                  thumbnailUrl={track.thumbnailUrl}
-                  aspectRatio="1"
-                  rounded="10px"
-                  showVinyl={false}
-                  showBadge={false}
-                  style={{ width: '100%', height: '100%' }}
-                />
+            {[0, 1, 2].map((pageIdx) => {
+              const pageTracks = speedDialTracks.slice(pageIdx * 9, (pageIdx + 1) * 9);
+              if (pageTracks.length === 0) return null;
+              return (
                 <div
+                  key={pageIdx}
                   style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    padding: '8px 6px',
-                    pointerEvents: 'none',
-                    zIndex: 3,
+                    flex: '0 0 100%',
+                    minWidth: '100%',
+                    scrollSnapAlign: 'start',
+                    boxSizing: 'border-box',
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(115px, 1fr))',
+                    gap: isMobile ? '8px' : '12px',
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#fff',
-                      lineHeight: '1.25',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    {track.title}
-                  </span>
+                  {pageTracks.map((track) => (
+                    <div
+                      key={track.id}
+                      onClick={() => onPlayTrack(track)}
+                      style={{
+                        position: 'relative',
+                        aspectRatio: '1',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: '#181a20',
+                      }}
+                    >
+                      <ArtisticCover
+                        title={track.title}
+                        subtitle={track.artist}
+                        thumbnailUrl={track.thumbnailUrl}
+                        aspectRatio="1"
+                        rounded="10px"
+                        showVinyl={false}
+                        showBadge={false}
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
+                          display: 'flex',
+                          alignItems: 'flex-end',
+                          padding: '8px 6px',
+                          pointerEvents: 'none',
+                          zIndex: 3,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#fff',
+                            lineHeight: '1.25',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {track.title}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Dots Indicator */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '12px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
+          {/* Interactive 3-Dot Carousel Indicator */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '14px' }}>
+            {[0, 1, 2].map((idx) => {
+              const isActive = speedDialPage === idx;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setSpeedDialPage(idx);
+                    if (speedDialContainerRef.current) {
+                      const targetLeft = idx * speedDialContainerRef.current.clientWidth;
+                      speedDialContainerRef.current.scrollTo({
+                        left: targetLeft,
+                        behavior: 'smooth',
+                      });
+                    }
+                  }}
+                  style={{
+                    width: isActive ? '20px' : '6px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: isActive ? '#fff' : 'rgba(255,255,255,0.3)',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                  }}
+                  title={`Go to page ${idx + 1}`}
+                  aria-label={`Go to page ${idx + 1}`}
+                />
+              );
+            })}
           </div>
         </div>
 

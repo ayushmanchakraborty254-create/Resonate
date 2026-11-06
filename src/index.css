@@ -524,32 +524,48 @@ body {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.2);
+  height: 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.16);
   outline: none;
-  transition: height 0.1s;
   cursor: pointer;
+  transition: height 0.15s ease;
 }
 
-.slider:hover {
-  height: 5px;
+.slider:hover,
+.slider:active {
+  height: 7px;
 }
 
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: var(--yt-accent);
+  background: #ffffff;
+  border: 2px solid #ff3366;
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.9), 0 2px 6px rgba(0, 0, 0, 0.6);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.1s;
+  opacity: 1 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.slider:active::-webkit-slider-thumb,
 .slider:hover::-webkit-slider-thumb {
-  opacity: 1;
+  transform: scale(1.35);
+  box-shadow: 0 0 16px rgba(255, 51, 102, 1), 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #ff3366;
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.9), 0 2px 6px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  opacity: 1 !important;
 }
 
 .player-right {

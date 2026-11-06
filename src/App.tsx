@@ -23,7 +23,7 @@ import { personalization } from './utils/personalization';
 import { useBreakpoint } from './utils/responsive';
 import { useNavigation } from './utils/navigation';
 import type { ActiveView } from './utils/navigation';
-import { Home, Search, Library } from 'lucide-react';
+import { Home, Search, Library, Mic, Radio } from 'lucide-react';
 
 // Color themes mapped to each track's visual identity to simulate Material You dynamic theme
 const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }> = {
@@ -327,12 +327,30 @@ function App() {
   };
 
   const handleNext = () => {
-    if (queue.length === 0) return;
+    if (queue.length === 0) {
+      if (POPULAR_TRACKS.length > 0) {
+        handlePlayTrack(POPULAR_TRACKS[0]);
+      }
+      return;
+    }
     let nextIdx = currentIndex + 1;
     if (isShuffle) {
       nextIdx = Math.floor(Math.random() * queue.length);
     } else if (nextIdx >= queue.length) {
-      nextIdx = isRepeat === 'all' ? 0 : queue.length - 1;
+      if (isRepeat === 'all') {
+        nextIdx = 0;
+      } else {
+        // Auto-recommend next track from catalogue to keep playback seamless
+        const currentId = currentTrack?.id;
+        const candidate = POPULAR_TRACKS.find((t) => t.id !== currentId) || POPULAR_TRACKS[0];
+        const newQueue = [...queue, candidate];
+        setQueue(newQueue);
+        setCurrentIndex(newQueue.length - 1);
+        setCurrentTrack(candidate);
+        setProgress(0);
+        setIsPlaying(true);
+        return;
+      }
     }
     setCurrentIndex(nextIdx);
     setCurrentTrack(queue[nextIdx]);
@@ -575,6 +593,65 @@ function App() {
       />
 
 
+
+      {/* Mobile Floating Action Buttons (Bottom Right): Music Recognizer & Listen Together */}
+      {isMobile && currentView === 'home' && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: currentTrack ? '124px' : '64px',
+            right: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            zIndex: 60,
+          }}
+        >
+          {/* Floating Mic for Music Recognizer */}
+          <button
+            onClick={() => setIsRecognizerOpen(true)}
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '14px',
+              backgroundColor: '#3b5478',
+              color: '#fff',
+              border: 'none',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+            }}
+            title="Music Recognizer"
+          >
+            <Mic size={19} />
+          </button>
+
+          {/* Floating Listen Together Radio button */}
+          <button
+            onClick={() => setIsListenTogetherOpen(true)}
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '14px',
+              backgroundColor: '#384358',
+              color: '#fff',
+              border: 'none',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+            }}
+            title="Listen Together Room"
+          >
+            <Radio size={19} />
+          </button>
+        </div>
+      )}
 
       {/* Mobile Bottom Navigation Bar (Material You 3-Tab - Reference Match: Images 3, 4, 5) */}
       {isMobile && (

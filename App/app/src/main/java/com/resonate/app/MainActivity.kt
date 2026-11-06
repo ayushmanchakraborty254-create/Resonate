@@ -555,6 +555,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                // Metrolist-Style Uninterrupted Background Audio:
+                // Spoof Page Visibility API so WebView never pauses media or YouTube iframes when minimized
+                view?.evaluateJavascript(
+                    """
+                    (function() {
+                        try {
+                            Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });
+                            Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });
+                            window.addEventListener('visibilitychange', function(e) { e.stopImmediatePropagation(); }, true);
+                        } catch(e) {}
+                    })();
+                    """.trimIndent(), null
+                )
+            }
+
             override fun shouldInterceptRequest(
                 view: WebView?,
                 request: WebResourceRequest?
@@ -665,21 +682,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        try {
-            if (::webView.isInitialized) {
-                dispatchRemote("appPaused")
-                webView.onPause()
-            }
-        } catch (_: Exception) {}
+        // Do NOT call webView.onPause() while minimized.
+        // webView.onPause() explicitly stops HTML5 media playback and timer loops in Chromium!
+        // Leaving the WebView active in background allows MediaPlaybackService (foreground service
+        // with PARTIAL_WAKE_LOCK) to continue playing audio seamlessly without getting killed or paused.
     }
 
     override fun onStop() {
         super.onStop()
-        try {
-            if (::webView.isInitialized) {
-                dispatchRemote("appStopped")
-            }
-        } catch (_: Exception) {}
+        // Maintain active background execution for audio streaming
     }
 
     override fun onDestroy() {
@@ -703,6 +714,8 @@ class MainActivity : AppCompatActivity() {
         } catch (_: Exception) {}
 
         try {
+            webView.onPause()
+            webView.pauseTimers()
             webView.stopLoading()
             webView.destroy()
         } catch (_: Exception) {}

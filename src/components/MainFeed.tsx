@@ -18,6 +18,8 @@ import {
 } from '../utils/youtube';
 import { PlaylistCover } from './PlaylistCover';
 import { ArtisticCover } from './ArtisticCover';
+import { getTrackArtwork, handleTrackImageLoad, handleTrackImageError } from '../utils/artwork';
+import { getCachedTracks } from '../utils/offlineCache';
 
 interface MainFeedProps {
   view: string;
@@ -52,6 +54,26 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId);
   const [selectedMood, setSelectedMood] = useState('Podcasts');
   const [speedDialPage, setSpeedDialPage] = useState(0);
+  const [cachedOfflineTracks, setCachedOfflineTracks] = useState<Track[]>([]);
+  const [showOfflineView, setShowOfflineView] = useState(false);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchOfflineTracks = async () => {
+      try {
+        const list = await getCachedTracks();
+        if (isMounted) setCachedOfflineTracks(list);
+      } catch (_) {}
+    };
+    fetchOfflineTracks();
+
+    const handleUpdate = () => fetchOfflineTracks();
+    window.addEventListener('resonate-offline-cache-updated', handleUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('resonate-offline-cache-updated', handleUpdate);
+    };
+  }, []);
   const speedDialContainerRef = React.useRef<HTMLDivElement>(null);
   const [isPointerDown, setIsPointerDown] = useState(false);
   const pointerStartX = React.useRef(0);
@@ -106,14 +128,11 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   };
 
   const handleFeedImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
+    handleTrackImageError(e);
   };
 
   const handleFeedImgLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    if (img.naturalWidth === 120 && img.naturalHeight === 90) {
-      img.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
-    }
+    handleTrackImageLoad(e);
   };
 
   // Verified Top Trending Music Hits (Curated music videos only, no shorts or non-music videos)
@@ -303,43 +322,43 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     },
     // Page 3: Acoustic Melodies, Bollywood & Soundtracks
     {
-      id: 'piUHBTXsoiY',
+      id: 'z-diRlyLGzo',
       title: 'Raabta',
       artist: 'Arijit Singh',
       album: 'Agent Vinod',
       duration: 244,
-      thumbnailUrl: 'https://i.ytimg.com/vi/piUHBTXsoiY/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=piUHBTXsoiY',
+      thumbnailUrl: 'https://i.ytimg.com/vi/z-diRlyLGzo/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=z-diRlyLGzo',
       lyrics: `[Raabta - Arijit Singh]`
     },
     {
-      id: 'HeBJMzrM7hU',
+      id: 'W8a4sUabCUo',
       title: 'Naadaniyan',
       artist: 'Akshath',
       album: 'Single',
       duration: 172,
-      thumbnailUrl: 'https://i.ytimg.com/vi/HeBJMzrM7hU/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=HeBJMzrM7hU',
+      thumbnailUrl: 'https://i.ytimg.com/vi/W8a4sUabCUo/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=W8a4sUabCUo',
       lyrics: `[Naadaniyan - Akshath]`
     },
     {
-      id: 'TbjbZFqLEtw',
+      id: '1poXU3b3KCY',
       title: 'Mere Naam Tu',
       artist: 'Abhay Jodhpurkar',
       album: 'Zero',
       duration: 338,
-      thumbnailUrl: 'https://i.ytimg.com/vi/TbjbZFqLEtw/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=TbjbZFqLEtw',
+      thumbnailUrl: 'https://i.ytimg.com/vi/1poXU3b3KCY/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=1poXU3b3KCY',
       lyrics: `[Mere Naam Tu - Zero]`
     },
     {
-      id: 'E1C_fP9AgjU',
+      id: '1F3hm6MfR1k',
       title: 'Hukum',
       artist: 'Anirudh Ravichander',
       album: 'Jailer',
       duration: 207,
-      thumbnailUrl: 'https://img.youtube.com/vi/E1C_fP9AgjU/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=E1C_fP9AgjU',
+      thumbnailUrl: 'https://img.youtube.com/vi/1F3hm6MfR1k/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
       lyrics: `[Hukum - Anirudh]`
     },
     {
@@ -420,7 +439,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     if (t.duration && t.duration > 0 && t.duration < 75) return false;
     if (title.includes('#shorts') || title.includes('#short') || full.includes('amazing shorts') || full.includes('youtube shorts')) return false;
 
-    // 2. Exclude tutorials, teaching, challenges, exercises, notes, chords
+    // 2. Exclude tutorials, teaching, challenges, exercises, notes, chords, hashtags
     const banned = [
       'tutorial',
       'tutorials',
@@ -454,7 +473,18 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       'unboxing',
       'podcast episode',
       'interview with',
-      'behind the scenes'
+      'behind the scenes',
+      '#singing',
+      '#guitarcover',
+      '#trendingaudio',
+      '#trendingmusic',
+      'didnt know',
+      "didn't know",
+      "didn't knew",
+      'fancam',
+      'live crowd',
+      'audience screaming',
+      'live stage recording'
     ];
 
     for (const kw of banned) {
@@ -510,7 +540,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     return TRENDING_MUSIC_HITS;
   }, [isUserLoggedIn, userPlaylistTracks, TRENDING_MUSIC_HITS]);
 
-  // User listening history for behavior-based personalization
+  // User listening history for behavior-based personalization (strictly genuine music)
   const userListeningHistory = React.useMemo<Track[]>(() => {
     try {
       const raw = localStorage.getItem('resonate_history');
@@ -520,6 +550,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           const seen = new Set<string>();
           return parsed.filter((t: Track) => {
             if (!t?.id || seen.has(t.id)) return false;
+            if (!isGenuineMusicTrack(t)) return false;
             seen.add(t.id);
             return true;
           });
@@ -1147,13 +1178,12 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   }}
                 >
                   <img
-                    src={track.thumbnailUrl}
+                    src={getTrackArtwork(track)}
                     className="track-row-img"
                     alt={track.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
+                    onLoad={(e) => handleTrackImageLoad(e, track)}
+                    onError={(e) => handleTrackImageError(e, track)}
                   />
                 </div>
                 <div className="track-row-info">
@@ -1573,7 +1603,13 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           <div className="quick-picks-grid">
             {POPULAR_TRACKS.map((track) => (
               <div key={track.id} className="track-row" onClick={() => onPlayTrack(track)}>
-                <img src={track.thumbnailUrl} className="track-row-img" alt={track.title} />
+                <img
+                  src={getTrackArtwork(track)}
+                  className="track-row-img"
+                  alt={track.title}
+                  onLoad={(e) => handleTrackImageLoad(e, track)}
+                  onError={(e) => handleTrackImageError(e, track)}
+                />
                 <div className="track-row-info">
                   <div className="track-row-title">{track.title}</div>
                   <div className="track-row-subtitle">{track.artist}</div>
@@ -1594,11 +1630,93 @@ export const MainFeed: React.FC<MainFeedProps> = ({
 
     const quickActions = [
       { id: 'liked', label: 'Liked', icon: Heart, count: `${likedTracks.length} ${likedTracks.length === 1 ? 'song' : 'songs'}`, color: '#f43f5e' },
-      { id: 'downloaded', label: 'Downloaded', icon: CheckCircle, count: '0 offline', color: '#10b981' },
-      { id: 'cached', label: 'Cached', icon: RefreshCw, count: '0 cached', color: '#06b6d4' },
+      { id: 'downloaded', label: 'Downloaded', icon: CheckCircle, count: `${cachedOfflineTracks.length} offline`, color: '#10b981' },
+      { id: 'cached', label: 'Cached (Metrolist)', icon: RefreshCw, count: `${cachedOfflineTracks.length} auto-cached`, color: '#06b6d4' },
       { id: 'top50', label: 'My Top 50', icon: TrendingUp, count: 'Frequently played', color: '#f59e0b' },
       { id: 'uploaded', label: 'Uploaded', icon: Cloud, count: '0 songs', color: '#8b5cf6' },
     ];
+
+    if (showOfflineView) {
+      return (
+        <div style={{ paddingBottom: '120px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <button
+              onClick={() => setShowOfflineView(false)}
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                color: '#fff',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', margin: 0 }}>
+                Metrolist Offline Cache
+              </h2>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', margin: '2px 0 0 0' }}>
+                {cachedOfflineTracks.length} songs cached automatically from your online playback
+              </p>
+            </div>
+          </div>
+
+          {cachedOfflineTracks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 16px', color: 'rgba(255,255,255,0.5)' }}>
+              <RefreshCw size={36} style={{ color: '#06b6d4', margin: '0 auto 12px auto' }} />
+              <div style={{ fontWeight: 600, fontSize: '15px', color: '#fff' }}>No songs in offline cache yet</div>
+              <div style={{ fontSize: '12px', marginTop: '6px' }}>
+                Any song you listen to online will be automatically cached here for offline replay without downloading!
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {cachedOfflineTracks.map((track) => (
+                <div
+                  key={track.id}
+                  className="track-row"
+                  onClick={() => onPlayTrack(track)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '8px 10px',
+                    borderRadius: '10px',
+                    background: 'rgba(255,255,255,0.02)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <img
+                    src={getTrackArtwork(track)}
+                    alt={track.title}
+                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover' }}
+                    onLoad={(e) => handleTrackImageLoad(e, track)}
+                    onError={(e) => handleTrackImageError(e, track)}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {track.title}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {track.artist}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                    Offline Ready
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
 
     return (
       <div style={{ paddingBottom: '120px' }}>
@@ -1637,6 +1755,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                 onClick={() => {
                   if (action.id === 'liked' && likedTracks.length > 0) {
                     onPlayTrack(likedTracks[0]);
+                  } else if (action.id === 'downloaded' || action.id === 'cached') {
+                    setShowOfflineView(true);
                   }
                 }}
                 style={{

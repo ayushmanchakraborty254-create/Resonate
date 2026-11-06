@@ -365,9 +365,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button
                     onClick={() => setShowDownloadModal(true)}
                     style={{
-                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(56, 189, 248, 0.28)',
+                      backgroundColor: 'rgba(196, 181, 253, 0.14)',
+                      color: '#c4b5fd',
+                      border: '1px solid rgba(196, 181, 253, 0.32)',
+                      boxShadow: '0 2px 14px rgba(167, 139, 250, 0.25)',
                       padding: '7px 14px',
                       borderRadius: '20px',
                       fontSize: '13px',

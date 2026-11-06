@@ -187,14 +187,15 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              backgroundColor: '#e50914',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%)',
+              color: '#1e1b4b',
               fontWeight: 700,
               fontSize: '14px',
               padding: '11px 16px',
               borderRadius: '12px',
               textDecoration: 'none',
-              boxShadow: '0 4px 14px rgba(229, 9, 20, 0.4)',
+              boxShadow: '0 4px 20px rgba(167, 139, 250, 0.38)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
               transition: 'transform 0.15s ease',
             }}
           >

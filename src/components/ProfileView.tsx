@@ -343,9 +343,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     flex: 1,
                     padding: '10px 16px',
                     borderRadius: '12px',
-                    backgroundColor: '#e50914',
-                    color: '#fff',
-                    border: 'none',
+                    background: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%)',
+                    color: '#1e1b4b',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
                     fontWeight: 700,
                     fontSize: '13px',
                     cursor: 'pointer',
@@ -353,7 +353,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 14px rgba(229, 9, 20, 0.4)',
+                    boxShadow: '0 4px 20px rgba(167, 139, 250, 0.38)',
                   }}
                 >
                   <Download size={15} />
@@ -385,11 +385,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <button
                 onClick={() => openExternalUrl(updateInfo?.downloadUrl || 'https://github.com/ayushmanchakraborty254-create/Resonate/releases/latest')}
                 style={{
-                  padding: '6px 12px',
+                  padding: '7px 14px',
                   borderRadius: '12px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#fff',
+                  background: 'rgba(196, 181, 253, 0.16)',
+                  border: '1px solid rgba(196, 181, 253, 0.35)',
+                  boxShadow: '0 2px 12px rgba(167, 139, 250, 0.25)',
+                  color: '#c4b5fd',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',

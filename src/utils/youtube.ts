@@ -467,22 +467,22 @@ export const MUSIC_VIDEOS_SHELF: Track[] = [
     youtubeUrl: 'https://www.youtube.com/watch?v=BNi9fOjXx-Y'
   },
   {
-    id: 'jTPXwbDtIpA',
+    id: 'zCNHVMIYQiA',
     title: "Hedwig's Theme (Orchestral Video)",
     artist: 'Patrik Pietschmann • 30m views',
     album: 'Orchestral',
     duration: 310,
-    thumbnailUrl: 'https://img.youtube.com/vi/jTPXwbDtIpA/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=jTPXwbDtIpA'
+    thumbnailUrl: 'https://img.youtube.com/vi/zCNHVMIYQiA/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=zCNHVMIYQiA'
   },
   {
-    id: 'giA1Y3VB3CM',
+    id: 'C-U_b31q6oM',
     title: 'KALYANI Official Music Video',
     artist: 'ARJN, KDS, FIFTY4 & Ronn • 59m views',
     album: 'Single',
     duration: 215,
-    thumbnailUrl: 'https://img.youtube.com/vi/giA1Y3VB3CM/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=giA1Y3VB3CM'
+    thumbnailUrl: 'https://img.youtube.com/vi/C-U_b31q6oM/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=C-U_b31q6oM'
   }
 ];
 
@@ -545,31 +545,31 @@ export const INDIAS_BIGGEST_HITS_SHELF: Track[] = [
     youtubeUrl: 'https://www.youtube.com/watch?v=5rHzi_5rSyw'
   },
   {
-    id: 'piUHBTXsoiY',
+    id: 'z-diRlyLGzo',
     title: 'Uncut Bollywood',
     artist: 'Arijit Singh, Pritam, Irshad Kamil',
     album: 'Classics',
     duration: 244,
-    thumbnailUrl: 'https://img.youtube.com/vi/piUHBTXsoiY/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=piUHBTXsoiY'
+    thumbnailUrl: 'https://img.youtube.com/vi/z-diRlyLGzo/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=z-diRlyLGzo'
   },
   {
-    id: 'TbjbZFqLEtw',
+    id: '1poXU3b3KCY',
     title: 'Bollywood Romance Hitlist',
     artist: 'Abhay Jodhpurkar, Ajay-Atul',
     album: 'Zero',
     duration: 338,
-    thumbnailUrl: 'https://img.youtube.com/vi/TbjbZFqLEtw/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=TbjbZFqLEtw'
+    thumbnailUrl: 'https://img.youtube.com/vi/1poXU3b3KCY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=1poXU3b3KCY'
   },
   {
-    id: 'HeBJMzrM7hU',
+    id: 'W8a4sUabCUo',
     title: 'Hindi Indie',
     artist: 'Akshath, Ramil Ganjoo, Anuv Jain',
     album: 'Indie Wave',
     duration: 172,
-    thumbnailUrl: 'https://img.youtube.com/vi/HeBJMzrM7hU/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=HeBJMzrM7hU'
+    thumbnailUrl: 'https://img.youtube.com/vi/W8a4sUabCUo/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=W8a4sUabCUo'
   },
   {
     id: 'I0-IiiVgvyU',
@@ -581,13 +581,13 @@ export const INDIAS_BIGGEST_HITS_SHELF: Track[] = [
     youtubeUrl: 'https://www.youtube.com/watch?v=I0-IiiVgvyU'
   },
   {
-    id: 'E1C_fP9AgjU',
+    id: '1F3hm6MfR1k',
     title: 'Hukum - Thalaivar Alappara',
     artist: 'Anirudh Ravichander',
     album: 'Jailer',
     duration: 207,
-    thumbnailUrl: 'https://img.youtube.com/vi/E1C_fP9AgjU/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=E1C_fP9AgjU'
+    thumbnailUrl: 'https://img.youtube.com/vi/1F3hm6MfR1k/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k'
   }
 ];
 
@@ -610,43 +610,43 @@ export const EXTENDED_CATALOG: Track[] = [
     lyrics: `[Janam Janam - Dilwale]`
   },
   {
-    id: 'HeBJMzrM7hU',
+    id: 'W8a4sUabCUo',
     title: 'Naadaniyan',
     artist: 'Akshath',
     album: 'Single',
     duration: 172,
-    thumbnailUrl: 'https://i.ytimg.com/vi/HeBJMzrM7hU/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=HeBJMzrM7hU',
+    thumbnailUrl: 'https://i.ytimg.com/vi/W8a4sUabCUo/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=W8a4sUabCUo',
     lyrics: `[Naadaniyan - Akshath]`
   },
   {
-    id: 'TbjbZFqLEtw',
+    id: '1poXU3b3KCY',
     title: 'Mere Naam Tu',
     artist: 'Abhay Jodhpurkar',
     album: 'Zero',
     duration: 338,
-    thumbnailUrl: 'https://i.ytimg.com/vi/TbjbZFqLEtw/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=TbjbZFqLEtw',
+    thumbnailUrl: 'https://i.ytimg.com/vi/1poXU3b3KCY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=1poXU3b3KCY',
     lyrics: `[Mere Naam Tu - Zero]`
   },
   {
-    id: 'piUHBTXsoiY',
+    id: 'z-diRlyLGzo',
     title: 'Raabta',
     artist: 'Arijit Singh',
     album: 'Agent Vinod',
     duration: 244,
-    thumbnailUrl: 'https://i.ytimg.com/vi/piUHBTXsoiY/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=piUHBTXsoiY',
+    thumbnailUrl: 'https://i.ytimg.com/vi/z-diRlyLGzo/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=z-diRlyLGzo',
     lyrics: `[Raabta - Arijit Singh]`
   },
   {
-    id: 'E1C_fP9AgjU',
+    id: '1F3hm6MfR1k',
     title: 'Hukum',
     artist: 'Anirudh Ravichander',
     album: 'Jailer',
     duration: 207,
-    thumbnailUrl: 'https://img.youtube.com/vi/E1C_fP9AgjU/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=E1C_fP9AgjU',
+    thumbnailUrl: 'https://img.youtube.com/vi/1F3hm6MfR1k/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
     lyrics: `[Hukum - Anirudh]`
   },
   {

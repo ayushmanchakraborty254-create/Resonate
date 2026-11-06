@@ -24,6 +24,7 @@ import { useBreakpoint } from '../utils/responsive';
 import { floatingPlayer } from '../utils/floatingPlayer';
 import { KaraokeLyrics } from './KaraokeLyrics';
 import { useTrackLyrics } from '../utils/lyrics';
+import { handleTrackImageLoad, handleTrackImageError, getTrackArtwork } from '../utils/artwork';
 
 interface PlayerBarProps {
   currentTrack: Track | null;
@@ -132,14 +133,11 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   }, [onPrev]);
 
   const handleCoverLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    if (img.naturalWidth === 120 && img.naturalHeight === 90) {
-      img.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
-    }
+    handleTrackImageLoad(e, currentTrack);
   };
 
   const handleCoverError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
+    handleTrackImageError(e, currentTrack);
   };
 
   // Explicit user-gesture playback controller (complies with browser & YouTube autoplay policy)
@@ -311,6 +309,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
       const totalDur = duration || currentTrack.duration || 180;
       const currentPos = progress;
 
+      const trackArtwork = getTrackArtwork(currentTrack);
+
       // 1. Android Native Notification Bridge
       try {
         if ((window as any).ResonateNative?.updateMediaNotification) {
@@ -318,7 +318,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             currentTrack.title,
             currentTrack.artist,
             currentTrack.album || 'Resonate Music',
-            currentTrack.thumbnailUrl,
+            trackArtwork,
             isPlaying,
             totalDur,
             currentPos
@@ -334,10 +334,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             artist: currentTrack.artist,
             album: currentTrack.album || 'Resonate Music',
             artwork: [
-              { src: currentTrack.thumbnailUrl, sizes: '96x96', type: 'image/jpeg' },
-              { src: currentTrack.thumbnailUrl, sizes: '128x128', type: 'image/jpeg' },
-              { src: currentTrack.thumbnailUrl, sizes: '256x256', type: 'image/jpeg' },
-              { src: currentTrack.thumbnailUrl, sizes: '512x512', type: 'image/jpeg' },
+              { src: trackArtwork, sizes: '96x96', type: 'image/jpeg' },
+              { src: trackArtwork, sizes: '128x128', type: 'image/jpeg' },
+              { src: trackArtwork, sizes: '256x256', type: 'image/jpeg' },
+              { src: trackArtwork, sizes: '512x512', type: 'image/jpeg' },
             ],
           });
 
@@ -406,17 +406,21 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         setProgress(param);
         if (playerRef.current?.seekTo) playerRef.current.seekTo(param, true);
       } else if (action === 'appPaused') {
-        // App minimized: mark state as interrupted so UI displays tap to resume cleanly on return
-        setPlayerStatus('interrupted');
+        // App minimized: continue uninterrupted background playback
       } else if (action === 'appResumed') {
-        // App returned to foreground: verify actual player status
-        if (typeof playerRef.current.getPlayerState === 'function') {
-          const st = playerRef.current.getPlayerState();
-          if (st !== 1) { // Not playing
-            setNeedsResumeGesture(true);
-            setStatusMessage('Playback paused • Tap to resume');
-          }
+        // App returned to foreground: smoothly resume if it was actively playing
+        if (isPlayingRef.current && playerRef.current) {
+          try {
+            if (typeof playerRef.current.getPlayerState === 'function') {
+              const st = playerRef.current.getPlayerState();
+              if (st !== 1 && typeof playerRef.current.playVideo === 'function') {
+                playerRef.current.playVideo();
+              }
+            }
+          } catch (_) {}
         }
+        setNeedsResumeGesture(false);
+        setStatusMessage(null);
       }
     };
 
@@ -542,7 +546,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             {currentTrack ? (
               <>
                 <img
-                  src={currentTrack.thumbnailUrl}
+                  src={getTrackArtwork(currentTrack)}
                   alt={currentTrack.title}
                   className="player-img"
                   onLoad={handleCoverLoad}
@@ -762,7 +766,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     }}
                   >
                     <img 
-                      src={currentTrack.thumbnailUrl} 
+                      src={getTrackArtwork(currentTrack)} 
                       alt={currentTrack.title} 
                       onLoad={handleCoverLoad}
                       onError={handleCoverError}
@@ -944,7 +948,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                                 {isActive ? <Disc size={13} className="spinning" /> : i + 1}
                               </span>
                               <img 
-                                src={track.thumbnailUrl} 
+                                src={getTrackArtwork(track)} 
                                 alt={track.title} 
                                 onLoad={handleCoverLoad}
                                 onError={handleCoverError}
@@ -1014,7 +1018,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         </div>
                       ) : (
                         <img 
-                          src={currentTrack.thumbnailUrl} 
+                          src={getTrackArtwork(currentTrack)} 
                           alt={currentTrack.title} 
                           onLoad={handleCoverLoad}
                           onError={handleCoverError}

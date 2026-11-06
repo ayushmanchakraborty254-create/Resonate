@@ -213,8 +213,8 @@ export const ArtisticCover: React.FC<ArtisticCoverProps> = ({
               onError={() => setImageError(true)}
               onLoad={(e) => {
                 const img = e.currentTarget;
-                // YouTube returns a 120x90 placeholder when a video/thumbnail is missing or invalid
-                if (img.naturalWidth === 120 && img.naturalHeight === 90) {
+                // YouTube returns a 120x90 or <=120px placeholder when a video/thumbnail is missing or invalid
+                if ((img.naturalWidth <= 120 && img.naturalHeight <= 90) || img.naturalWidth === 0) {
                   setImageError(true);
                 }
               }}

@@ -258,212 +258,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        // ==========================================
-        // Media3 Native Playback Engine Bridge (Phase 1 & 2)
-        // ==========================================
-
-        private fun isTrustedOrigin(): Boolean {
-            val currentUrl = webView.url ?: return false
-            return currentUrl.startsWith("https://resonate.app")
-        }
-
-        private fun isValidAuthorizedStreamUrl(streamUrl: String): Boolean {
-            return try {
-                val uri = Uri.parse(streamUrl)
-                val scheme = uri.scheme?.lowercase() ?: return false
-                if (scheme != "https" && scheme != "android.resource") return false
-
-                val host = uri.host?.lowercase() ?: return false
-                // Reject loopback or private networks
-                if (host == "localhost" || host == "127.0.0.1" || host.startsWith("192.168.") ||
-                    host.startsWith("10.") || host.startsWith("172.16.") || host.endsWith(".local")
-                ) {
-                    return false
-                }
-                true
-            } catch (_: Exception) {
-                false
-            }
-        }
-
-        @android.webkit.JavascriptInterface
-        fun runNativeAudioSelfTest(): String {
-            return try {
-                if (!isTrustedOrigin()) {
-                    return org.json.JSONObject().apply {
-                        put("success", false)
-                        put("error", "Unauthorized origin: ${webView.url}")
-                    }.toString()
-                }
-
-                val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
-                    action = MediaPlaybackService.ACTION_PLAY_TEST
-                }
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        this@MainActivity.startForegroundService(serviceIntent)
-                    } else {
-                        this@MainActivity.startService(serviceIntent)
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.e("MainActivity", "startForegroundService failed: ${e.message}", e)
-                }
-
-                // If service instance is already alive, dispatch on MainLooper immediately
-                runOnUiThread {
-                    MediaPlaybackService.instance?.playTestStream()
-                }
-
-                org.json.JSONObject().apply {
-                    put("success", true)
-                    put("track", MediaPlaybackService.TEST_TRACK_TITLE)
-                    put("artist", MediaPlaybackService.TEST_TRACK_ARTIST)
-                    put("streamUrl", MediaPlaybackService.AUTHORIZED_TEST_STREAM_URL)
-                    put("engine", "AndroidX Media3 ExoPlayer")
-                }.toString()
-            } catch (e: Throwable) {
-                android.util.Log.e("MainActivity", "runNativeAudioSelfTest error", e)
-                org.json.JSONObject().apply {
-                    put("success", false)
-                    put("error", "${e.javaClass.simpleName}: ${e.message}")
-                }.toString()
-            }
-        }
-
-        @android.webkit.JavascriptInterface
-        fun getNativePlaybackStatus(): String {
-            return try {
-                if (!isTrustedOrigin()) return """{"error":"Unauthorized origin"}"""
-                val snapshot = MediaPlaybackService.instance?.getPlaybackSnapshot()
-                if (snapshot != null) {
-                    org.json.JSONObject().apply {
-                        put("isPlaying", snapshot.isPlaying)
-                        put("positionMs", snapshot.currentPositionMs)
-                        put("durationMs", snapshot.durationMs)
-                        put("bufferedPositionMs", snapshot.bufferedPositionMs)
-                        put("trackId", snapshot.currentTrackId)
-                        put("playbackState", snapshot.playbackState)
-                        put("isTestStream", snapshot.isTestStream)
-                    }.toString()
-                } else {
-                    """{"isPlaying":false,"status":"service_inactive"}"""
-                }
-            } catch (e: Throwable) {
-                """{"isPlaying":false,"error":"${e.message}"}"""
-            }
-        }
-
-        @android.webkit.JavascriptInterface
-        fun playTrackNative(
-            trackId: String,
-            title: String,
-            artist: String,
-            album: String,
-            artworkUrl: String,
-            streamUrl: String,
-            canCache: Boolean
-        ): Boolean {
-            return try {
-                if (!isTrustedOrigin()) return false
-                if (!isValidAuthorizedStreamUrl(streamUrl)) return false
-
-                val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
-                    action = MediaPlaybackService.ACTION_PLAY_AUTHORIZED
-                    putExtra(MediaPlaybackService.EXTRA_TRACK_ID, trackId)
-                    putExtra(MediaPlaybackService.EXTRA_TITLE, title)
-                    putExtra(MediaPlaybackService.EXTRA_ARTIST, artist)
-                    putExtra(MediaPlaybackService.EXTRA_ALBUM, album)
-                    putExtra(MediaPlaybackService.EXTRA_ARTWORK_URL, artworkUrl)
-                    putExtra(MediaPlaybackService.EXTRA_STREAM_URL, streamUrl)
-                    putExtra(MediaPlaybackService.EXTRA_CAN_CACHE, canCache)
-                }
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        this@MainActivity.startForegroundService(serviceIntent)
-                    } else {
-                        this@MainActivity.startService(serviceIntent)
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.e("MainActivity", "startForegroundService failed: ${e.message}", e)
-                }
-
-                runOnUiThread {
-                    MediaPlaybackService.instance?.playAuthorizedTrack(
-                        trackId = trackId,
-                        title = title,
-                        artist = artist,
-                        album = album,
-                        artworkUrl = artworkUrl,
-                        streamUrl = streamUrl,
-                        clientCanCache = canCache
-                    )
-                }
-                true
-            } catch (e: Throwable) {
-                false
-            }
-        }
-
-        @android.webkit.JavascriptInterface
-        fun pauseNative() {
-            try {
-                if (!isTrustedOrigin()) return
-                val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
-                    action = MediaPlaybackService.ACTION_PAUSE
-                }
-                startService(serviceIntent)
-                runOnUiThread {
-                    MediaPlaybackService.instance?.pause()
-                }
-            } catch (_: Exception) {}
-        }
-
-        @android.webkit.JavascriptInterface
-        fun resumeNative() {
-            try {
-                if (!isTrustedOrigin()) return
-                val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
-                    action = MediaPlaybackService.ACTION_RESUME
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent)
-                } else {
-                    startService(serviceIntent)
-                }
-                runOnUiThread {
-                    MediaPlaybackService.instance?.resume()
-                }
-            } catch (_: Exception) {}
-        }
-
-        @android.webkit.JavascriptInterface
-        fun seekNative(positionSeconds: Double) {
-            try {
-                if (!isTrustedOrigin()) return
-                runOnUiThread {
-                    MediaPlaybackService.instance?.seekTo((positionSeconds * 1000).toLong())
-                }
-            } catch (_: Exception) {}
-        }
-
-        @android.webkit.JavascriptInterface
-        fun areNotificationsEnabled(): Boolean {
-            return androidx.core.app.NotificationManagerCompat.from(this@MainActivity).areNotificationsEnabled()
-        }
-
-        @android.webkit.JavascriptInterface
-        fun requestNotificationPermission() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                runOnUiThread {
-                    ActivityCompat.requestPermissions(
-                        this@MainActivity,
-                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                        POST_NOTIF_PERMISSION_REQUEST
-                    )
-                }
-            }
-        }
     }
 
     private fun syncMediaSessionAndNotification(
@@ -753,6 +547,7 @@ class MainActivity : AppCompatActivity() {
         webView.addJavascriptInterface(AppNativeBridge(), "ResonateNative")
 
         // Enhanced Bridge Security (Requirement 1):
+        // Enhanced Bridge Security (Requirement 1 & 3):
         // Prefer WebViewCompat.addWebMessageListener with explicit trusted origin allowlist
         // Chromium enforces this at the C++ process level, preventing cross-origin framing/injection attacks
         if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
@@ -762,41 +557,70 @@ class MainActivity : AppCompatActivity() {
                     webView,
                     "ResonateNativeSecure",
                     allowedOrigins
-                ) { _, message, _, _, replyProxy ->
+                ) { _, message, sourceOrigin, isMainFrame, replyProxy ->
+                    // Validate security: Ensure only top-level main frame from allowed origin can issue playback commands
+                    if (!isMainFrame) {
+                        android.util.Log.w("ResonateNativeSecure", "Rejected command from non-main frame: $sourceOrigin")
+                        return@addWebMessageListener
+                    }
+
+                    var reqId = ""
+                    var reqAction = ""
                     try {
                         val raw = message.data ?: return@addWebMessageListener
                         val json = org.json.JSONObject(raw)
-                        val action = json.optString("action")
-                        when (action) {
+                        reqId = json.optString("id", "")
+                        reqAction = json.optString("action", "")
+
+                        when (reqAction) {
                             "runSelfTest" -> {
                                 val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
                                     this.action = MediaPlaybackService.ACTION_PLAY_TEST
                                 }
+                                var serviceStarted = false
                                 try {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                         this@MainActivity.startForegroundService(serviceIntent)
                                     } else {
                                         this@MainActivity.startService(serviceIntent)
                                     }
+                                    serviceStarted = true
                                 } catch (e: Exception) {
-                                    android.util.Log.e("MainActivity", "startForegroundService failed: ${e.message}", e)
+                                    android.util.Log.e("ResonateNativeSecure", "startForegroundService failed: ${e.message}", e)
+                                    val errResp = org.json.JSONObject().apply {
+                                        if (reqId.isNotEmpty()) put("id", reqId)
+                                        put("action", reqAction)
+                                        put("success", false)
+                                        put("error", "Service start failed: ${e.message}")
+                                    }
+                                    replyProxy.postMessage(errResp.toString())
+                                    return@addWebMessageListener
                                 }
-                                runOnUiThread {
-                                    MediaPlaybackService.instance?.playTestStream()
-                                }
+
+                                // onPostMessage executes on the UI/MainLooper thread; player operations are safe
+                                val playerPrepared = MediaPlaybackService.instance?.playTestStream() ?: false
+
                                 val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
                                     put("success", true)
                                     put("track", MediaPlaybackService.TEST_TRACK_TITLE)
                                     put("artist", MediaPlaybackService.TEST_TRACK_ARTIST)
                                     put("streamUrl", MediaPlaybackService.AUTHORIZED_TEST_STREAM_URL)
                                     put("engine", "AndroidX Media3 ExoPlayer")
+                                    put("serviceStarted", serviceStarted)
+                                    put("playerPrepared", playerPrepared || MediaPlaybackService.instance != null)
                                 }
                                 replyProxy.postMessage(resp.toString())
                             }
+
                             "getStatus" -> {
                                 val snapshot = MediaPlaybackService.instance?.getPlaybackSnapshot()
-                                val resp = if (snapshot != null) {
-                                    org.json.JSONObject().apply {
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                    if (snapshot != null) {
                                         put("isPlaying", snapshot.isPlaying)
                                         put("positionMs", snapshot.currentPositionMs)
                                         put("durationMs", snapshot.durationMs)
@@ -804,32 +628,128 @@ class MainActivity : AppCompatActivity() {
                                         put("trackId", snapshot.currentTrackId)
                                         put("playbackState", snapshot.playbackState)
                                         put("isTestStream", snapshot.isTestStream)
-                                    }
-                                } else {
-                                    org.json.JSONObject().apply {
+                                        put("serviceActive", true)
+                                    } else {
                                         put("isPlaying", false)
-                                        put("status", "service_inactive")
+                                        put("positionMs", 0L)
+                                        put("durationMs", 0L)
+                                        put("bufferedPositionMs", 0L)
+                                        put("trackId", "")
+                                        put("playbackState", 1) // STATE_IDLE
+                                        put("isTestStream", false)
+                                        put("serviceActive", false)
                                     }
                                 }
                                 replyProxy.postMessage(resp.toString())
                             }
+
                             "pause" -> {
+                                val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
+                                    this.action = MediaPlaybackService.ACTION_PAUSE
+                                }
+                                try {
+                                    this@MainActivity.startService(serviceIntent)
+                                } catch (_: Exception) {}
+
                                 MediaPlaybackService.instance?.pause()
-                                replyProxy.postMessage("""{"status":"paused"}""")
+
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                    put("status", "paused")
+                                }
+                                replyProxy.postMessage(resp.toString())
                             }
+
                             "resume" -> {
+                                val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
+                                    this.action = MediaPlaybackService.ACTION_RESUME
+                                }
+                                try {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        this@MainActivity.startForegroundService(serviceIntent)
+                                    } else {
+                                        this@MainActivity.startService(serviceIntent)
+                                    }
+                                } catch (_: Exception) {}
+
                                 MediaPlaybackService.instance?.resume()
-                                replyProxy.postMessage("""{"status":"resumed"}""")
+
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                    put("status", "resumed")
+                                }
+                                replyProxy.postMessage(resp.toString())
                             }
+
                             "seek" -> {
                                 val posSec = json.optDouble("positionSeconds", 0.0)
                                 MediaPlaybackService.instance?.seekTo((posSec * 1000).toLong())
-                                replyProxy.postMessage("""{"status":"seeked"}""")
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                    put("positionSeconds", posSec)
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+
+                            "checkNotifPermission" -> {
+                                val granted = androidx.core.app.NotificationManagerCompat.from(this@MainActivity).areNotificationsEnabled()
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                    put("granted", granted)
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+
+                            "requestNotifPermission" -> {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    ActivityCompat.requestPermissions(
+                                        this@MainActivity,
+                                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                                        POST_NOTIF_PERMISSION_REQUEST
+                                    )
+                                }
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+
+                            else -> {
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", false)
+                                    put("error", "Unknown action: $reqAction")
+                                }
+                                replyProxy.postMessage(resp.toString())
                             }
                         }
-                    } catch (_: Exception) {}
+                    } catch (e: Exception) {
+                        android.util.Log.e("ResonateNativeSecure", "Error processing web message", e)
+                        try {
+                            val errResp = org.json.JSONObject().apply {
+                                if (reqId.isNotEmpty()) put("id", reqId)
+                                if (reqAction.isNotEmpty()) put("action", reqAction)
+                                put("success", false)
+                                put("error", "${e.javaClass.simpleName}: ${e.message ?: "Unknown error"}")
+                            }
+                            replyProxy.postMessage(errResp.toString())
+                        } catch (_: Exception) {}
+                    }
                 }
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Failed to register addWebMessageListener", e)
+            }
         }
         webView.setBackgroundColor(Color.parseColor("#0a0a0a"))
 

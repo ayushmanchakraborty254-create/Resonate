@@ -25,6 +25,7 @@ export function isNativeAndroidApp(): boolean {
   if (typeof window === 'undefined') return false;
   return Boolean(
     (window as any).ResonateNative ||
+    (window as any).ResonateNativeSecure ||
     navigator.userAgent.includes('ResonateNativeApp') ||
     window.location.hostname === 'resonate.app' ||
     window.location.protocol === 'file:'

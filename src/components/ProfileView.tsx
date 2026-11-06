@@ -4,6 +4,7 @@ import {
   Sparkles, ExternalLink, LogOut, ArrowLeft, Trash2, Volume2, Play, Pause
 } from 'lucide-react';
 import { isNativeAndroidApp, checkGitHubReleaseUpdate, openExternalUrl, CURRENT_APP_VERSION, type UpdateInfo } from '../utils/appPlatform';
+import { sendNativeMessage, isSecureNativeBridgeAvailable } from '../utils/nativeBridge';
 
 interface ProfileViewProps {
   user: { name: string; email: string; avatar?: string; isGoogle?: boolean } | null;
@@ -36,28 +37,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [isNativePlaying, setIsNativePlaying] = useState<boolean>(false);
   const [notifGranted, setNotifGranted] = useState<boolean>(true);
 
-  useEffect(() => {
-    if (isNative && (window as any).ResonateNative?.areNotificationsEnabled) {
+  // Check notification permission on load
+  const verifyNotificationPermission = async () => {
+    if (isNative && isSecureNativeBridgeAvailable()) {
       try {
-        setNotifGranted((window as any).ResonateNative.areNotificationsEnabled());
+        const res = await sendNativeMessage('checkNotifPermission');
+        if (res && typeof res.granted === 'boolean') {
+          setNotifGranted(res.granted);
+        }
       } catch (_) {}
     }
-  }, [isNative]);
+  };
 
   useEffect(() => {
+    verifyNotificationPermission();
+  }, [isNative]);
+
+  // Live status poller while test stream is active
+  useEffect(() => {
     if (!isNativePlaying) return;
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       try {
-        if ((window as any).ResonateNative?.getNativePlaybackStatus) {
-          const raw = (window as any).ResonateNative.getNativePlaybackStatus();
-          const st = JSON.parse(raw);
-          if (st.isPlaying) {
+        if (isSecureNativeBridgeAvailable()) {
+          const st = await sendNativeMessage('getStatus');
+          if (st && st.success && st.isPlaying) {
             const curSec = Math.floor((st.positionMs || 0) / 1000);
             const durSec = Math.floor((st.durationMs || 0) / 1000);
             const curMin = `${Math.floor(curSec / 60)}:${(curSec % 60).toString().padStart(2, '0')}`;
             const durMin = durSec > 0 ? `${Math.floor(durSec / 60)}:${(durSec % 60).toString().padStart(2, '0')}` : '--:--';
             setNativeTestStatus(`Playing: Jazz In Paris (${curMin} / ${durMin}) • Media3 Active`);
-          } else if (st.playbackState === 4) {
+          } else if (st && st.playbackState === 4) { // STATE_ENDED
             setNativeTestStatus('Finished playback (Jazz In Paris)');
             setIsNativePlaying(false);
           }
@@ -67,49 +76,55 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     return () => clearInterval(interval);
   }, [isNativePlaying]);
 
-  const handleRunNativeSelfTest = () => {
+  const handleRunNativeSelfTest = async () => {
+    setNativeTestStatus('Starting native Media3 ExoPlayer engine...');
     try {
-      if ((window as any).ResonateNative?.runNativeAudioSelfTest) {
-        const raw = (window as any).ResonateNative.runNativeAudioSelfTest();
-        const resp = JSON.parse(raw);
-        if (resp.success) {
-          setNativeTestStatus(`Starting: ${resp.track} • Engine: ${resp.engine}`);
+      if (isSecureNativeBridgeAvailable()) {
+        const resp = await sendNativeMessage('runSelfTest');
+        if (resp && resp.success) {
+          setNativeTestStatus(`Active: ${resp.track} • Engine: ${resp.engine}`);
           setIsNativePlaying(true);
         } else {
-          setNativeTestStatus(`Failed to start: ${resp.error || 'Unknown error'}`);
+          setNativeTestStatus(`Failed to start: ${resp?.error || 'Unknown native error'}`);
         }
       } else {
-        setNativeTestStatus('ResonateNative bridge unavailable (Only active on Android APK)');
+        setNativeTestStatus('ResonateNativeSecure bridge unavailable (Only active on Android APK)');
       }
     } catch (err: any) {
-      setNativeTestStatus(`Error: ${err.message}`);
+      setNativeTestStatus(`Failed to start: ${err.message}`);
     }
   };
 
-  const handleToggleNativeTest = () => {
+  const handleToggleNativeTest = async () => {
     try {
       if (isNativePlaying) {
-        (window as any).ResonateNative?.pauseNative?.();
-        setIsNativePlaying(false);
-        setNativeTestStatus('Paused native test stream');
+        const resp = await sendNativeMessage('pause');
+        if (resp && resp.success) {
+          setIsNativePlaying(false);
+          setNativeTestStatus('Paused native test stream');
+        } else {
+          setNativeTestStatus(`Pause failed: ${resp?.error || 'Unknown error'}`);
+        }
       } else {
-        (window as any).ResonateNative?.resumeNative?.();
-        setIsNativePlaying(true);
-        setNativeTestStatus('Resumed native test stream');
+        const resp = await sendNativeMessage('resume');
+        if (resp && resp.success) {
+          setIsNativePlaying(true);
+          setNativeTestStatus('Resumed native test stream');
+        } else {
+          setNativeTestStatus(`Resume failed: ${resp?.error || 'Unknown error'}`);
+        }
       }
     } catch (err: any) {
       setNativeTestStatus(`Error: ${err.message}`);
     }
   };
 
-  const handleRequestNotifPermission = () => {
+  const handleRequestNotifPermission = async () => {
     try {
-      (window as any).ResonateNative?.requestNotificationPermission?.();
-      setTimeout(() => {
-        if ((window as any).ResonateNative?.areNotificationsEnabled) {
-          setNotifGranted((window as any).ResonateNative.areNotificationsEnabled());
-        }
-      }, 2000);
+      if (isSecureNativeBridgeAvailable()) {
+        await sendNativeMessage('requestNotifPermission');
+        setTimeout(verifyNotificationPermission, 1500);
+      }
     } catch (_) {}
   };
 

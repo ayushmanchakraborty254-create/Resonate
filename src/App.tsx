@@ -168,7 +168,7 @@ function App() {
 
   const executeSyncSilent = async () => {
     try {
-      const { playlists: syncedPlaylists, tracks: syncedTracks } = await syncManager.syncAllConnected();
+      const { playlists: syncedPlaylists } = await syncManager.syncAllConnected();
       
       const appPlaylists = syncedPlaylists.map((pl: UnifiedPlaylist) => ({
         id: pl.id,
@@ -200,28 +200,9 @@ function App() {
         const custom = prev.filter((p) => !p.id.startsWith('yt-playlist-') && !p.id.startsWith('sp-playlist-') && !p.id.startsWith('am-playlist-'));
         const nextState = [...custom, ...uniqueIncomingPlaylists];
         console.log("Final state length (playlists count):", nextState.length);
+        // YouTube Liked videos are excluded from auto-import to prevent non-music tutorials & shorts
+        // from polluting the user's Resonate Favourites and Home feed.
         return nextState;
-      });
-
-      const appLikes = syncedTracks.map((t: UnifiedTrack) => ({
-        id: t.id.split(':')[1] || t.id,
-        title: t.title,
-        artist: t.artist,
-        album: t.album,
-        duration: t.duration,
-        thumbnailUrl: t.thumbnailUrl,
-        youtubeUrl: t.source === 'youtube' ? t.externalUrl || `https://www.youtube.com/watch?v=${t.id}` : `https://www.youtube.com/watch?v=${t.id}`,
-        lyrics: `[Enjoy listening to ${t.title} on Resonate!]`
-      }));
-      
-      setLikedTracks((prev) => {
-        const merged = [...prev];
-        appLikes.forEach((track: Track) => {
-          if (!merged.some((t: Track) => t.id === track.id)) {
-            merged.push(track);
-          }
-        });
-        return merged;
       });
     } catch (e) {
       console.warn('Silent sync failed:', e);

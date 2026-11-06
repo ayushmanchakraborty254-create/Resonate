@@ -104,8 +104,8 @@ body {
 
 .nav-center {
   flex: 1;
-  max-width: 560px;
-  margin: 0 24px;
+  max-width: 480px;
+  margin: 0 0 0 16px;
   position: relative;
 }
 

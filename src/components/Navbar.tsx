@@ -172,19 +172,60 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         ) : (
           <>
-            {/* Left Brand / Mobile Title (Only on Mobile; Sidebar has brand on desktop) */}
-            {isMobile && (
-              <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <img src={logoImg} alt="Resonate" style={{ width: '26px', height: '26px', borderRadius: '7px', objectFit: 'cover' }} />
-                <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff', letterSpacing: '-0.4px', fontFamily: "'Outfit', sans-serif" }}>
-                  {currentView === 'library' ? 'Library' : currentView === 'favourites' ? 'Favourites' : 'Home'}
-                </span>
-              </div>
-            )}
+            {/* Top Left Brand: Resonate Logo + Text at top-left of window (YouTube Music style) */}
+            <div
+              className="nav-left"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: isMobile ? '8px' : '10px',
+                minWidth: isMobile ? 'auto' : '200px',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+              onClick={() => setView('home')}
+            >
+              <img
+                src={logoImg}
+                alt="Resonate"
+                style={{
+                  width: isMobile ? '26px' : '30px',
+                  height: isMobile ? '26px' : '30px',
+                  borderRadius: '8px',
+                  objectFit: 'cover',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: isMobile ? '22px' : '20px',
+                  fontWeight: 800,
+                  color: '#fff',
+                  letterSpacing: '-0.4px',
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                {isMobile
+                  ? currentView === 'library'
+                    ? 'Library'
+                    : currentView === 'favourites'
+                    ? 'Favourites'
+                    : 'Home'
+                  : 'Resonate'}
+              </span>
+            </div>
 
-            {/* Center Search (Tablet & Desktop) */}
+            {/* Search shifted to the side next to logo (YT Music desktop style) */}
             {!isMobile && (
-              <div className="nav-center" ref={dropdownRef} style={{ maxWidth: isTablet ? '320px' : '480px' }}>
+              <div
+                className="nav-center"
+                ref={dropdownRef}
+                style={{
+                  maxWidth: isTablet ? '320px' : '480px',
+                  margin: '0 0 0 16px',
+                  flex: 1,
+                }}
+              >
                 <form onSubmit={handleSubmit}>
                   <div className="search-box">
                     <Search size={18} className="search-icon" style={{ color: 'var(--yt-text-secondary)' }} />

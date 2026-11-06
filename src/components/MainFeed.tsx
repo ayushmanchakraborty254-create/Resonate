@@ -52,35 +52,37 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   const speedDialContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Verified Top Trending Music Hits (Curated music videos only, no shorts or non-music videos)
+  // Verified Top Trending Music Hits (Curated official studio music tracks & verified instrumental covers only)
   const TRENDING_MUSIC_HITS = React.useMemo<Track[]>(() => [
+    // Page 1: Global Mega-Hits
     {
-      id: 'kPa7bsKwL-8',
+      id: 'fnPxkuFIA48',
       title: 'Die With A Smile',
       artist: 'Lady Gaga & Bruno Mars',
       album: 'Single',
       duration: 251,
-      thumbnailUrl: 'https://img.youtube.com/vi/kPa7bsKwL-8/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=kPa7bsKwL-8',
+      thumbnailUrl: 'https://i.ytimg.com/vi/fnPxkuFIA48/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=fnPxkuFIA48',
       lyrics: `[Die With A Smile - Lady Gaga & Bruno Mars]`
     },
     {
-      id: 'eVtxu9c36y0',
+      id: 'eVli-tstM5E',
       title: 'Espresso',
       artist: 'Sabrina Carpenter',
       album: 'Short n\' Sweet',
       duration: 175,
-      thumbnailUrl: 'https://img.youtube.com/vi/eVtxu9c36y0/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=eVtxu9c36y0',
+      thumbnailUrl: 'https://i.ytimg.com/vi/eVli-tstM5E/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=eVli-tstM5E',
       lyrics: `[Espresso - Sabrina Carpenter]`
     },
     {
-      id: 'd5gf9dXb4AU',
+      id: 'V9PVRfjEBTI',
       title: 'BIRDS OF A FEATHER',
       artist: 'Billie Eilish',
       album: 'HIT ME HARD AND SOFT',
       duration: 194,
-      thumbnailUrl: 'https://img.youtube.com/vi/d5gf9dXb4AU/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=d5gf9dXb4AU',
+      thumbnailUrl: 'https://i.ytimg.com/vi/V9PVRfjEBTI/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=V9PVRfjEBTI',
       lyrics: `[BIRDS OF A FEATHER - Billie Eilish]`
     },
     {
@@ -88,8 +90,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       title: 'APT.',
       artist: 'ROSÉ & Bruno Mars',
       album: 'rosie',
-      duration: 173,
-      thumbnailUrl: 'https://img.youtube.com/vi/ekr2nIex040/hqdefault.jpg',
+      duration: 169,
+      thumbnailUrl: 'https://i.ytimg.com/vi/ekr2nIex040/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=ekr2nIex040',
       lyrics: `[APT. - ROSÉ & Bruno Mars]`
     },
@@ -99,7 +101,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'The Weeknd',
       album: 'After Hours',
       duration: 200,
-      thumbnailUrl: 'https://img.youtube.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=4NRXx6U8ABQ',
       lyrics: `[Blinding Lights - The Weeknd]`
     },
@@ -109,7 +111,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'Ed Sheeran',
       album: '÷ (Divide)',
       duration: 233,
-      thumbnailUrl: 'https://img.youtube.com/vi/JGwWNGJdvx8/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=JGwWNGJdvx8',
       lyrics: `[Shape of You - Ed Sheeran]`
     },
@@ -119,7 +121,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'Luis Fonsi ft. Daddy Yankee',
       album: 'VIDA',
       duration: 228,
-      thumbnailUrl: 'https://img.youtube.com/vi/kJQP7kiw5Fk/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk',
       lyrics: `[Despacito - Luis Fonsi ft. Daddy Yankee]`
     },
@@ -129,7 +131,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'Mark Ronson ft. Bruno Mars',
       album: 'Uptown Special',
       duration: 270,
-      thumbnailUrl: 'https://img.youtube.com/vi/OPf0YbXqDm0/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/OPf0YbXqDm0/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=OPf0YbXqDm0',
       lyrics: `[Uptown Funk - Mark Ronson ft. Bruno Mars]`
     },
@@ -139,7 +141,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'Imagine Dragons',
       album: 'Evolve',
       duration: 204,
-      thumbnailUrl: 'https://img.youtube.com/vi/7wtfhZwyrcc/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/7wtfhZwyrcc/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=7wtfhZwyrcc',
       lyrics: `[Believer - Imagine Dragons]`
     },
@@ -150,7 +152,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'The Weeknd ft. Daft Punk',
       album: 'Starboy',
       duration: 230,
-      thumbnailUrl: 'https://img.youtube.com/vi/34Na4j8AVgA/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=34Na4j8AVgA',
       lyrics: `[Starboy - The Weeknd ft. Daft Punk]`
     },
@@ -160,18 +162,18 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'OneRepublic',
       album: 'Native',
       duration: 257,
-      thumbnailUrl: 'https://img.youtube.com/vi/hT_nvWreIhg/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/hT_nvWreIhg/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=hT_nvWreIhg',
       lyrics: `[Counting Stars - OneRepublic]`
     },
     {
-      id: '09R8_2nJwqc',
+      id: '09R8_2nJtjg',
       title: 'Sugar',
       artist: 'Maroon 5',
       album: 'V',
       duration: 235,
-      thumbnailUrl: 'https://img.youtube.com/vi/09R8_2nJwqc/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=09R8_2nJwqc',
+      thumbnailUrl: 'https://i.ytimg.com/vi/09R8_2nJtjg/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=09R8_2nJtjg',
       lyrics: `[Sugar - Maroon 5]`
     },
     {
@@ -180,7 +182,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'Bruno Mars',
       album: '24K Magic',
       duration: 206,
-      thumbnailUrl: 'https://img.youtube.com/vi/PMivT7MJ41M/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/PMivT7MJ41M/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=PMivT7MJ41M',
       lyrics: `[That's What I Like - Bruno Mars]`
     },
@@ -188,9 +190,9 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       id: 'rtOvBOTyX00',
       title: 'A Thousand Years',
       artist: 'Christina Perri',
-      album: 'The Twilight Saga: Breaking Dawn',
+      album: 'The Twilight Saga',
       duration: 285,
-      thumbnailUrl: 'https://img.youtube.com/vi/rtOvBOTyX00/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/rtOvBOTyX00/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=rtOvBOTyX00',
       lyrics: `[A Thousand Years - Christina Perri]`
     },
@@ -200,7 +202,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'Katy Perry',
       album: 'PRISM',
       duration: 223,
-      thumbnailUrl: 'https://img.youtube.com/vi/CevxZvSJLk8/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/CevxZvSJLk8/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=CevxZvSJLk8',
       lyrics: `[Roar - Katy Perry]`
     },
@@ -210,7 +212,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'PSY',
       album: 'PSY 6',
       duration: 252,
-      thumbnailUrl: 'https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/9bZkp7q19f0/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=9bZkp7q19f0',
       lyrics: `[GANGNAM STYLE - PSY]`
     },
@@ -220,7 +222,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'The Chainsmokers ft. Halsey',
       album: 'Collage',
       duration: 245,
-      thumbnailUrl: 'https://img.youtube.com/vi/PT2_F-1esPk/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/PT2_F-1esPk/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=PT2_F-1esPk',
       lyrics: `[Closer - The Chainsmokers ft. Halsey]`
     },
@@ -230,39 +232,39 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'Ed Sheeran',
       album: '÷ (Divide)',
       duration: 263,
-      thumbnailUrl: 'https://img.youtube.com/vi/2Vv-BfVoq4g/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/2Vv-BfVoq4g/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g',
       lyrics: `[Perfect - Ed Sheeran]`
     },
     // Page 3: Acoustic Melodies, Bollywood & Soundtracks
     {
-      id: 'z-diB996nWU',
+      id: 'piUHBTXsoiY',
       title: 'Raabta',
       artist: 'Arijit Singh',
       album: 'Agent Vinod',
       duration: 244,
-      thumbnailUrl: 'https://img.youtube.com/vi/z-diB996nWU/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=z-diB996nWU',
+      thumbnailUrl: 'https://i.ytimg.com/vi/piUHBTXsoiY/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=piUHBTXsoiY',
       lyrics: `[Raabta - Arijit Singh]`
     },
     {
-      id: 'gPpQNzKP6-0',
+      id: 'HeBJMzrM7hU',
       title: 'Naadaniyan',
       artist: 'Akshath',
       album: 'Single',
       duration: 172,
-      thumbnailUrl: 'https://img.youtube.com/vi/gPpQNzKP6-0/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=gPpQNzKP6-0',
+      thumbnailUrl: 'https://i.ytimg.com/vi/HeBJMzrM7hU/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=HeBJMzrM7hU',
       lyrics: `[Naadaniyan - Akshath]`
     },
     {
-      id: '1X_2X1Z_m6I',
+      id: 'TbjbZFqLEtw',
       title: 'Mere Naam Tu',
       artist: 'Abhay Jodhpurkar',
       album: 'Zero',
       duration: 338,
-      thumbnailUrl: 'https://img.youtube.com/vi/1X_2X1Z_m6I/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=1X_2X1Z_m6I',
+      thumbnailUrl: 'https://i.ytimg.com/vi/TbjbZFqLEtw/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=TbjbZFqLEtw',
       lyrics: `[Mere Naam Tu - Zero]`
     },
     {
@@ -271,59 +273,59 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       artist: 'Anirudh Ravichander',
       album: 'Jailer',
       duration: 207,
-      thumbnailUrl: 'https://img.youtube.com/vi/1F3hm6MfR1k/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/1F3hm6MfR1k/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
       lyrics: `[Hukum - Anirudh]`
     },
     {
-      id: 'UDVtMYqUAyw',
-      title: 'Interstellar Theme',
+      id: '4y33h81phKU',
+      title: 'Interstellar on Piano',
       artist: 'Patrik Pietschmann',
       album: 'Piano Covers',
-      duration: 288,
-      thumbnailUrl: 'https://img.youtube.com/vi/UDVtMYqUAyw/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=UDVtMYqUAyw',
-      lyrics: `[Interstellar Theme - Patrik Pietschmann]`
+      duration: 275,
+      thumbnailUrl: 'https://i.ytimg.com/vi/4y33h81phKU/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=4y33h81phKU',
+      lyrics: `[Interstellar on Piano - Patrik Pietschmann]`
     },
     {
       id: 'CFPLIaMpGrY',
       title: 'golden hour',
       artist: 'JVKE',
-      album: 'this is what ____ feels like',
+      album: 'Single',
       duration: 209,
-      thumbnailUrl: 'https://img.youtube.com/vi/CFPLIaMpGrY/hqdefault.jpg',
+      thumbnailUrl: 'https://i.ytimg.com/vi/CFPLIaMpGrY/hqdefault.jpg',
       youtubeUrl: 'https://www.youtube.com/watch?v=CFPLIaMpGrY',
       lyrics: `[golden hour - JVKE]`
     },
     {
-      id: 'kxyY185k12I',
-      title: 'Khat',
-      artist: 'Jigar Saraiya, Priya Saraiya',
-      album: 'Single',
-      duration: 297,
-      thumbnailUrl: 'https://img.youtube.com/vi/kxyY185k12I/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=kxyY185k12I',
-      lyrics: `[Khat - Jigar Saraiya, Priya Saraiya]`
-    },
-    {
-      id: 'GTXRRZTCNPE',
-      title: 'Hedwig\'s Theme',
-      artist: 'John Williams',
-      album: 'Harry Potter OST',
-      duration: 310,
-      thumbnailUrl: 'https://img.youtube.com/vi/GTXRRZTCNPE/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=GTXRRZTCNPE',
-      lyrics: `[Hedwig's Theme - John Williams]`
-    },
-    {
-      id: 'mRD0-GxqHVo',
-      title: 'Heat Waves',
-      artist: 'Glass Animals',
-      album: 'Dreamland',
+      id: '5rHzi_5rSyw',
+      title: 'Janam Janam',
+      artist: 'Arijit Singh, Antara Mitra',
+      album: 'Dilwale',
       duration: 238,
-      thumbnailUrl: 'https://img.youtube.com/vi/mRD0-GxqHVo/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=mRD0-GxqHVo',
-      lyrics: `[Heat Waves - Glass Animals]`
+      thumbnailUrl: 'https://i.ytimg.com/vi/5rHzi_5rSyw/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=5rHzi_5rSyw',
+      lyrics: `[Janam Janam - Dilwale]`
+    },
+    {
+      id: 'I0-IiiVgvyU',
+      title: 'Teri Mitti',
+      artist: 'B Praak',
+      album: 'Kesari',
+      duration: 314,
+      thumbnailUrl: 'https://i.ytimg.com/vi/I0-IiiVgvyU/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=I0-IiiVgvyU',
+      lyrics: `[Teri Mitti - Kesari]`
+    },
+    {
+      id: 'TIUjE7YgoTQ',
+      title: 'Coffee Houser Sei Addata',
+      artist: 'Manna Dey',
+      album: 'Classics',
+      duration: 382,
+      thumbnailUrl: 'https://i.ytimg.com/vi/TIUjE7YgoTQ/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=TIUjE7YgoTQ',
+      lyrics: `[Coffee Houser Sei Addata - Manna Dey]`
     }
   ], []);
 
@@ -340,27 +342,92 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     }
   }, []);
 
+  // Strict Music Quality Filter:
+  // Discards tutorials, lessons, challenges, flute notes, chords, and YouTube shorts.
+  // Preserves genuine studio songs and pure instrumental covers (orchestra, piano covers, acoustic).
+  const isGenuineMusicTrack = (t: { title?: string; duration?: number; artist?: string }): boolean => {
+    if (!t || !t.title) return false;
+    const title = t.title.toLowerCase();
+    const artist = (t.artist || '').toLowerCase();
+    const full = `${title} ${artist}`;
+
+    // 1. Exclude shorts and micro clips (< 75 seconds or hashtag shorts)
+    if (t.duration && t.duration > 0 && t.duration < 75) return false;
+    if (title.includes('#shorts') || title.includes('#short') || full.includes('amazing shorts') || full.includes('youtube shorts')) return false;
+
+    // 2. Exclude tutorials, teaching, challenges, exercises, notes, chords
+    const banned = [
+      'tutorial',
+      'tutorials',
+      'how to',
+      'lesson',
+      'lessons',
+      'flute notes',
+      'piano notes',
+      'keyboard notes',
+      'guitar notes',
+      'notes |',
+      '| notes',
+      'chords',
+      'chord progression',
+      'synthesia',
+      'for beginners',
+      'beginner tutorial',
+      'easy tutorial',
+      'step by step',
+      'learn to play',
+      'how to blow',
+      'how to produce',
+      'piano challenge',
+      'flute challenge',
+      '100 day',
+      'scale exercise',
+      'practice routine',
+      'masterclass',
+      'reaction video',
+      'reacting to',
+      'unboxing',
+      'podcast episode',
+      'interview with',
+      'behind the scenes'
+    ];
+
+    for (const kw of banned) {
+      if (full.includes(kw)) return false;
+    }
+
+    if (/\bday\s*\d+\b/i.test(title)) return false;
+
+    return true;
+  };
+
   // Playlist & Music Library Scraper (Active ONLY when logged into account):
-  // Filters out shorts and non-music videos (e.g. duration < 60s, "#shorts")
+  // 1. Completely avoids the user's YouTube "Liked videos" / LL playlist (which contains non-song tutorials & shorts)
+  // 2. Only scans the user's music-specific playlists and applies strict quality filtering
   const userPlaylistTracks = React.useMemo<Track[]>(() => {
     if (!isUserLoggedIn) return [];
 
-    const allFromPlaylists = playlists.flatMap((p) => p.tracks || []);
-    const combined = [...likedTracks, ...allFromPlaylists];
+    // Filter out any Liked Videos or non-music system playlists
+    const songPlaylists = playlists.filter((p) => {
+      const pid = (p.id || '').toLowerCase();
+      const pname = (p.name || '').toLowerCase();
+      if (pid.includes('ll') || pid.includes('liked') || pname.includes('liked')) return false;
+      return true;
+    });
+
+    const allFromPlaylists = songPlaylists.flatMap((p) => p.tracks || []);
     const seen = new Set<string>();
     const filtered: Track[] = [];
 
-    for (const t of combined) {
+    for (const t of allFromPlaylists) {
       if (t && t.id && !seen.has(t.id)) {
-        // Exclude shorts or micro videos (< 60 seconds)
-        if (t.duration && t.duration < 60) continue;
-        if (t.title.toLowerCase().includes('#shorts') || t.title.toLowerCase().includes('#short')) continue;
+        if (!isGenuineMusicTrack(t)) continue;
         seen.add(t.id);
         filtered.push(t);
       }
     }
     return filtered;
-  }, [isUserLoggedIn, playlists, likedTracks]);
+  }, [isUserLoggedIn, playlists]);
 
   // Speed Dial (Quick dial 3x3 with 3 swipeable pages, 27 total tracks):
   // 1. If logged in with scanned playlists/favourites: use their verified playlist tracks

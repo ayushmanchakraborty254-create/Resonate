@@ -25,7 +25,6 @@ export interface MusicProvider {
 // -------------------------------------------------------------
 export class YouTubeProvider implements MusicProvider {
   name = 'youtube' as const;
-  private categoryMusicId = '10';
 
   async connect(): Promise<boolean> {
     const token = localStorage.getItem('resonate_google_access_token');
@@ -36,14 +35,6 @@ export class YouTubeProvider implements MusicProvider {
   async disconnect(): Promise<void> {
     localStorage.removeItem('resonate_google_access_token');
     localStorage.removeItem('resonate_google_token_expiry');
-  }
-
-  private isMusicMetadata(title: string, desc: string): boolean {
-    const text = `${title} ${desc}`.toLowerCase();
-    const excludeKeywords = ['tutorial', 'coding', 'programming', 'lecture', 'gaming', 'podcast', 'course', 'news'];
-    const includeKeywords = ['music', 'song', 'lofi', 'beats', 'mix', 'remix', 'playlist', 'album', 'ost'];
-    if (excludeKeywords.some(kw => text.includes(kw))) return false;
-    return includeKeywords.some(kw => text.includes(kw));
   }
 
   async getPlaylists(): Promise<UnifiedPlaylist[]> {
@@ -198,53 +189,8 @@ export class YouTubeProvider implements MusicProvider {
   }
 
   async getLikedSongs(): Promise<UnifiedTrack[]> {
-    const token = localStorage.getItem('resonate_google_access_token');
-    if (!token) return [];
-    const url = `https://www.googleapis.com/youtube/v3/videos?myRating=like&part=snippet&maxResults=25`;
-
-    try {
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!res.ok) {
-        let errMsg = `HTTP Status: ${res.status}`;
-        try {
-          const errData = await res.json();
-          errMsg = errData.error?.message || JSON.stringify(errData);
-        } catch (_) {}
-        console.error("YouTube LikedVideos Request Failed:", { url, status: res.status, error: errMsg });
-        throw new Error(`YouTube LikedVideos API Error: ${errMsg}`);
-      }
-
-      const data = await res.json();
-      const likes = data.items ? data.items.filter((video: any) => {
-        return video.snippet?.categoryId === this.categoryMusicId || this.isMusicMetadata(video.snippet?.title, video.snippet?.description);
-      }).map((video: any) => {
-        const videoId = video.id;
-        return {
-          id: videoId,
-          title: video.snippet?.title || 'Unknown Title',
-          artist: video.snippet?.channelTitle || 'Unknown Artist',
-          duration: 240,
-          thumbnailUrl: video.snippet?.thumbnails?.medium?.url || video.snippet?.thumbnails?.default?.url || `https://img.youtube.com/vi/${videoId}/0.jpg`,
-          source: 'youtube',
-          externalUrl: `https://www.youtube.com/watch?v=${videoId}`,
-          availableSources: [`yo:${videoId}`]
-        };
-      }) : [];
-
-      console.log("YouTube LikedVideos Request Succeeded:", {
-        url,
-        status: res.status,
-        likesImported: likes.length
-      });
-
-      return likes;
-    } catch (e: any) {
-      console.error('Error fetching YouTube Liked songs:', e);
-      throw e;
-    }
+    // Exclude YouTube Liked Videos as requested to prevent tutorials & non-music videos from entering recommendations
+    return [];
   }
 
   async search(query: string): Promise<UnifiedTrack[]> {

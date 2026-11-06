@@ -323,13 +323,13 @@ export const NOSTALGIC_SHELF: Track[] = [
 
 export const NEW_RELEASES_SHELF: Track[] = [
   {
-    id: '1F3hm63481o',
+    id: '1F3hm6MfR1k',
     title: 'Hukum - Thalaivar Alappara',
     artist: 'Anirudh Ravichander',
     album: 'Jailer Single',
     duration: 208,
-    thumbnailUrl: 'https://img.youtube.com/vi/1F3hm63481o/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm63481o',
+    thumbnailUrl: 'https://i.ytimg.com/vi/1F3hm6MfR1k/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
     lyrics: `[Hukum - Anirudh]`
   },
   {

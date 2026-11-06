@@ -91,6 +91,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const dynamicLyrics = useTrackLyrics(currentTrack);
 
   const swipeHandlers = useSwipeGesture({
+    disabled: isDragging,
     onSwipeDown: () => {
       if (mobilePlayerState === 'full') setMobilePlayerState('mini');
       else if (mobilePlayerState === 'half') setMobilePlayerState('mini');
@@ -650,18 +651,6 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         </div>
                       ))}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px' }}>
-                      <Volume2 size={16} />
-                      <input 
-                        type="range" 
-                        min={0} 
-                        max={1} 
-                        step={0.05} 
-                        value={volume} 
-                        onChange={(e) => setVolume(parseFloat(e.target.value))} 
-                        style={{ flex: 1 }} 
-                      />
-                    </div>
                   </div>
                 ) : (
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 0 }}>
@@ -717,14 +706,20 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     </div>
 
                     <div 
-                      style={{ marginBottom: '24px' }}
+                      data-no-swipe="true"
+                      style={{ marginBottom: '24px', touchAction: 'none' }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onMouseMove={(e) => e.stopPropagation()}
+                      onMouseUp={(e) => e.stopPropagation()}
                       onTouchStart={(e) => e.stopPropagation()}
                       onTouchMove={(e) => e.stopPropagation()}
                       onTouchEnd={(e) => e.stopPropagation()}
+                      onTouchCancel={(e) => e.stopPropagation()}
                     >
                       <input 
                         type="range" 
                         className="slider"
+                        data-no-swipe="true"
                         min={0} 
                         max={duration || currentTrack.duration || 180} 
                         value={isDragging ? dragProgress : progress} 
@@ -735,7 +730,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         onTouchEnd={handleSliderMouseUp}
                         style={{ width: '100%', marginBottom: '8px', touchAction: 'none' }} 
                       />
-                      <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--yt-text-secondary)' }}>
+                      <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--yt-text-secondary)', userSelect: 'none' }}>
                         <span>{formatTime(isDragging ? dragProgress : progress)}</span>
                         <span>{formatTime(duration || currentTrack.duration || 0)}</span>
                       </div>
@@ -773,33 +768,6 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       >
                         <Repeat size={18} />
                       </button>
-                    </div>
-
-                    {/* Volume Slider in Mobile Full Player */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px', marginBottom: '20px' }}>
-                      <button
-                        onClick={toggleMute}
-                        style={{ background: 'none', border: 'none', color: isMuted || volume === 0 ? 'var(--yt-accent)' : 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                      >
-                        {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                      </button>
-                      <input
-                        type="range"
-                        className="slider"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={isMuted ? 0 : volume}
-                        onChange={(e) => {
-                          const v = parseFloat(e.target.value);
-                          setVolume(v);
-                          if (v > 0) setIsMuted(false);
-                          if (playerRef.current && playerRef.current.setVolume) {
-                            playerRef.current.setVolume(Math.round(v * 100));
-                          }
-                        }}
-                        style={{ flex: 1, touchAction: 'none' }}
-                      />
                     </div>
 
                     <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-around', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>

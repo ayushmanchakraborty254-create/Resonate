@@ -7,6 +7,7 @@ interface SwipeCallbacks {
   onSwipeUp?: () => void;
   onSwipeDown?: () => void;
   minDelta?: number;
+  disabled?: boolean;
 }
 
 export const useSwipeGesture = (callbacks: SwipeCallbacks) => {
@@ -16,6 +17,28 @@ export const useSwipeGesture = (callbacks: SwipeCallbacks) => {
   const minSwipeDistance = callbacks.minDelta ?? 50;
 
   const onTouchStart = (e: TouchEvent) => {
+    if (callbacks.disabled) {
+      setTouchStart(null);
+      setTouchEnd(null);
+      return;
+    }
+
+    // Ignore touches starting on interactive elements (sliders, inputs, buttons)
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'BUTTON' ||
+        target.closest('input') ||
+        target.closest('button') ||
+        target.closest('.slider') ||
+        target.closest('[data-no-swipe="true"]'))
+    ) {
+      setTouchStart(null);
+      setTouchEnd(null);
+      return;
+    }
+
     setTouchEnd(null);
     setTouchStart({
       x: e.targetTouches[0].clientX,
@@ -24,6 +47,7 @@ export const useSwipeGesture = (callbacks: SwipeCallbacks) => {
   };
 
   const onTouchMove = (e: TouchEvent) => {
+    if (callbacks.disabled || !touchStart) return;
     setTouchEnd({
       x: e.targetTouches[0].clientX,
       y: e.targetTouches[0].clientY,
@@ -31,7 +55,7 @@ export const useSwipeGesture = (callbacks: SwipeCallbacks) => {
   };
 
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+    if (callbacks.disabled || !touchStart || !touchEnd) return;
 
     const distanceX = touchStart.x - touchEnd.x;
     const distanceY = touchStart.y - touchEnd.y;

@@ -377,6 +377,31 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 </button>
               </div>
             </div>
+          ) : updateCheckStatus === 'error' ? (
+            <div style={{ marginTop: '8px' }}>
+              <div style={{ color: '#f87171', fontSize: '12px', marginBottom: '8px' }}>
+                Unable to check automatic updates. You can download the latest APK directly from GitHub.
+              </div>
+              <button
+                onClick={() => openExternalUrl(updateInfo?.downloadUrl || 'https://github.com/ayushmanchakraborty254-create/Resonate/releases/latest')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '12px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Download size={13} />
+                <span>Download Latest APK</span>
+              </button>
+            </div>
           ) : updateCheckStatus === 'up-to-date' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4ade80', fontSize: '12px', marginTop: '6px' }}>
               <CheckCircle2 size={15} />

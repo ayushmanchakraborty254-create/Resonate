@@ -1,7 +1,10 @@
 // Platform detection, native bridge, and GitHub update checker
 
 export const CURRENT_APP_VERSION = 'v1.0.0';
-export const CURRENT_BUILD_COMMIT = 'b44b873';
+export const CURRENT_BUILD_COMMIT = 'a89a9ef';
+export const GITHUB_REPO = 'ayushmanchakraborty254-create/Resonate';
+export const DEFAULT_APK_DOWNLOAD_URL = `https://github.com/${GITHUB_REPO}/releases/latest/download/Resonate-v1.0.0.apk`;
+export const GITHUB_RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
 
 export interface UpdateInfo {
   hasUpdate: boolean;
@@ -53,13 +56,50 @@ function compareSemVer(a: [number, number, number], b: [number, number, number])
 }
 
 /**
- * Checks GitHub Releases API for new Resonate releases.
- * Handles semver tags as well as rolling 'latest' auto-builds intelligently.
+ * Checks GitHub Releases and raw version metadata for new Resonate releases.
+ * Uses a robust dual-source check (raw CDN version.json + GitHub Releases API)
+ * to prevent failing on GitHub rate limits (HTTP 403).
  */
 export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
   const current = CURRENT_APP_VERSION;
+  const currentCommit = CURRENT_BUILD_COMMIT.toLowerCase();
+  const lastInstalled = (localStorage.getItem('resonate_installed_commit') || '').toLowerCase();
+
+  // 1. First attempt: check raw version.json (Fastly/Cloudflare CDN, NO rate limits)
   try {
-    const res = await fetch('https://api.github.com/repos/ayushmanchakraborty254-create/Resonate/releases/latest', {
+    const rawRes = await fetch(
+      `https://raw.githubusercontent.com/${GITHUB_REPO}/main/version.json?t=${Date.now()}`,
+      { signal: AbortSignal.timeout(3000) }
+    );
+    if (rawRes.ok) {
+      const vData = await rawRes.json();
+      const remoteCommit = (vData.commitSha || '').trim().toLowerCase();
+      const remoteVersion = (vData.versionName ? `v${vData.versionName}` : vData.version || current).trim();
+      const isDismissed = localStorage.getItem('resonate_dismissed_update') === remoteCommit;
+
+      let hasUpdate = false;
+      if (!isDismissed && remoteCommit && remoteCommit !== currentCommit && remoteCommit !== lastInstalled) {
+        hasUpdate = true;
+      }
+
+      return {
+        hasUpdate,
+        currentVersion: current,
+        latestVersion: remoteVersion,
+        releaseName: vData.commitMessage || `Resonate Auto-Build (${remoteCommit || 'latest'})`,
+        releaseNotes: vData.commitMessage || 'Performance optimizations and mobile refinements.',
+        downloadUrl: vData.downloadUrl || DEFAULT_APK_DOWNLOAD_URL,
+        htmlUrl: GITHUB_RELEASES_URL,
+        releaseCommit: remoteCommit
+      };
+    }
+  } catch (_) {
+    // CDN check failed, fall through to GitHub API
+  }
+
+  // 2. Second attempt: GitHub Releases API
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
       headers: {
         'Accept': 'application/vnd.github.v3+json'
       },
@@ -83,21 +123,15 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
     if (remoteSem) {
       hasUpdate = compareSemVer(remoteSem, localSem) > 0;
     } else if (rawTag.toLowerCase().includes('latest') || releaseName.toLowerCase().includes('auto-build')) {
-      const currentCommit = CURRENT_BUILD_COMMIT.toLowerCase();
-      const lastInstalled = (localStorage.getItem('resonate_installed_commit') || '').toLowerCase();
       const isDismissed = localStorage.getItem('resonate_dismissed_update') === releaseCommit;
 
-      // If user dismissed this update, or already installed it, or matches current build, no update!
       if (isDismissed || (releaseCommit && (releaseCommit === currentCommit || releaseCommit === lastInstalled))) {
         hasUpdate = false;
       } else if (releaseCommit && currentCommit && releaseCommit !== currentCommit) {
         hasUpdate = true;
-      } else {
-        hasUpdate = false;
       }
     }
 
-    // Find apk asset download URL if available
     let apkDownloadUrl: string | undefined;
     if (Array.isArray(data.assets)) {
       const apkAsset = data.assets.find((a: any) => (a.name || '').toLowerCase().endsWith('.apk'));
@@ -112,19 +146,20 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
       latestVersion: rawTag || current,
       releaseName: releaseName,
       releaseNotes: data.body || 'No release notes provided.',
-      downloadUrl: apkDownloadUrl || data.html_url,
-      htmlUrl: data.html_url || 'https://github.com/ayushmanchakraborty254-create/Resonate/releases',
+      downloadUrl: apkDownloadUrl || DEFAULT_APK_DOWNLOAD_URL,
+      htmlUrl: data.html_url || GITHUB_RELEASES_URL,
       releaseCommit: releaseCommit
     };
   } catch (err) {
-    console.warn('[Resonate] Update check failed or offline:', err);
+    console.warn('[Resonate] Update check fallback:', err);
     return {
       hasUpdate: false,
       currentVersion: current,
       latestVersion: current,
-      releaseName: 'v1.0.0 Stable',
+      releaseName: 'Resonate v1.0.0',
       releaseNotes: 'Running on current build.',
-      htmlUrl: 'https://github.com/ayushmanchakraborty254-create/Resonate/releases'
+      downloadUrl: DEFAULT_APK_DOWNLOAD_URL,
+      htmlUrl: GITHUB_RELEASES_URL
     };
   }
 }

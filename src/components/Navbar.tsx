@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Search, Music, LogOut, User as UserIcon, Mic, Radio,
-  BarChart2, History, Download, X, Smartphone, Users
+  BarChart2, History, Download, X, Smartphone
 } from 'lucide-react';
 import type { Track } from '../types';
 import { POPULAR_TRACKS } from '../utils/youtube';
@@ -391,17 +391,59 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Mobile Top Actions (Reference Match: Image 4 & 5) */}
+            {/* Mobile Top Actions */}
             {isMobile && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {/* Music Recognizer Button (Prominent Glowing Mic) */}
+                <button
+                  onClick={onOpenRecognizer}
+                  style={{
+                    backgroundColor: 'rgba(141, 168, 214, 0.2)',
+                    color: '#8da8d6',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    border: '1px solid rgba(141, 168, 214, 0.45)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 10px rgba(141, 168, 214, 0.25)',
+                  }}
+                  title="Recognize Music (Metrolist / Shazam Engine)"
+                >
+                  <Mic size={17} />
+                </button>
+
+                {/* Listen Together Radio Room Button */}
+                <button
+                  onClick={onOpenListenTogether}
+                  style={{
+                    backgroundColor: 'rgba(167, 139, 250, 0.18)',
+                    color: '#c4b5fd',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    border: '1px solid rgba(167, 139, 250, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 10px rgba(167, 139, 250, 0.2)',
+                  }}
+                  title="Listen Together (Sync Rooms)"
+                >
+                  <Radio size={17} />
+                </button>
+
                 {/* Listening History */}
                 <button
                   onClick={onOpenHistory}
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#fff',
-                    padding: '6px',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    padding: '4px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -409,7 +451,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   }}
                   title="History"
                 >
-                  <History size={20} />
+                  <History size={19} />
                 </button>
 
                 {/* Stats / Trends */}
@@ -418,8 +460,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#fff',
-                    padding: '6px',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    padding: '4px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -427,28 +469,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   }}
                   title="Stats"
                 >
-                  <BarChart2 size={20} />
+                  <BarChart2 size={19} />
                 </button>
 
-                {/* Listen Together */}
-                <button
-                  onClick={onOpenListenTogether}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#fff',
-                    padding: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  title="Listen Together"
-                >
-                  <Users size={20} />
-                </button>
-
-                {/* Profile Avatar / Sign In (Navigates to Redesigned Profile View) */}
+                {/* Profile Avatar / Sign In */}
                 {user ? (
                   <div
                     onClick={() => setView('profile')}

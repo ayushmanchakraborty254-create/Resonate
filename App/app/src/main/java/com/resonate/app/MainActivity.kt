@@ -35,10 +35,19 @@ class MainActivity : AppCompatActivity() {
         @android.webkit.JavascriptInterface
         fun openExternalUrl(url: String) {
             try {
-                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                val uri = android.net.Uri.parse(url)
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
                 intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                this@MainActivity.startActivity(intent)
-            } catch (_: Exception) {}
+                val chooser = android.content.Intent.createChooser(intent, "Download Resonate Update")
+                chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                this@MainActivity.startActivity(chooser)
+            } catch (_: Exception) {
+                try {
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    this@MainActivity.startActivity(intent)
+                } catch (_: Exception) {}
+            }
         }
 
         @android.webkit.JavascriptInterface
@@ -154,6 +163,16 @@ class MainActivity : AppCompatActivity() {
         webView.addJavascriptInterface(AppNativeBridge(), "ResonateNative")
 
         webView.setBackgroundColor(Color.parseColor("#0a0a0a"))
+
+        // Route any file download or APK download link to external browser / download manager
+        webView.setDownloadListener { url, _, _, _, _ ->
+            try {
+                val uri = android.net.Uri.parse(url)
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                this@MainActivity.startActivity(intent)
+            } catch (_: Exception) {}
+        }
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(

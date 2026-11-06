@@ -60,23 +60,23 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       lyrics: `[Die With A Smile - Lady Gaga & Bruno Mars]`
     },
     {
-      id: 'eVtxu9c36y0',
+      id: 'eVli-tstM5E',
       title: 'Espresso',
       artist: 'Sabrina Carpenter',
       album: 'Short n\' Sweet',
       duration: 175,
-      thumbnailUrl: 'https://img.youtube.com/vi/eVtxu9c36y0/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=eVtxu9c36y0',
+      thumbnailUrl: 'https://img.youtube.com/vi/eVli-tstM5E/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=eVli-tstM5E',
       lyrics: `[Espresso - Sabrina Carpenter]`
     },
     {
-      id: 'd5gf9dXb4AU',
+      id: 'V9PVRfjEBTI',
       title: 'BIRDS OF A FEATHER',
       artist: 'Billie Eilish',
       album: 'HIT ME HARD AND SOFT',
       duration: 194,
-      thumbnailUrl: 'https://img.youtube.com/vi/d5gf9dXb4AU/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=d5gf9dXb4AU',
+      thumbnailUrl: 'https://img.youtube.com/vi/V9PVRfjEBTI/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=V9PVRfjEBTI',
       lyrics: `[BIRDS OF A FEATHER - Billie Eilish]`
     },
     {
@@ -343,19 +343,26 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   backgroundColor: '#181a20'
                 }}
               >
-                <img
-                  src={track.thumbnailUrl}
-                  alt={track.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                <ArtisticCover
+                  title={track.title}
+                  subtitle={track.artist}
+                  thumbnailUrl={track.thumbnailUrl}
+                  aspectRatio="1"
+                  rounded="10px"
+                  showVinyl={false}
+                  showBadge={false}
+                  style={{ width: '100%', height: '100%' }}
                 />
                 <div
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
                     display: 'flex',
                     alignItems: 'flex-end',
-                    padding: '8px 6px'
+                    padding: '8px 6px',
+                    pointerEvents: 'none',
+                    zIndex: 3,
                   }}
                 >
                   <span
@@ -426,11 +433,18 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   cursor: 'pointer'
                 }}
               >
-                <img 
-                  src={track.thumbnailUrl} 
-                  alt={track.title} 
-                  style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover' }} 
-                />
+                <div style={{ width: '48px', height: '48px', flexShrink: 0 }}>
+                  <ArtisticCover 
+                    title={track.title}
+                    subtitle={track.artist}
+                    thumbnailUrl={track.thumbnailUrl}
+                    size={48}
+                    aspectRatio="1"
+                    rounded="6px"
+                    showVinyl={false}
+                    showBadge={false}
+                  />
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: '15px', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {track.title}

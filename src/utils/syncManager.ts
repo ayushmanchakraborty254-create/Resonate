@@ -142,49 +142,67 @@ export class YouTubeProvider implements MusicProvider {
   private async getPlaylistTracks(playlistId: string): Promise<UnifiedTrack[]> {
     const token = localStorage.getItem('resonate_google_access_token');
     if (!token) return [];
-    const url = `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistId}&part=snippet&maxResults=25`;
+
+    const allTracks: UnifiedTrack[] = [];
+    const seenIds = new Set<string>();
+    let pageToken = '';
+    let pagesFetched = 0;
+    const maxPages = 4; // Retrieve up to 200 tracks per playlist
 
     try {
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      do {
+        const pageParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '';
+        const url = `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistId}&part=snippet&maxResults=50${pageParam}`;
 
-      if (!res.ok) {
-        let errMsg = `HTTP Status: ${res.status}`;
-        try {
-          const errData = await res.json();
-          errMsg = errData.error?.message || JSON.stringify(errData);
-        } catch (_) {}
-        console.error("YouTube PlaylistItems Request Failed:", { url, status: res.status, error: errMsg });
-        throw new Error(`YouTube PlaylistItems API Error: ${errMsg}`);
-      }
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-      const data = await res.json();
-      const tracks = data.items ? data.items.map((item: any) => {
-        const videoId = item.snippet?.resourceId?.videoId || '';
-        return {
-          id: videoId,
-          title: item.snippet?.title || 'Unknown Title',
-          artist: item.snippet?.videoOwnerChannelTitle || item.snippet?.channelTitle || 'Unknown Artist',
-          duration: 240,
-          thumbnailUrl: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || `https://img.youtube.com/vi/${videoId}/0.jpg`,
-          source: 'youtube',
-          externalUrl: `https://www.youtube.com/watch?v=${videoId}`,
-          availableSources: [`yo:${videoId}`]
-        };
-      }).filter((t: UnifiedTrack) => t.id !== '') : [];
+        if (!res.ok) {
+          if (pagesFetched > 0) break;
+          let errMsg = `HTTP Status: ${res.status}`;
+          try {
+            const errData = await res.json();
+            errMsg = errData.error?.message || JSON.stringify(errData);
+          } catch (_) {}
+          throw new Error(`YouTube PlaylistItems API Error: ${errMsg}`);
+        }
+
+        const data = await res.json();
+        if (data.items) {
+          for (const item of data.items) {
+            const videoId = item.snippet?.resourceId?.videoId || '';
+            // Filter duplicates and invalid tracks
+            if (videoId && !seenIds.has(videoId)) {
+              seenIds.add(videoId);
+              allTracks.push({
+                id: videoId,
+                title: item.snippet?.title || 'Unknown Title',
+                artist: item.snippet?.videoOwnerChannelTitle || item.snippet?.channelTitle || 'Unknown Artist',
+                duration: 240,
+                thumbnailUrl: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || `https://img.youtube.com/vi/${videoId}/0.jpg`,
+                source: 'youtube',
+                externalUrl: `https://www.youtube.com/watch?v=${videoId}`,
+                availableSources: [`yo:${videoId}`]
+              });
+            }
+          }
+        }
+
+        pageToken = data.nextPageToken || '';
+        pagesFetched++;
+      } while (pageToken && pagesFetched < maxPages);
 
       console.log("YouTube PlaylistItems Request Succeeded:", {
-        url,
         playlistId,
-        status: res.status,
-        tracksImported: tracks.length
+        tracksImported: allTracks.length,
+        pagesFetched
       });
 
-      return tracks;
+      return allTracks;
     } catch (e: any) {
       console.error(`Error fetching playlistTracks for ${playlistId}:`, e);
-      throw e;
+      return allTracks;
     }
   }
 

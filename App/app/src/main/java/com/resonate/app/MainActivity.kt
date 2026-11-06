@@ -535,14 +535,13 @@ class MainActivity : AppCompatActivity() {
             allowFileAccessFromFileURLs = true
             allowUniversalAccessFromFileURLs = true
             mediaPlaybackRequiresUserGesture = false
-            cacheMode = WebSettings.LOAD_NO_CACHE
+            cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             useWideViewPort = true
             loadWithOverviewMode = true
             userAgentString = "$userAgentString ResonateNativeApp/1.0.0"
         }
 
-        webView.clearCache(true)
         webView.addJavascriptInterface(AppNativeBridge(), "ResonateNative")
         webView.setBackgroundColor(Color.parseColor("#0a0a0a"))
 
@@ -639,12 +638,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Keep music playing uninterrupted in background when app is minimized or window loses focus
+    // Keep music player state cleanly synced across window focus and minimize/restore events
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         try {
             if (::webView.isInitialized) {
+                if (hasFocus) {
+                    webView.onResume()
+                    webView.resumeTimers()
+                    dispatchRemote("appResumed")
+                }
+            }
+        } catch (_: Exception) {}
+    }
+
+    override fun onResume() {
+        super.onResume()
+        try {
+            if (::webView.isInitialized) {
+                webView.onResume()
                 webView.resumeTimers()
+                dispatchRemote("appResumed")
             }
         } catch (_: Exception) {}
     }
@@ -653,7 +667,8 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         try {
             if (::webView.isInitialized) {
-                webView.resumeTimers()
+                dispatchRemote("appPaused")
+                webView.onPause()
             }
         } catch (_: Exception) {}
     }
@@ -662,7 +677,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         try {
             if (::webView.isInitialized) {
-                webView.resumeTimers()
+                dispatchRemote("appStopped")
             }
         } catch (_: Exception) {}
     }

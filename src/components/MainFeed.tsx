@@ -510,21 +510,46 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     return TRENDING_MUSIC_HITS;
   }, [isUserLoggedIn, userPlaylistTracks, TRENDING_MUSIC_HITS]);
 
-  // Quick picks items
+  // User listening history for behavior-based personalization
+  const userListeningHistory = React.useMemo<Track[]>(() => {
+    try {
+      const raw = localStorage.getItem('resonate_history');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const seen = new Set<string>();
+          return parsed.filter((t: Track) => {
+            if (!t?.id || seen.has(t.id)) return false;
+            seen.add(t.id);
+            return true;
+          });
+        }
+      }
+    } catch (_) {}
+    return [];
+  }, []);
+
+  // Quick picks items: learns from actual listening history, then user playlist tracks, then trending hits
   const quickPicksTracks = React.useMemo<Track[]>(() => {
+    if (userListeningHistory.length >= 4) {
+      return userListeningHistory.slice(0, 4);
+    }
     if (isUserLoggedIn && userPlaylistTracks.length >= 4) {
       return userPlaylistTracks.slice(0, 4);
     }
     return TRENDING_MUSIC_HITS.slice(0, 4);
-  }, [isUserLoggedIn, userPlaylistTracks, TRENDING_MUSIC_HITS]);
+  }, [userListeningHistory, isUserLoggedIn, userPlaylistTracks, TRENDING_MUSIC_HITS]);
 
-  // Listen again shelf
+  // Listen again shelf: powered directly by user's actual playback history
   const listenAgainTracks = React.useMemo<Track[]>(() => {
+    if (userListeningHistory.length > 0) {
+      return userListeningHistory.slice(0, 8);
+    }
     if (isUserLoggedIn && userPlaylistTracks.length > 0) {
       return userPlaylistTracks.slice(0, 8);
     }
     return POPULAR_TRACKS.slice(0, 8);
-  }, [isUserLoggedIn, userPlaylistTracks]);
+  }, [userListeningHistory, isUserLoggedIn, userPlaylistTracks]);
 
   // Explore categories
   const exploreCategories = [

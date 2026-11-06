@@ -111,6 +111,11 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
   const isLiked = currentTrack ? likedTracks.some((t) => t.id === currentTrack.id) : false;
 
+  // Player State Architecture: reflects real YouTube player status, never assumed
+  const [playerStatus, setPlayerStatus] = useState<'idle' | 'loading' | 'playing' | 'paused' | 'buffering' | 'interrupted' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [needsResumeGesture, setNeedsResumeGesture] = useState<boolean>(false);
+
   const isPlayingRef = useRef(isPlaying);
   useEffect(() => {
     isPlayingRef.current = isPlaying;
@@ -137,22 +142,25 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
   };
 
-  // Keep background audio active when window blurs or document visibility changes
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (isPlayingRef.current && playerRef.current?.playVideo) {
-        playerRef.current.playVideo();
+  // Explicit user-gesture playback controller (complies with browser & YouTube autoplay policy)
+  const togglePlayback = () => {
+    if (!playerRef.current) return;
+    if (isPlaying) {
+      if (typeof playerRef.current.pauseVideo === 'function') {
+        playerRef.current.pauseVideo();
       }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('blur', handleVisibility);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('blur', handleVisibility);
-    };
-  }, []);
+    } else {
+      setNeedsResumeGesture(false);
+      setStatusMessage(null);
+      if (typeof playerRef.current.playVideo === 'function') {
+        playerRef.current.playVideo();
+      } else if (currentTrack && typeof playerRef.current.loadVideoById === 'function') {
+        playerRef.current.loadVideoById(currentTrack.id, progress);
+      }
+    }
+  };
 
-  // Initialize YouTube Iframe Player
+  // Initialize YouTube Iframe Player (Compliant with official 200x200 min viewport)
   useEffect(() => {
     if (!window.YT) {
       const tag = document.createElement('script');
@@ -170,11 +178,11 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     function initPlayer() {
       if (playerRef.current) return;
       playerRef.current = new window.YT.Player(iframeContainerId, {
-        height: '1',
-        width: '1',
+        height: '240',
+        width: '240',
         videoId: currentTrack?.id || '',
         playerVars: {
-          autoplay: 1,
+          autoplay: 0,
           controls: 0,
           disablekb: 1,
           fs: 0,
@@ -183,37 +191,54 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
           showinfo: 0,
           iv_load_policy: 3,
           playsinline: 1,
+          origin: window.location.origin
         },
         events: {
-          onReady: () => {
-            if (currentTrack) {
-              playerRef.current.loadVideoById(currentTrack.id, progress);
-              if (isPlaying) {
-                playerRef.current.playVideo();
-              } else {
-                playerRef.current.pauseVideo();
-              }
+          onReady: (event: any) => {
+            setPlayerStatus('idle');
+            if (currentTrack?.id) {
+              try {
+                // Cue saved position without forcing unprompted autoplay
+                event.target.cueVideoById(currentTrack.id, progress);
+              } catch (_) {}
             }
           },
           onStateChange: (event: any) => {
-            // YT.PlayerState.ENDED = 0
-            if (event.data === 0) {
+            const state = event.data;
+            // YouTube Player States:
+            // -1: UNSTARTED, 0: ENDED, 1: PLAYING, 2: PAUSED, 3: BUFFERING, 5: CUED
+            if (state === 1) { // PLAYING
+              setPlayerStatus('playing');
+              setIsPlaying(true);
+              setNeedsResumeGesture(false);
+              setStatusMessage(null);
+            } else if (state === 2) { // PAUSED
+              setPlayerStatus('paused');
+              setIsPlaying(false);
+              // Respect pause; do NOT attempt aggressive restart loops
+            } else if (state === 3) { // BUFFERING
+              setPlayerStatus('buffering');
+            } else if (state === 0) { // ENDED
+              setPlayerStatus('idle');
+              setIsPlaying(false);
               onNextRef.current();
-            } else if (event.data === 2 && isPlayingRef.current) {
-              // Auto-resume background audio when minimized or window blurs
-              setTimeout(() => {
-                if (isPlayingRef.current && playerRef.current?.playVideo) {
-                  playerRef.current.playVideo();
-                }
-              }, 40);
+            } else if (state === 5) { // CUED
+              setPlayerStatus('idle');
+              setIsPlaying(false);
             }
           },
           onError: (event: any) => {
             console.warn('[Resonate] YouTube Player error:', event.data);
-            // 150/101: Embedding not allowed, 100: Video removed/not found, 2: Invalid id
-            if (event.data === 150 || event.data === 101 || event.data === 100 || event.data === 2) {
-              console.warn('[Resonate] Track unavailable, auto-advancing to next track...');
-              setTimeout(() => onNextRef.current(), 800);
+            setPlayerStatus('error');
+            setIsPlaying(false);
+            if (event.data === 150 || event.data === 101) {
+              setStatusMessage('Embedded playback restricted by video owner. Skipping...');
+              setTimeout(() => onNextRef.current(), 1500);
+            } else if (event.data === 100 || event.data === 2) {
+              setStatusMessage('Track unavailable on YouTube. Skipping...');
+              setTimeout(() => onNextRef.current(), 1500);
+            } else {
+              setStatusMessage('Playback error occurred.');
             }
           },
         },
@@ -221,17 +246,14 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     }
   }, []);
 
-  // Sync Video Loading with currentTrack
+  // Sync Video Loading with currentTrack (cues/loads on explicit track selection)
   useEffect(() => {
-    if (playerRef.current && playerRef.current.loadVideoById && currentTrack) {
-      playerRef.current.loadVideoById(currentTrack.id);
-      if (isPlaying) {
-        playerRef.current.playVideo();
-      } else {
-        playerRef.current.pauseVideo();
-      }
+    if (playerRef.current && typeof playerRef.current.loadVideoById === 'function' && currentTrack?.id) {
+      playerRef.current.loadVideoById(currentTrack.id, 0);
+      setNeedsResumeGesture(false);
+      setStatusMessage(null);
     }
-  }, [currentTrack]);
+  }, [currentTrack?.id]);
 
   // Sync Player Volume
   useEffect(() => {
@@ -362,23 +384,20 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     }
   }, [currentTrack?.id, isPlaying, duration, onNext, onPrev]);
 
-  // Two-way Remote Control Dispatcher (invoked by Native Android Notification Actions)
+  // Two-way Remote Control Dispatcher (invoked by Native Android Notification Actions & App Lifecycle)
   useEffect(() => {
     (window as any).resonateRemoteControl = (action: string, param?: number) => {
+      if (!playerRef.current) return;
       if (action === 'play') {
-        setIsPlaying(true);
-        if (playerRef.current?.playVideo) playerRef.current.playVideo();
-      } else if (action === 'pause') {
-        setIsPlaying(false);
-        if (playerRef.current?.pauseVideo) playerRef.current.pauseVideo();
-      } else if (action === 'toggle') {
-        const nextState = !isPlayingRef.current;
-        setIsPlaying(nextState);
-        if (nextState) {
-          if (playerRef.current?.playVideo) playerRef.current.playVideo();
-        } else {
-          if (playerRef.current?.pauseVideo) playerRef.current.pauseVideo();
+        if (typeof playerRef.current.playVideo === 'function') {
+          playerRef.current.playVideo();
         }
+      } else if (action === 'pause') {
+        if (typeof playerRef.current.pauseVideo === 'function') {
+          playerRef.current.pauseVideo();
+        }
+      } else if (action === 'toggle') {
+        togglePlayback();
       } else if (action === 'next') {
         onNextRef.current();
       } else if (action === 'prev') {
@@ -386,34 +405,41 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
       } else if (action === 'seek' && typeof param === 'number') {
         setProgress(param);
         if (playerRef.current?.seekTo) playerRef.current.seekTo(param, true);
+      } else if (action === 'appPaused') {
+        // App minimized: mark state as interrupted so UI displays tap to resume cleanly on return
+        setPlayerStatus('interrupted');
+      } else if (action === 'appResumed') {
+        // App returned to foreground: verify actual player status
+        if (typeof playerRef.current.getPlayerState === 'function') {
+          const st = playerRef.current.getPlayerState();
+          if (st !== 1) { // Not playing
+            setNeedsResumeGesture(true);
+            setStatusMessage('Playback paused • Tap to resume');
+          }
+        }
       }
     };
 
     return () => {
       delete (window as any).resonateRemoteControl;
     };
-  }, [setIsPlaying]);
+  }, []);
 
-  // Track progress updates (poll at 100ms with float precision for sub-second smooth sync)
+  // Track progress updates (poll at 500ms strictly for seeker reading, zero aggressive restart loops)
   useEffect(() => {
     if (isPlaying) {
       progressIntervalRef.current = setInterval(() => {
-        if (!isDragging && playerRef.current && playerRef.current.getCurrentTime && playerRef.current.getDuration) {
-          const curr = playerRef.current.getCurrentTime();
-          const dur = playerRef.current.getDuration() || currentTrack?.duration || 0;
-          if (typeof curr === 'number' && !isNaN(curr)) {
-            setProgress(curr);
-          }
-          if (dur > 0) setDuration(Math.floor(dur));
-
-          // Background auto-resume watchdog: if browser blurred/minimized and paused video unexpectedly
-          if (isPlayingRef.current && typeof playerRef.current.getPlayerState === 'function') {
-            if (playerRef.current.getPlayerState() === 2) {
-              playerRef.current.playVideo();
+        if (!isDragging && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+          try {
+            const curr = playerRef.current.getCurrentTime();
+            const dur = playerRef.current.getDuration?.() || currentTrack?.duration || 0;
+            if (typeof curr === 'number' && !isNaN(curr)) {
+              setProgress(curr);
             }
-          }
+            if (dur > 0) setDuration(Math.floor(dur));
+          } catch (_) {}
         }
-      }, 100);
+      }, 500);
     } else {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -485,21 +511,27 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
   return (
     <>
-      {/* Active Off-Screen YouTube player container (Never display:none to prevent Chromium/WebView throttling) */}
+      {/* Official YouTube Embed Player Stage (Fully compliant with 200x200 min viewport) */}
       <div 
         style={{ 
-          position: 'fixed', 
-          top: '-9999px', 
-          left: '-9999px', 
-          width: '200px', 
-          height: '200px', 
-          opacity: 0.01, 
-          pointerEvents: 'none', 
-          zIndex: -999 
+          position: mobilePlayerState === 'full' ? 'relative' : 'fixed', 
+          bottom: mobilePlayerState === 'full' ? 'auto' : '84px', 
+          right: mobilePlayerState === 'full' ? 'auto' : '16px', 
+          width: mobilePlayerState === 'full' ? 'min(78vw, 320px)' : '240px', 
+          height: mobilePlayerState === 'full' ? 'min(78vw, 320px)' : '240px', 
+          borderRadius: '16px',
+          overflow: 'hidden',
+          backgroundColor: '#0a0a0a',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          zIndex: mobilePlayerState === 'full' ? 5 : -1,
+          pointerEvents: mobilePlayerState === 'full' ? 'auto' : 'none',
+          visibility: currentTrack ? 'visible' : 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }} 
-        aria-hidden="true"
       >
-        <div id={iframeContainerId}></div>
+        <div id={iframeContainerId} style={{ width: '100%', height: '100%' }}></div>
       </div>
 
       {!isMobile ? (
@@ -518,7 +550,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 />
                 <div className="player-track-info">
                   <div className="player-title">{currentTrack.title}</div>
-                  <div className="player-artist">{currentTrack.artist}</div>
+                  <div className="player-artist">
+                    {currentTrack.artist}
+                    {playerStatus === 'buffering' ? ' • Buffering...' : ''}
+                  </div>
                 </div>
                 <button
                   className={`icon-btn ${isLiked ? 'active' : ''}`}
@@ -555,7 +590,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
               <button
                 className="icon-btn icon-btn-large"
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={togglePlayback}
                 disabled={!currentTrack}
               >
                 {isPlaying ? <Pause size={20} fill="#000" /> : <Play size={20} fill="#000" style={{ transform: 'translateX(1px)' }} />}
@@ -742,7 +777,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setIsPlaying(!isPlaying);
+                        togglePlayback();
                       }}
                       style={{
                         position: 'absolute',
@@ -773,8 +808,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     <div style={{ fontWeight: 600, fontSize: '14px', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {currentTrack.title}
                     </div>
-                    <div style={{ color: 'rgba(255, 255, 255, 0.55)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {currentTrack.artist}
+                    <div style={{ color: needsResumeGesture ? '#93c5fd' : 'rgba(255, 255, 255, 0.55)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: needsResumeGesture ? 600 : 400 }}>
+                      {needsResumeGesture ? 'Tap to resume' : currentTrack.artist}
                     </div>
                   </div>
                 </div>
@@ -1031,6 +1066,30 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       </div>
                     </div>
 
+                    {needsResumeGesture && (
+                      <div 
+                        onClick={togglePlayback}
+                        style={{
+                          marginBottom: '16px',
+                          padding: '10px 16px',
+                          background: 'rgba(59, 130, 246, 0.15)',
+                          border: '1px solid rgba(59, 130, 246, 0.35)',
+                          borderRadius: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <span style={{ fontSize: '13px', color: '#bfdbfe', fontWeight: 600 }}>
+                          {statusMessage || 'Playback paused • Tap to resume'}
+                        </span>
+                        <div style={{ background: '#2563eb', color: '#fff', padding: '4px 12px', borderRadius: '16px', fontSize: '12px', fontWeight: 700 }}>
+                          Resume
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                       <button className={`icon-btn ${isShuffle ? 'active' : ''}`} onClick={() => setIsShuffle(!isShuffle)}>
                         <Shuffle size={18} />
@@ -1042,7 +1101,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         <RotateCcw size={20} />
                       </button>
                       <button 
-                        onClick={() => setIsPlaying(!isPlaying)} 
+                        onClick={togglePlayback} 
                         style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', color: '#000', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(255,255,255,0.1)' }}
                       >
                         {isPlaying ? <Pause size={26} fill="#000" /> : <Play size={26} fill="#000" style={{ transform: 'translateX(2px)' }} />}

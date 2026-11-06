@@ -5,7 +5,6 @@
 
 export const SPOTIFY_CONFIG = {
   clientId: '820f794c097f42cfa1dc22b0bbdf922b',
-  clientSecret: '2369006275b54b6d82a7f0b7532902c6',
   redirectUri: () => window.location.origin + window.location.pathname,
   scopes: [
     'user-library-read',
@@ -121,11 +120,6 @@ export class SpotifyAuthManager {
           'Content-Type': 'application/x-www-form-urlencoded',
         };
 
-        // Use Basic Auth with client secret if present
-        if (SPOTIFY_CONFIG.clientSecret) {
-          headers['Authorization'] = 'Basic ' + btoa(`${SPOTIFY_CONFIG.clientId}:${SPOTIFY_CONFIG.clientSecret}`);
-        }
-
         const res = await fetch('https://accounts.spotify.com/api/token', {
           method: 'POST',
           headers,
@@ -173,10 +167,6 @@ export class SpotifyAuthManager {
       const headers: Record<string, string> = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-
-      if (SPOTIFY_CONFIG.clientSecret) {
-        headers['Authorization'] = 'Basic ' + btoa(`${SPOTIFY_CONFIG.clientId}:${SPOTIFY_CONFIG.clientSecret}`);
-      }
 
       const res = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',

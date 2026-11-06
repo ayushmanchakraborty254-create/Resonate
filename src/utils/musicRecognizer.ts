@@ -80,40 +80,7 @@ export class MusicRecognizer {
       }
     };
 
-    this.mediaRecorder.start(1000);
-  }
-
-  /**
-   * Captures an in-flight snapshot blob of audio recorded so far without stopping
-   */
-  async requestSnapshot(): Promise<Blob | null> {
-    if (!this.mediaRecorder || this.mediaRecorder.state !== 'recording') return null;
-    return new Promise((resolve) => {
-      const onData = (e: BlobEvent) => {
-        if (e.data.size > 0) {
-          this.audioChunks.push(e.data);
-        }
-        resolve(new Blob(this.audioChunks, { type: 'audio/webm' }));
-      };
-      this.mediaRecorder!.addEventListener('dataavailable', onData, { once: true });
-      try {
-        this.mediaRecorder!.requestData();
-      } catch (_) {
-        resolve(null);
-      }
-    });
-  }
-
-  /**
-   * Tests recognition on an in-flight snapshot (returns null instead of throwing)
-   */
-  async testSnapshotRecognize(snapshotBlob: Blob): Promise<RecognizedTrack | null> {
-    try {
-      const match = await this.queryRecognitionEngine(snapshotBlob);
-      return match;
-    } catch (_) {
-      return null;
-    }
+    this.mediaRecorder.start();
   }
 
   /**
@@ -223,7 +190,7 @@ export class MusicRecognizer {
             thumbnailUrl:
               data.result.spotify?.album?.images?.[0]?.url ||
               data.result.apple_music?.artwork?.url?.replace('{w}x{h}', '400x400') ||
-              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+              `https://img.youtube.com/vi/${data.result.youtube?.vid || 'kJQP7kiw5Fk'}/hqdefault.jpg`,
             releaseDate: data.result.release_date,
             recognizedAt: Date.now(),
           };

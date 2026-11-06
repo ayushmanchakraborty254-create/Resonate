@@ -68,3 +68,4 @@ export function useTrackLyrics(currentTrack: Track | null): string {
 
   return lyrics;
 }
+

@@ -7,7 +7,6 @@ import type { Track, Playlist } from '../types';
 import { useBreakpoint } from '../utils/responsive';
 import { 
   POPULAR_TRACKS,
-  SPEED_DIAL_ITEMS,
   NOSTALGIC_SHELF,
   NEW_RELEASES_SHELF,
   COMMUNITY_PLAYLISTS,
@@ -48,57 +47,166 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId);
   const [selectedMood, setSelectedMood] = useState('Podcasts');
 
-  // Dynamic User Preference Engine:
-  // Merges user's liked tracks and recent listening history.
-  // If fresh install or no preferences, seamlessly defaults to the world's most famous hits.
-  const userPreferences = React.useMemo<Track[]>(() => {
-    let history: Track[] = [];
-    try {
-      const raw = localStorage.getItem('resonate_history');
-      if (raw) history = JSON.parse(raw);
-    } catch (_) {}
+  // Verified Top Trending Music Hits (Curated music videos only, no shorts or non-music videos)
+  const TRENDING_MUSIC_HITS = React.useMemo<Track[]>(() => [
+    {
+      id: 'LHCob76kigA',
+      title: 'Die With A Smile',
+      artist: 'Lady Gaga & Bruno Mars',
+      album: 'Single',
+      duration: 251,
+      thumbnailUrl: 'https://img.youtube.com/vi/LHCob76kigA/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=LHCob76kigA',
+      lyrics: `[Die With A Smile - Lady Gaga & Bruno Mars]`
+    },
+    {
+      id: 'eVtxu9c36y0',
+      title: 'Espresso',
+      artist: 'Sabrina Carpenter',
+      album: 'Short n\' Sweet',
+      duration: 175,
+      thumbnailUrl: 'https://img.youtube.com/vi/eVtxu9c36y0/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=eVtxu9c36y0',
+      lyrics: `[Espresso - Sabrina Carpenter]`
+    },
+    {
+      id: 'd5gf9dXb4AU',
+      title: 'BIRDS OF A FEATHER',
+      artist: 'Billie Eilish',
+      album: 'HIT ME HARD AND SOFT',
+      duration: 194,
+      thumbnailUrl: 'https://img.youtube.com/vi/d5gf9dXb4AU/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=d5gf9dXb4AU',
+      lyrics: `[BIRDS OF A FEATHER - Billie Eilish]`
+    },
+    {
+      id: 'ekr2nIex040',
+      title: 'APT.',
+      artist: 'ROSÉ & Bruno Mars',
+      album: 'rosie',
+      duration: 173,
+      thumbnailUrl: 'https://img.youtube.com/vi/ekr2nIex040/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=ekr2nIex040',
+      lyrics: `[APT. - ROSÉ & Bruno Mars]`
+    },
+    {
+      id: '4NRXx6U8ABQ',
+      title: 'Blinding Lights',
+      artist: 'The Weeknd',
+      album: 'After Hours',
+      duration: 200,
+      thumbnailUrl: 'https://img.youtube.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=4NRXx6U8ABQ',
+      lyrics: `[Blinding Lights - The Weeknd]`
+    },
+    {
+      id: 'JGwWNGJdvx8',
+      title: 'Shape of You',
+      artist: 'Ed Sheeran',
+      album: '÷ (Divide)',
+      duration: 233,
+      thumbnailUrl: 'https://img.youtube.com/vi/JGwWNGJdvx8/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=JGwWNGJdvx8',
+      lyrics: `[Shape of You - Ed Sheeran]`
+    },
+    {
+      id: 'kJQP7kiw5Fk',
+      title: 'Despacito',
+      artist: 'Luis Fonsi ft. Daddy Yankee',
+      album: 'VIDA',
+      duration: 228,
+      thumbnailUrl: 'https://img.youtube.com/vi/kJQP7kiw5Fk/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk',
+      lyrics: `[Despacito - Luis Fonsi ft. Daddy Yankee]`
+    },
+    {
+      id: 'OPf0YbXqDm0',
+      title: 'Uptown Funk',
+      artist: 'Mark Ronson ft. Bruno Mars',
+      album: 'Uptown Special',
+      duration: 270,
+      thumbnailUrl: 'https://img.youtube.com/vi/OPf0YbXqDm0/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=OPf0YbXqDm0',
+      lyrics: `[Uptown Funk - Mark Ronson ft. Bruno Mars]`
+    },
+    {
+      id: '7wtfhZwyrcc',
+      title: 'Believer',
+      artist: 'Imagine Dragons',
+      album: 'Evolve',
+      duration: 204,
+      thumbnailUrl: 'https://img.youtube.com/vi/7wtfhZwyrcc/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=7wtfhZwyrcc',
+      lyrics: `[Believer - Imagine Dragons]`
+    }
+  ], []);
 
-    const combined = [...likedTracks, ...history];
+  // Account Login State
+  const isUserLoggedIn = React.useMemo(() => {
+    try {
+      return Boolean(
+        localStorage.getItem('resonate_google_access_token') ||
+        localStorage.getItem('resonate_user') ||
+        localStorage.getItem('resonate_auth_user')
+      );
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Playlist & Music Library Scraper (Active ONLY when logged into account):
+  // Filters out shorts and non-music videos (e.g. duration < 60s, "#shorts")
+  const userPlaylistTracks = React.useMemo<Track[]>(() => {
+    if (!isUserLoggedIn) return [];
+
+    const allFromPlaylists = playlists.flatMap((p) => p.tracks || []);
+    const combined = [...likedTracks, ...allFromPlaylists];
     const seen = new Set<string>();
-    const unique: Track[] = [];
+    const filtered: Track[] = [];
+
     for (const t of combined) {
       if (t && t.id && !seen.has(t.id)) {
+        // Exclude shorts or micro videos (< 60 seconds)
+        if (t.duration && t.duration < 60) continue;
+        if (t.title.toLowerCase().includes('#shorts') || t.title.toLowerCase().includes('#short')) continue;
         seen.add(t.id);
-        unique.push(t);
+        filtered.push(t);
       }
     }
-    return unique;
-  }, [likedTracks]);
+    return filtered;
+  }, [isUserLoggedIn, playlists, likedTracks]);
 
-  // Speed Dial items (3x3 grid)
+  // Speed Dial (Quick dial 3x3):
+  // 1. If logged in with scanned playlists/favourites: use their verified playlist tracks
+  // 2. If not logged in: strictly use verified trending music hits (no unauthenticated random history/shorts)
   const speedDialTracks = React.useMemo<Track[]>(() => {
-    if (userPreferences.length >= 4) {
-      const preferred = userPreferences.slice(0, 9);
+    if (isUserLoggedIn && userPlaylistTracks.length >= 4) {
+      const preferred = userPlaylistTracks.slice(0, 9);
       if (preferred.length < 9) {
         const pIds = new Set(preferred.map((p) => p.id));
-        const fillers = SPEED_DIAL_ITEMS.filter((f) => !pIds.has(f.id));
+        const fillers = TRENDING_MUSIC_HITS.filter((f) => !pIds.has(f.id));
         return [...preferred, ...fillers].slice(0, 9);
       }
       return preferred;
     }
-    return SPEED_DIAL_ITEMS;
-  }, [userPreferences]);
+    return TRENDING_MUSIC_HITS;
+  }, [isUserLoggedIn, userPlaylistTracks, TRENDING_MUSIC_HITS]);
 
   // Quick picks items
   const quickPicksTracks = React.useMemo<Track[]>(() => {
-    if (userPreferences.length >= 4) {
-      return userPreferences.slice(0, 4);
+    if (isUserLoggedIn && userPlaylistTracks.length >= 4) {
+      return userPlaylistTracks.slice(0, 4);
     }
-    return POPULAR_TRACKS.slice(0, 4);
-  }, [userPreferences]);
+    return TRENDING_MUSIC_HITS.slice(0, 4);
+  }, [isUserLoggedIn, userPlaylistTracks, TRENDING_MUSIC_HITS]);
 
   // Listen again shelf
   const listenAgainTracks = React.useMemo<Track[]>(() => {
-    if (userPreferences.length > 0) {
-      return userPreferences.slice(0, 8);
+    if (isUserLoggedIn && userPlaylistTracks.length > 0) {
+      return userPlaylistTracks.slice(0, 8);
     }
     return POPULAR_TRACKS.slice(0, 8);
-  }, [userPreferences]);
+  }, [isUserLoggedIn, userPlaylistTracks]);
 
   // Explore categories
   const exploreCategories = [
@@ -353,6 +461,33 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   subtitle={track.artist}
                   thumbnailUrl={track.thumbnailUrl}
                   tag="POPULAR"
+                  size="100%"
+                  rounded="10px"
+                  showVinyl={true}
+                />
+                <div className="card-title">{track.title}</div>
+                <div className="card-subtitle">{track.artist}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Top Trending Worldwide Hits (Verified Official Music Videos) */}
+        <div className="home-section">
+          <div className="section-title">
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <TrendingUp size={18} style={{ color: '#ec4899' }} />
+              Trending Worldwide
+            </span>
+          </div>
+          <div className="shelf-scroll">
+            {TRENDING_MUSIC_HITS.map((track) => (
+              <div key={'trend-' + track.id} className="song-card" onClick={() => onPlayTrack(track)}>
+                <ArtisticCover
+                  title={track.title}
+                  subtitle={track.artist}
+                  thumbnailUrl={track.thumbnailUrl}
+                  tag="TRENDING"
                   size="100%"
                   rounded="10px"
                   showVinyl={true}

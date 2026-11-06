@@ -140,12 +140,15 @@ class MainActivity : AppCompatActivity() {
             allowFileAccessFromFileURLs = true
             allowUniversalAccessFromFileURLs = true
             mediaPlaybackRequiresUserGesture = false
-            cacheMode = WebSettings.LOAD_DEFAULT
+            cacheMode = WebSettings.LOAD_NO_CACHE
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             useWideViewPort = true
             loadWithOverviewMode = true
             userAgentString = "$userAgentString ResonateNativeApp/1.0.0"
         }
+
+        // Clear stale WebView cache to ensure newly compiled assets load immediately
+        webView.clearCache(true)
 
         // Inject Native App detection bridge
         webView.addJavascriptInterface(AppNativeBridge(), "ResonateNative")

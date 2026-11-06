@@ -42,42 +42,20 @@ export const MusicRecognizerModal: React.FC<MusicRecognizerModalProps> = ({
         setVolumeLevel(vol);
       });
 
-      // Adaptive Listening Flow:
-      // Step 1: At 3.5s, check if we already have an unambiguous match.
-      // If yes, stop listening and show result immediately (instant match)!
-      const fastTimer = setTimeout(async () => {
+      // Listen for 5.5 seconds to capture a high-fidelity continuous acoustic sample
+      const listenTimer = setTimeout(async () => {
         try {
-          const snapshot = await musicRecognizer.requestSnapshot();
-          if (snapshot) {
-            const quickMatch = await musicRecognizer.testSnapshotRecognize(snapshot);
-            if (quickMatch) {
-              musicRecognizer.cancel();
-              musicRecognizer.saveToHistory(quickMatch);
-              setResult(quickMatch);
-              setStage('result');
-              setHistoryList(musicRecognizer.getHistory());
-              return;
-            }
-          }
-        } catch (_) {}
+          const match = await musicRecognizer.stopAndRecognize();
+          setResult(match);
+          setStage('result');
+          setHistoryList(musicRecognizer.getHistory());
+        } catch (err: any) {
+          setError(err.message || 'Could not recognize music. Please ensure song is playing clearly.');
+          setStage('listening');
+        }
+      }, 5500);
 
-        // Step 2: If not yet recognized (covers, instrumentals, low-volume),
-        // keep listening up to 8.5 seconds to build a deeper acoustic spectrum.
-        const deepTimer = setTimeout(async () => {
-          try {
-            const match = await musicRecognizer.stopAndRecognize();
-            setResult(match);
-            setStage('result');
-            setHistoryList(musicRecognizer.getHistory());
-          } catch (err: any) {
-            setError(err.message || 'Could not recognize music.');
-            setStage('listening');
-          }
-        }, 5000);
-        timersRef.current.push(deepTimer);
-      }, 3500);
-
-      timersRef.current.push(fastTimer);
+      timersRef.current.push(listenTimer);
     } catch (err: any) {
       setError(err.message || 'Microphone access denied or unavailable.');
     }

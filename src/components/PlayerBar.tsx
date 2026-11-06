@@ -239,13 +239,15 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     };
   }, [isPlaying, isDragging, currentTrack]);
 
-  // Smooth seeker drag handlers & immediate seek execution
-  const handleSliderMouseDown = () => {
+  // Smooth seeker drag handlers & immediate seek execution (isolated from swipe gesture)
+  const handleSliderMouseDown = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e && e.stopPropagation) e.stopPropagation();
     setIsDragging(true);
     setDragProgress(progress);
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     const val = parseInt(e.target.value, 10);
     setDragProgress(val);
     setProgress(val);
@@ -254,7 +256,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     }
   };
 
-  const handleSliderMouseUp = () => {
+  const handleSliderMouseUp = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e && e.stopPropagation) e.stopPropagation();
     setIsDragging(false);
     setProgress(dragProgress);
     if (playerRef.current && playerRef.current.seekTo) {
@@ -713,7 +716,12 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       </div>
                     </div>
 
-                    <div style={{ marginBottom: '24px' }}>
+                    <div 
+                      style={{ marginBottom: '24px' }}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                      onTouchEnd={(e) => e.stopPropagation()}
+                    >
                       <input 
                         type="range" 
                         className="slider"

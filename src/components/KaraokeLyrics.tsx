@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { hasIndicScript, transliterateToRomanized } from '../utils/transliterate';
 
 export interface LyricLine {
   text: string;
@@ -152,6 +153,9 @@ export const KaraokeLyrics: React.FC<KaraokeLyricsProps> = ({
     );
   }
 
+  const isIndic = useMemo(() => hasIndicScript(lyrics), [lyrics]);
+  const [scriptMode, setScriptMode] = useState<'english' | 'native'>('english');
+
   // Active line progress percentage for word-by-word karaoke sweep
   const activeLine = activeIndex >= 0 ? lines[activeIndex] : null;
   const lineProgressRatio = activeLine && !activeLine.isHeader
@@ -173,9 +177,53 @@ export const KaraokeLyrics: React.FC<KaraokeLyricsProps> = ({
         WebkitOverflowScrolling: 'touch',
       }}
     >
+      {/* Script / Language Toggle for Multilingual Songs (Hindi/Bengali -> Romanized English) */}
+      {isIndic && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '16px' }}>
+          <div style={{ display: 'inline-flex', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '3px' }}>
+            <button
+              onClick={() => setScriptMode('english')}
+              style={{
+                border: 'none',
+                background: scriptMode === 'english' ? 'var(--yt-accent, #e50914)' : 'transparent',
+                color: '#fff',
+                borderRadius: '16px',
+                padding: '4px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              English (Hinglish/Banglish)
+            </button>
+            <button
+              onClick={() => setScriptMode('native')}
+              style={{
+                border: 'none',
+                background: scriptMode === 'native' ? 'var(--yt-accent, #e50914)' : 'transparent',
+                color: '#fff',
+                borderRadius: '16px',
+                padding: '4px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Native Script
+            </button>
+          </div>
+        </div>
+      )}
+
       {lines.map((line, idx) => {
         const isActive = idx === activeIndex;
         const isPast = idx < activeIndex;
+
+        const displayText = isIndic && scriptMode === 'english' && !line.isHeader
+          ? transliterateToRomanized(line.text)
+          : line.text;
 
         if (line.isHeader) {
           return (
@@ -191,13 +239,13 @@ export const KaraokeLyrics: React.FC<KaraokeLyricsProps> = ({
                 opacity: 0.8,
               }}
             >
-              {line.text}
+              {displayText}
             </div>
           );
         }
 
         // Active line with word-by-word progressive gradient reveal
-        const words = line.text.split(' ');
+        const words = displayText.split(' ');
 
         return (
           <div
@@ -261,7 +309,7 @@ export const KaraokeLyrics: React.FC<KaraokeLyricsProps> = ({
                   transition: 'color 0.3s ease',
                 }}
               >
-                {line.text}
+                {displayText}
               </span>
             )}
           </div>

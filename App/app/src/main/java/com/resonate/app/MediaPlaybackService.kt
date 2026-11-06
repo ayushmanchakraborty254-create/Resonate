@@ -119,7 +119,15 @@ class MediaPlaybackService : Service() {
             ).build()
         )
 
-        val notification = notifBuilder.build()
+        // Ensure MediaStyle with active MediaSession is always applied so Android Quick Settings media player card is preserved
+        MainActivity.activeMediaSession?.let { session ->
+            val mediaStyle = Notification.MediaStyle()
+                .setMediaSession(session.sessionToken)
+                .setShowActionsInCompactView(0, 1)
+            notifBuilder.setStyle(mediaStyle)
+        }
+
+        val notification = MainActivity.activeMediaNotification ?: notifBuilder.build()
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

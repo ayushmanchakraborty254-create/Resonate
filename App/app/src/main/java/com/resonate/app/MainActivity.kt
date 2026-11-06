@@ -48,6 +48,11 @@ class MainActivity : AppCompatActivity() {
     private val POST_NOTIF_PERMISSION_REQUEST = 1002
     private var pendingPermissionRequest: PermissionRequest? = null
 
+    companion object {
+        var activeMediaSession: MediaSession? = null
+        var activeMediaNotification: Notification? = null
+    }
+
     private var mediaSession: MediaSession? = null
     private val NOTIFICATION_ID = 777
     private val CHANNEL_ID = "resonate_playback_channel"
@@ -373,7 +378,9 @@ class MainActivity : AppCompatActivity() {
                 ).build()
             )
 
-            nm.notify(NOTIFICATION_ID, notifBuilder.build())
+            val notif = notifBuilder.build()
+            activeMediaNotification = notif
+            nm.notify(NOTIFICATION_ID, notif)
 
             // Start Android Foreground Media Service to guarantee continuous background audio
             try {
@@ -454,6 +461,7 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
+        activeMediaSession = mediaSession
 
         // Register BroadcastReceiver for media button actions
         val filter = IntentFilter().apply {
@@ -631,7 +639,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Keep music playing in background when app is minimized
+    // Keep music playing uninterrupted in background when app is minimized or window loses focus
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        try {
+            if (::webView.isInitialized) {
+                webView.resumeTimers()
+            }
+        } catch (_: Exception) {}
+    }
+
     override fun onPause() {
         super.onPause()
         try {

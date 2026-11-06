@@ -149,14 +149,14 @@ I guess that I forgot I had a choice
 I let you push me past the breaking point`
   },
   {
-    id: 'fnPxkuFIA48',
+    id: 'kPa7bsKwL-c',
     title: 'Die With A Smile',
     artist: 'Lady Gaga & Bruno Mars',
     album: 'Single',
     duration: 251,
-    thumbnailUrl: 'https://img.youtube.com/vi/fnPxkuFIA48/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=fnPxkuFIA48',
-    lyrics: `[Lady Gaga, Bruno Mars - Die With A Smile]
+    thumbnailUrl: 'https://img.youtube.com/vi/kPa7bsKwL-c/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=kPa7bsKwL-c',
+    lyrics: `[Lady Gaga, Bruno Mars - Die With A Smile (Official Studio Master)]
 (Ooh, ooh)
 I, I just woke up from a dream
 Where you and I had to say goodbye
@@ -167,33 +167,33 @@ But since I survived, I realized`
 
 export const SPEED_DIAL_ITEMS: Track[] = [
   {
-    id: 'K6MlhX0Q3sQ',
-    title: "Hedwig's Theme",
-    artist: 'John Williams',
+    id: 'jTPXwbDtIpA',
+    title: "Hedwig's Theme (Piano)",
+    artist: 'Patrik Pietschmann',
     album: "Harry Potter OST",
     duration: 310,
-    thumbnailUrl: 'https://img.youtube.com/vi/K6MlhX0Q3sQ/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=K6MlhX0Q3sQ',
+    thumbnailUrl: 'https://img.youtube.com/vi/jTPXwbDtIpA/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=jTPXwbDtIpA',
     lyrics: `[Hedwig's Theme - Orchestral Instrumental]`
   },
   {
-    id: 'gSuhcWpX2_A',
+    id: 'HeBJMzrM7hU',
     title: 'Naadaniyan',
     artist: 'Akshath',
     album: 'Single',
     duration: 172,
-    thumbnailUrl: 'https://img.youtube.com/vi/gSuhcWpX2_A/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=gSuhcWpX2_A',
+    thumbnailUrl: 'https://img.youtube.com/vi/HeBJMzrM7hU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=HeBJMzrM7hU',
     lyrics: `[Naadaniyan - Akshath]`
   },
   {
-    id: 'zlt3bhMWw_E',
+    id: 'piUHBTXsoiY',
     title: 'Raabta',
     artist: 'Arijit Singh',
     album: 'Agent Vinod',
     duration: 244,
-    thumbnailUrl: 'https://img.youtube.com/vi/zlt3bhMWw_E/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=zlt3bhMWw_E',
+    thumbnailUrl: 'https://img.youtube.com/vi/piUHBTXsoiY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=piUHBTXsoiY',
     lyrics: `[Raabta - Arijit Singh]`
   },
   {
@@ -237,23 +237,23 @@ export const SPEED_DIAL_ITEMS: Track[] = [
     lyrics: `[Interstellar on Piano - Patrik Pietschmann]`
   },
   {
-    id: 'd_k8qFzOuhE',
+    id: 'TbjbZFqLEtw',
     title: 'Mere Naam Tu (From Zero)',
     artist: 'Abhay Jodhpurkar, Ajay-Atul',
     album: 'Zero',
     duration: 338,
-    thumbnailUrl: 'https://img.youtube.com/vi/d_k8qFzOuhE/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=d_k8qFzOuhE',
+    thumbnailUrl: 'https://img.youtube.com/vi/TbjbZFqLEtw/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=TbjbZFqLEtw',
     lyrics: `[Mere Naam Tu - Zero]`
   },
   {
-    id: '0kFhPVAhV_o',
+    id: '_D0ZQPqeJkk',
     title: 'Star Wars Main Theme',
     artist: 'John Williams',
     album: 'Star Wars OST',
     duration: 215,
-    thumbnailUrl: 'https://img.youtube.com/vi/0kFhPVAhV_o/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=0kFhPVAhV_o',
+    thumbnailUrl: 'https://img.youtube.com/vi/_D0ZQPqeJkk/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=_D0ZQPqeJkk',
     lyrics: `[Star Wars Theme - John Williams]`
   }
 ];
@@ -270,23 +270,23 @@ export const NOSTALGIC_SHELF: Track[] = [
     lyrics: `[That's What I Like - Bruno Mars]`
   },
   {
-    id: 'zlt3bhMWw_E',
+    id: 'piUHBTXsoiY',
     title: 'Raabta (00s Evergreen)',
     artist: 'Arijit Singh, Pritam',
     album: 'Agent Vinod',
     duration: 244,
-    thumbnailUrl: 'https://img.youtube.com/vi/zlt3bhMWw_E/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=zlt3bhMWw_E',
+    thumbnailUrl: 'https://img.youtube.com/vi/piUHBTXsoiY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=piUHBTXsoiY',
     lyrics: `[Raabta - Arijit Singh]`
   },
   {
-    id: 'd_k8qFzOuhE',
+    id: 'TbjbZFqLEtw',
     title: 'Mere Naam Tu',
     artist: 'Abhay Jodhpurkar, Ajay-Atul',
     album: 'Zero',
     duration: 338,
-    thumbnailUrl: 'https://img.youtube.com/vi/d_k8qFzOuhE/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=d_k8qFzOuhE',
+    thumbnailUrl: 'https://img.youtube.com/vi/TbjbZFqLEtw/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=TbjbZFqLEtw',
     lyrics: `[Mere Naam Tu - Zero]`
   },
   {
@@ -323,13 +323,13 @@ export const NOSTALGIC_SHELF: Track[] = [
 
 export const NEW_RELEASES_SHELF: Track[] = [
   {
-    id: '1F3hm6MfR1k',
+    id: 'E1C_fP9AgjU',
     title: 'Hukum - Thalaivar Alappara',
     artist: 'Anirudh Ravichander',
     album: 'Jailer Single',
     duration: 208,
-    thumbnailUrl: 'https://i.ytimg.com/vi/1F3hm6MfR1k/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
+    thumbnailUrl: 'https://img.youtube.com/vi/E1C_fP9AgjU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=E1C_fP9AgjU',
     lyrics: `[Hukum - Anirudh]`
   },
   {
@@ -431,40 +431,163 @@ export const COMMUNITY_PLAYLISTS = [
 
 export const MUSIC_VIDEOS_SHELF: Track[] = [
   {
-    id: 'K6MlhX0Q3sQ',
+    id: '8EiyyrIYmgY',
+    title: 'Zara Zara x Tinka Tinka (Sitar Version)',
+    artist: 'Rishab Rikhiram Sharma • 9.4m views',
+    album: 'Sitar Series',
+    duration: 254,
+    thumbnailUrl: 'https://img.youtube.com/vi/8EiyyrIYmgY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=8EiyyrIYmgY'
+  },
+  {
+    id: 'YxzIwX5g_eY',
+    title: 'Formula 1 — Hans Zimmer (OST F1 Movie) | Live by Imperial Orchestra',
+    artist: 'Imperial Orchestra • 13m views',
+    album: 'Live Concert',
+    duration: 334,
+    thumbnailUrl: 'https://img.youtube.com/vi/YxzIwX5g_eY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=YxzIwX5g_eY'
+  },
+  {
+    id: 'A57B7B6w3kw',
+    title: 'Stars',
+    artist: 'Marshmello • 674m views',
+    album: 'Single',
+    duration: 246,
+    thumbnailUrl: 'https://img.youtube.com/vi/A57B7B6w3kw/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=A57B7B6w3kw'
+  },
+  {
+    id: 'BNi9fOjXx-Y',
+    title: 'The Storm',
+    artist: 'Yanni • 53m views',
+    album: 'Yanni Live!',
+    duration: 225,
+    thumbnailUrl: 'https://img.youtube.com/vi/BNi9fOjXx-Y/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=BNi9fOjXx-Y'
+  },
+  {
+    id: 'jTPXwbDtIpA',
     title: "Hedwig's Theme (Orchestral Video)",
     artist: 'Patrik Pietschmann • 30m views',
     album: 'Orchestral',
     duration: 310,
-    thumbnailUrl: 'https://img.youtube.com/vi/K6MlhX0Q3sQ/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=K6MlhX0Q3sQ'
+    thumbnailUrl: 'https://img.youtube.com/vi/jTPXwbDtIpA/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=jTPXwbDtIpA'
   },
   {
-    id: 'gSuhcWpX2_A',
+    id: 'giA1Y3VB3CM',
     title: 'KALYANI Official Music Video',
     artist: 'ARJN, KDS, FIFTY4 & Ronn • 59m views',
     album: 'Single',
     duration: 215,
-    thumbnailUrl: 'https://img.youtube.com/vi/gSuhcWpX2_A/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=gSuhcWpX2_A'
+    thumbnailUrl: 'https://img.youtube.com/vi/giA1Y3VB3CM/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=giA1Y3VB3CM'
+  }
+];
+
+export const DAILY_DISCOVER_SHELF: Track[] = [
+  {
+    id: 'ApXoWvfEYVU',
+    title: 'Sunflower (Remix)',
+    artist: 'Post Malone, Swae Lee',
+    album: 'Spider-Man OST',
+    duration: 158,
+    thumbnailUrl: 'https://img.youtube.com/vi/ApXoWvfEYVU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=ApXoWvfEYVU'
   },
   {
-    id: 'zlt3bhMWw_E',
-    title: 'Satranga - Animal | Melodious Flute Cover',
-    artist: 'Swarnim Maharjan • 104k views',
-    album: 'Animal OST',
-    duration: 260,
-    thumbnailUrl: 'https://img.youtube.com/vi/zlt3bhMWw_E/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=zlt3bhMWw_E'
+    id: 'Ptk_1Dc2iPY',
+    title: 'Canon in D',
+    artist: 'Brooklyn Duo • 173m plays',
+    album: 'Cello & Piano',
+    duration: 295,
+    thumbnailUrl: 'https://img.youtube.com/vi/Ptk_1Dc2iPY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=Ptk_1Dc2iPY'
   },
   {
-    id: 'OPf0YbXqDm0',
-    title: "It's A Man's Man's Man's World (Live)",
-    artist: 'James Brown & Luciano Pavarotti • 141m views',
-    album: 'Live Concert',
-    duration: 335,
-    thumbnailUrl: 'https://img.youtube.com/vi/OPf0YbXqDm0/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=OPf0YbXqDm0'
+    id: 'KNtJGQkC-WI',
+    title: "we can't be friends (wait for your love)",
+    artist: 'Ariana Grande • 880m plays',
+    album: 'eternal sunshine',
+    duration: 228,
+    thumbnailUrl: 'https://img.youtube.com/vi/KNtJGQkC-WI/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=KNtJGQkC-WI'
+  },
+  {
+    id: 'ZuLbiwhehTo',
+    title: 'Another Love',
+    artist: 'PianoX • 12m plays',
+    album: 'Piano Series',
+    duration: 244,
+    thumbnailUrl: 'https://img.youtube.com/vi/ZuLbiwhehTo/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=ZuLbiwhehTo'
+  },
+  {
+    id: 'eVli-tstM5E',
+    title: 'Espresso',
+    artist: 'Sabrina Carpenter • 900m plays',
+    album: "Short n' Sweet",
+    duration: 175,
+    thumbnailUrl: 'https://img.youtube.com/vi/eVli-tstM5E/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=eVli-tstM5E'
+  }
+];
+
+export const INDIAS_BIGGEST_HITS_SHELF: Track[] = [
+  {
+    id: '5rHzi_5rSyw',
+    title: 'Hits of 2026 (So Far)',
+    artist: 'Shashwat Sachdev, Raushan Rohi',
+    album: 'Hits 2026',
+    duration: 238,
+    thumbnailUrl: 'https://img.youtube.com/vi/5rHzi_5rSyw/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=5rHzi_5rSyw'
+  },
+  {
+    id: 'piUHBTXsoiY',
+    title: 'Uncut Bollywood',
+    artist: 'Arijit Singh, Pritam, Irshad Kamil',
+    album: 'Classics',
+    duration: 244,
+    thumbnailUrl: 'https://img.youtube.com/vi/piUHBTXsoiY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=piUHBTXsoiY'
+  },
+  {
+    id: 'TbjbZFqLEtw',
+    title: 'Bollywood Romance Hitlist',
+    artist: 'Abhay Jodhpurkar, Ajay-Atul',
+    album: 'Zero',
+    duration: 338,
+    thumbnailUrl: 'https://img.youtube.com/vi/TbjbZFqLEtw/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=TbjbZFqLEtw'
+  },
+  {
+    id: 'HeBJMzrM7hU',
+    title: 'Hindi Indie',
+    artist: 'Akshath, Ramil Ganjoo, Anuv Jain',
+    album: 'Indie Wave',
+    duration: 172,
+    thumbnailUrl: 'https://img.youtube.com/vi/HeBJMzrM7hU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=HeBJMzrM7hU'
+  },
+  {
+    id: 'I0-IiiVgvyU',
+    title: 'The Short List India',
+    artist: 'B Praak, Shreya Ghoshal',
+    album: 'Kesari',
+    duration: 314,
+    thumbnailUrl: 'https://img.youtube.com/vi/I0-IiiVgvyU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=I0-IiiVgvyU'
+  },
+  {
+    id: 'E1C_fP9AgjU',
+    title: 'Hukum - Thalaivar Alappara',
+    artist: 'Anirudh Ravichander',
+    album: 'Jailer',
+    duration: 207,
+    thumbnailUrl: 'https://img.youtube.com/vi/E1C_fP9AgjU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=E1C_fP9AgjU'
   }
 ];
 
@@ -517,13 +640,13 @@ export const EXTENDED_CATALOG: Track[] = [
     lyrics: `[Raabta - Arijit Singh]`
   },
   {
-    id: '1F3hm6MfR1k',
+    id: 'E1C_fP9AgjU',
     title: 'Hukum',
     artist: 'Anirudh Ravichander',
     album: 'Jailer',
     duration: 207,
-    thumbnailUrl: 'https://i.ytimg.com/vi/1F3hm6MfR1k/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
+    thumbnailUrl: 'https://img.youtube.com/vi/E1C_fP9AgjU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=E1C_fP9AgjU',
     lyrics: `[Hukum - Anirudh]`
   },
   {

@@ -12,7 +12,9 @@ import {
   NEW_RELEASES_SHELF,
   COMMUNITY_PLAYLISTS,
   MUSIC_VIDEOS_SHELF,
-  QUICK_PICKS_EXPANDED
+  QUICK_PICKS_EXPANDED,
+  DAILY_DISCOVER_SHELF,
+  INDIAS_BIGGEST_HITS_SHELF
 } from '../utils/youtube';
 import { PlaylistCover } from './PlaylistCover';
 import { ArtisticCover } from './ArtisticCover';
@@ -91,18 +93,41 @@ export const MainFeed: React.FC<MainFeedProps> = ({
     }
   };
 
+  const musicVideosScrollRef = React.useRef<HTMLDivElement>(null);
+  const dailyDiscoverScrollRef = React.useRef<HTMLDivElement>(null);
+  const indiasHitsScrollRef = React.useRef<HTMLDivElement>(null);
+  const [dailyDiscoverProgress, setDailyDiscoverProgress] = useState(0);
+
+  const handleShelfScroll = (ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
+    if (ref.current) {
+      const shift = direction === 'left' ? -360 : 360;
+      ref.current.scrollBy({ left: shift, behavior: 'smooth' });
+    }
+  };
+
+  const handleFeedImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
+  };
+
+  const handleFeedImgLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth === 120 && img.naturalHeight === 90) {
+      img.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
+    }
+  };
+
   // Verified Top Trending Music Hits (Curated music videos only, no shorts or non-music videos)
   // Verified Top Trending Music Hits (Curated official studio music tracks & verified instrumental covers only)
   const TRENDING_MUSIC_HITS = React.useMemo<Track[]>(() => [
     // Page 1: Global Mega-Hits
     {
-      id: 'fnPxkuFIA48',
+      id: 'kPa7bsKwL-c',
       title: 'Die With A Smile',
       artist: 'Lady Gaga & Bruno Mars',
       album: 'Single',
       duration: 251,
-      thumbnailUrl: 'https://i.ytimg.com/vi/fnPxkuFIA48/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=fnPxkuFIA48',
+      thumbnailUrl: 'https://i.ytimg.com/vi/kPa7bsKwL-c/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=kPa7bsKwL-c',
       lyrics: `[Die With A Smile - Lady Gaga & Bruno Mars]`
     },
     {
@@ -308,13 +333,13 @@ export const MainFeed: React.FC<MainFeedProps> = ({
       lyrics: `[Mere Naam Tu - Zero]`
     },
     {
-      id: '1F3hm6MfR1k',
+      id: 'E1C_fP9AgjU',
       title: 'Hukum',
       artist: 'Anirudh Ravichander',
       album: 'Jailer',
       duration: 207,
-      thumbnailUrl: 'https://i.ytimg.com/vi/1F3hm6MfR1k/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
+      thumbnailUrl: 'https://img.youtube.com/vi/E1C_fP9AgjU/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=E1C_fP9AgjU',
       lyrics: `[Hukum - Anirudh]`
     },
     {
@@ -857,6 +882,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                 <img
                   src={track.thumbnailUrl}
                   alt={track.title}
+                  onLoad={handleFeedImgLoad}
+                  onError={handleFeedImgError}
                   style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover' }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1116,12 +1143,67 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           </div>
         </div>
 
-        {/* 5. Music Videos For You (Page 8 of PDF) */}
-        <div className="home-section">
-          <div className="section-title">
-            <span>Music videos for you</span>
+        {/* 5. Music Videos For You (Page 8 of PDF - Reference Image 1) */}
+        <div className="home-section" style={{ marginBottom: '28px' }}>
+          <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <span style={{ fontSize: '20px', fontWeight: 800, color: '#fff' }}>Music videos for you</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  if (MUSIC_VIDEOS_SHELF.length > 0) onPlayTrack(MUSIC_VIDEOS_SHELF[0]);
+                }}
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  borderRadius: '16px',
+                  padding: '5px 12px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Play all
+              </button>
+              <button
+                onClick={() => handleShelfScroll(musicVideosScrollRef, 'left')}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+                aria-label="Previous music videos"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => handleShelfScroll(musicVideosScrollRef, 'right')}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+                aria-label="Next music videos"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-          <div className="shelf-scroll">
+          <div className="shelf-scroll" ref={musicVideosScrollRef} style={{ scrollBehavior: 'smooth' }}>
             {MUSIC_VIDEOS_SHELF.map((video) => (
               <div
                 key={video.id}
@@ -1142,9 +1224,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                     src={video.thumbnailUrl}
                     alt={video.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
-                    }}
+                    onLoad={handleFeedImgLoad}
+                    onError={handleFeedImgError}
                   />
                   <div
                     style={{
@@ -1169,6 +1250,213 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--yt-text-secondary)', marginTop: '2px' }}>
                   {video.artist} • {video.views}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 5B. Your Daily Discover (Reference Image 2) */}
+        <div className="home-section" style={{ marginBottom: '28px' }}>
+          <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <span style={{ fontSize: '20px', fontWeight: 800, color: '#fff' }}>Your daily discover</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  if (DAILY_DISCOVER_SHELF.length > 0) onPlayTrack(DAILY_DISCOVER_SHELF[0]);
+                }}
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  borderRadius: '16px',
+                  padding: '5px 12px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Play all
+              </button>
+              <button
+                onClick={() => handleShelfScroll(dailyDiscoverScrollRef, 'left')}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+                aria-label="Previous discover"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => handleShelfScroll(dailyDiscoverScrollRef, 'right')}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+                aria-label="Next discover"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+          <div
+            className="shelf-scroll"
+            ref={dailyDiscoverScrollRef}
+            style={{ scrollBehavior: 'smooth' }}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const max = el.scrollWidth - el.clientWidth;
+              if (max > 0) {
+                setDailyDiscoverProgress(Math.min(100, Math.max(0, (el.scrollLeft / max) * 100)));
+              }
+            }}
+          >
+            {DAILY_DISCOVER_SHELF.map((track) => (
+              <div
+                key={track.id}
+                style={{ width: '160px', flexShrink: 0, cursor: 'pointer' }}
+                onClick={() => onPlayTrack(track)}
+              >
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', boxShadow: '0 6px 18px rgba(0,0,0,0.5)' }}>
+                  <img
+                    src={track.thumbnailUrl}
+                    alt={track.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onLoad={handleFeedImgLoad}
+                    onError={handleFeedImgError}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundColor: 'rgba(0,0,0,0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Play size={16} fill="#fff" style={{ transform: 'translateX(1.5px)' }} />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {track.title}
+                </div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {track.artist}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Scroll progress track */}
+          <div style={{ width: '100%', height: '3px', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: '2px', marginTop: '12px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${dailyDiscoverProgress * 0.7}%`, width: '30%', backgroundColor: 'rgba(255,255,255,0.45)', borderRadius: '2px', transition: 'left 0.1s ease-out' }} />
+          </div>
+        </div>
+
+        {/* 5C. India's Biggest Hits (Reference Image 2) */}
+        <div className="home-section" style={{ marginBottom: '28px' }}>
+          <div style={{ marginBottom: '14px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '4px' }}>
+              MUSIC THAT'S HOT AND HAPPENING!
+            </div>
+            <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '20px', fontWeight: 800, color: '#fff' }}>India's biggest hits</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => handleShelfScroll(indiasHitsScrollRef, 'left')}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                  aria-label="Previous hits"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => handleShelfScroll(indiasHitsScrollRef, 'right')}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                  aria-label="Next hits"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="shelf-scroll" ref={indiasHitsScrollRef} style={{ scrollBehavior: 'smooth' }}>
+            {INDIAS_BIGGEST_HITS_SHELF.map((hit) => (
+              <div
+                key={hit.id}
+                style={{ width: '160px', flexShrink: 0, cursor: 'pointer' }}
+                onClick={() => onPlayTrack(hit)}
+              >
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '12px', overflow: 'hidden', marginBottom: '8px', boxShadow: '0 6px 18px rgba(0,0,0,0.5)' }}>
+                  <img
+                    src={hit.thumbnailUrl}
+                    alt={hit.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onLoad={handleFeedImgLoad}
+                    onError={handleFeedImgError}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '8px',
+                      left: '8px',
+                      background: 'rgba(0,0,0,0.6)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: '#fff',
+                      letterSpacing: '0.04em'
+                    }}
+                  >
+                    HITLIST
+                  </div>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {hit.title}
+                </div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {hit.artist}
                 </div>
               </div>
             ))}

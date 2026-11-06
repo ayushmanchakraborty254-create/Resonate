@@ -37,7 +37,7 @@ const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }
   '09R8_2nJtjg': { primary: '#d81b60', glow: 'rgba(216, 27, 96, 0.25)', bg: '#1c050f' }, // Sugar - Pink
   'rtOvBOTyXkk': { primary: '#e53935', glow: 'rgba(229, 57, 53, 0.25)', bg: '#1a0505' }, // Stressed Out - Red/Black
   'CevxZvSJLk8': { primary: '#ffb300', glow: 'rgba(255, 179, 0, 0.25)', bg: '#1c1706' }, // Roar - Gold/Orange
-  'fnPxkuFIA48': { primary: '#e50914', glow: 'rgba(229, 9, 20, 0.25)', bg: '#1c0505' }, // Die With A Smile - Crimson/Red
+  'kPa7bsKwL-c': { primary: '#e50914', glow: 'rgba(229, 9, 20, 0.25)', bg: '#1c0505' }, // Die With A Smile - Crimson/Red
 };
 
 const DEFAULT_THEME = { primary: '#ff0000', glow: 'rgba(255, 0, 0, 0.2)', bg: '#070707' };

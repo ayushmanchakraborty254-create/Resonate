@@ -111,6 +111,47 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
   const isLiked = currentTrack ? likedTracks.some((t) => t.id === currentTrack.id) : false;
 
+  const isPlayingRef = useRef(isPlaying);
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  const onNextRef = useRef(onNext);
+  useEffect(() => {
+    onNextRef.current = onNext;
+  }, [onNext]);
+
+  const onPrevRef = useRef(onPrev);
+  useEffect(() => {
+    onPrevRef.current = onPrev;
+  }, [onPrev]);
+
+  const handleCoverLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth === 120 && img.naturalHeight === 90) {
+      img.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
+    }
+  };
+
+  const handleCoverError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
+  };
+
+  // Keep background audio active when window blurs or document visibility changes
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (isPlayingRef.current && playerRef.current?.playVideo) {
+        playerRef.current.playVideo();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', handleVisibility);
+    };
+  }, []);
+
   // Initialize YouTube Iframe Player
   useEffect(() => {
     if (!window.YT) {
@@ -157,7 +198,14 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
           onStateChange: (event: any) => {
             // YT.PlayerState.ENDED = 0
             if (event.data === 0) {
-              onNext();
+              onNextRef.current();
+            } else if (event.data === 2 && isPlayingRef.current) {
+              // Auto-resume background audio when minimized or window blurs
+              setTimeout(() => {
+                if (isPlayingRef.current && playerRef.current?.playVideo) {
+                  playerRef.current.playVideo();
+                }
+              }, 40);
             }
           },
           onError: (event: any) => {
@@ -165,7 +213,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             // 150/101: Embedding not allowed, 100: Video removed/not found, 2: Invalid id
             if (event.data === 150 || event.data === 101 || event.data === 100 || event.data === 2) {
               console.warn('[Resonate] Track unavailable, auto-advancing to next track...');
-              setTimeout(() => onNext(), 800);
+              setTimeout(() => onNextRef.current(), 800);
             }
           },
         },
@@ -324,16 +372,17 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         setIsPlaying(false);
         if (playerRef.current?.pauseVideo) playerRef.current.pauseVideo();
       } else if (action === 'toggle') {
-        setIsPlaying(!isPlaying);
-        if (isPlaying) {
-          if (playerRef.current?.pauseVideo) playerRef.current.pauseVideo();
-        } else {
+        const nextState = !isPlayingRef.current;
+        setIsPlaying(nextState);
+        if (nextState) {
           if (playerRef.current?.playVideo) playerRef.current.playVideo();
+        } else {
+          if (playerRef.current?.pauseVideo) playerRef.current.pauseVideo();
         }
       } else if (action === 'next') {
-        onNext();
+        onNextRef.current();
       } else if (action === 'prev') {
-        onPrev();
+        onPrevRef.current();
       } else if (action === 'seek' && typeof param === 'number') {
         setProgress(param);
         if (playerRef.current?.seekTo) playerRef.current.seekTo(param, true);
@@ -343,7 +392,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     return () => {
       delete (window as any).resonateRemoteControl;
     };
-  }, [isPlaying, setIsPlaying, onNext, onPrev]);
+  }, [setIsPlaying]);
 
   // Track progress updates (poll at 100ms with float precision for sub-second smooth sync)
   useEffect(() => {
@@ -356,6 +405,13 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             setProgress(curr);
           }
           if (dur > 0) setDuration(Math.floor(dur));
+
+          // Background auto-resume watchdog: if browser blurred/minimized and paused video unexpectedly
+          if (isPlayingRef.current && typeof playerRef.current.getPlayerState === 'function') {
+            if (playerRef.current.getPlayerState() === 2) {
+              playerRef.current.playVideo();
+            }
+          }
         }
       }, 100);
     } else {
@@ -457,6 +513,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                   src={currentTrack.thumbnailUrl}
                   alt={currentTrack.title}
                   className="player-img"
+                  onLoad={handleCoverLoad}
+                  onError={handleCoverError}
                 />
                 <div className="player-track-info">
                   <div className="player-title">{currentTrack.title}</div>
@@ -671,6 +729,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     <img 
                       src={currentTrack.thumbnailUrl} 
                       alt={currentTrack.title} 
+                      onLoad={handleCoverLoad}
+                      onError={handleCoverError}
                       style={{ 
                         width: '100%', 
                         height: '100%', 
@@ -848,7 +908,13 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                               <span style={{ fontSize: '12px', color: isActive ? 'var(--yt-accent)' : 'var(--yt-text-secondary)', width: '20px', fontWeight: isActive ? 700 : 400 }}>
                                 {isActive ? <Disc size={13} className="spinning" /> : i + 1}
                               </span>
-                              <img src={track.thumbnailUrl} alt={track.title} style={{ width: '38px', height: '38px', borderRadius: '6px', objectFit: 'cover' }} />
+                              <img 
+                                src={track.thumbnailUrl} 
+                                alt={track.title} 
+                                onLoad={handleCoverLoad}
+                                onError={handleCoverError}
+                                style={{ width: '38px', height: '38px', borderRadius: '6px', objectFit: 'cover' }} 
+                              />
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: '13px', fontWeight: 600, color: isActive ? 'var(--yt-accent)' : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.title}</div>
                                 <div style={{ fontSize: '11px', color: 'var(--yt-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artist}</div>
@@ -915,6 +981,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                         <img 
                           src={currentTrack.thumbnailUrl} 
                           alt={currentTrack.title} 
+                          onLoad={handleCoverLoad}
+                          onError={handleCoverError}
                           style={{ width: '80vw', maxHeight: '80vw', aspectRatio: '1', borderRadius: '16px', objectFit: 'cover', boxShadow: '0 12px 48px rgba(0,0,0,0.6)' }} 
                         />
                       )}

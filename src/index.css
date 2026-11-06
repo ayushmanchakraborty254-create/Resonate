@@ -1213,7 +1213,7 @@ body {
   }
 }
 
-/* Material You 3-Tab Bottom Navigation Bar */
+/* Material You 3-Tab Bottom Navigation Bar (Ultra-sleek, adaptable to 3-button & gesture nav) */
 .bottom-nav,
 .bottom-nav-material {
   grid-area: bottomnav;
@@ -1224,8 +1224,8 @@ body {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  height: calc(64px + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: 52px;
+  padding: 0 4px;
   box-sizing: border-box;
   position: fixed;
   bottom: 0;
@@ -1239,7 +1239,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.55);
@@ -1248,7 +1248,7 @@ body {
   cursor: pointer;
   flex: 1;
   height: 100%;
-  padding: 6px 0;
+  padding: 2px 0;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1256,9 +1256,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 58px;
-  height: 30px;
-  border-radius: 16px;
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
   transition: all 0.25s ease;
 }
 

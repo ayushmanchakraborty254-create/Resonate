@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Music } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 interface PlaylistCoverProps {
   tracks?: Array<{ thumbnailUrl?: string }>;
@@ -159,7 +160,7 @@ export const PlaylistCover: React.FC<PlaylistCoverProps> = ({
       onClick={onClick}
     >
       <img
-        src="/logo.png"
+        src={logoImg}
         alt="Resonate"
         style={{
           width: typeof size === 'number' ? `${Math.max(20, Math.floor(size / 3))}px` : '42%',

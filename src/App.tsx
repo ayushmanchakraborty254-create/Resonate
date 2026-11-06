@@ -579,11 +579,11 @@ function App() {
         <div
           style={{
             position: 'fixed',
-            bottom: '145px',
-            right: '20px',
+            bottom: currentTrack ? '124px' : '62px',
+            right: '14px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '10px',
             zIndex: 60,
           }}
         >
@@ -591,9 +591,9 @@ function App() {
           <button
             onClick={() => setIsRecognizerOpen(true)}
             style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '16px',
+              width: '44px',
+              height: '44px',
+              borderRadius: '14px',
               backgroundColor: '#3b5478',
               color: '#fff',
               border: 'none',
@@ -606,16 +606,16 @@ function App() {
             }}
             title="Music Recognizer (Metrolist / Shazam)"
           >
-            <Mic size={20} />
+            <Mic size={19} />
           </button>
 
           {/* Floating Listen Together / Shuffle Room button */}
           <button
             onClick={() => setIsListenTogetherOpen(true)}
             style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '16px',
+              width: '44px',
+              height: '44px',
+              borderRadius: '14px',
               backgroundColor: '#384358',
               color: '#fff',
               border: 'none',
@@ -628,7 +628,7 @@ function App() {
             }}
             title="Listen Together Room"
           >
-            <Radio size={20} />
+            <Radio size={19} />
           </button>
         </div>
       )}

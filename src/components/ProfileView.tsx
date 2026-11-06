@@ -3,7 +3,7 @@ import {
   User as UserIcon, RefreshCw, Download, ArrowUpRight, CheckCircle2, 
   Sparkles, ExternalLink, LogOut, ArrowLeft, Trash2
 } from 'lucide-react';
-import { isNativeAndroidApp, checkGitHubReleaseUpdate, CURRENT_APP_VERSION, type UpdateInfo } from '../utils/appPlatform';
+import { isNativeAndroidApp, checkGitHubReleaseUpdate, openExternalUrl, CURRENT_APP_VERSION, type UpdateInfo } from '../utils/appPlatform';
 
 interface ProfileViewProps {
   user: { name: string; email: string; avatar?: string; isGoogle?: boolean } | null;
@@ -52,7 +52,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const handleUpdateNow = () => {
     if (!updateInfo) return;
     const targetUrl = updateInfo.downloadUrl || updateInfo.htmlUrl;
-    window.open(targetUrl, '_blank');
+    // Mark this release as acknowledged
+    try {
+      const commitMatch = updateInfo.releaseName.match(/\(([a-f0-9]{7,40})\)/i);
+      if (commitMatch && commitMatch[1]) {
+        localStorage.setItem('resonate_installed_commit', commitMatch[1]);
+      }
+    } catch (_) {}
+    openExternalUrl(targetUrl);
   };
 
   const handleClearCache = () => {
@@ -388,6 +395,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           href="https://github.com/ayushmanchakraborty254-create/Resonate"
           target="_blank"
           rel="noopener noreferrer"
+          onClick={(e) => {
+            e.preventDefault();
+            openExternalUrl('https://github.com/ayushmanchakraborty254-create/Resonate');
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',

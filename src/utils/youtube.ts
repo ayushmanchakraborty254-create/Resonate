@@ -600,62 +600,89 @@ export async function searchYouTube(query: string): Promise<Track[]> {
     return EXTENDED_CATALOG.slice(0, 12);
   }
 
-  const lowercaseQuery = query.toLowerCase().trim();
+  // 1. Smart multi-token local match (e.g., "golden hour - JVKE" matches title="golden hour" and artist="JVKE")
+  const cleanTokens = query.toLowerCase().replace(/[-–—]/g, ' ').split(/\s+/).filter(Boolean);
+  const localMatches = EXTENDED_CATALOG.filter((track) => {
+    const combinedText = `${track.title} ${track.artist} ${track.album || ''}`.toLowerCase();
+    return cleanTokens.every((token) => combinedText.includes(token));
+  });
 
-  // 1. Instant local match
-  const localMatches = EXTENDED_CATALOG.filter(
-    (track) =>
-      track.title.toLowerCase().includes(lowercaseQuery) ||
-      track.artist.toLowerCase().includes(lowercaseQuery) ||
-      (track.album && track.album.toLowerCase().includes(lowercaseQuery))
-  );
-
-  // 2. Fetch from active Piped instances with fast timeout
-  const pipedInstances = [
-    'https://pipedapi.kavin.rocks',
-    'https://api.piped.privacydev.net',
-    'https://pipedapi.drgns.space'
+  // 2. Fetch from active public search mirrors (Invidious & Piped) with resilient timeout
+  const searchEndpoints = [
+    {
+      url: `https://inv.nadeko.net/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
+      parse: (data: any) => (Array.isArray(data) ? data : [])
+        .filter((it: any) => it.videoId)
+        .slice(0, 15)
+        .map((item: any) => ({
+          id: item.videoId,
+          title: item.title || 'Untitled Song',
+          artist: item.author || 'Artist',
+          album: 'YouTube Music',
+          duration: item.lengthSeconds || 210,
+          thumbnailUrl: item.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${item.videoId}/0.jpg`,
+          youtubeUrl: `https://www.youtube.com/watch?v=${item.videoId}`,
+          lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
+        } as Track))
+    },
+    {
+      url: `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music_songs`,
+      parse: (data: any) => (data.items || data || [])
+        .filter((it: any) => it.url || it.id)
+        .slice(0, 15)
+        .map((item: any) => {
+          const vidId = (item.url ? item.url.replace('/watch?v=', '') : item.id) || '';
+          return {
+            id: vidId || `yt-${Math.random().toString(36).substring(7)}`,
+            title: item.title || 'Untitled Song',
+            artist: item.uploaderName || item.artist || 'Artist',
+            album: item.album || 'YouTube Music',
+            duration: item.duration || 210,
+            thumbnailUrl: item.thumbnail || `https://img.youtube.com/vi/${vidId}/0.jpg`,
+            youtubeUrl: `https://www.youtube.com/watch?v=${vidId}`,
+            lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
+          } as Track;
+        })
+    },
+    {
+      url: `https://invidious.nerdvpn.de/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
+      parse: (data: any) => (Array.isArray(data) ? data : [])
+        .filter((it: any) => it.videoId)
+        .slice(0, 15)
+        .map((item: any) => ({
+          id: item.videoId,
+          title: item.title || 'Untitled Song',
+          artist: item.author || 'Artist',
+          album: 'YouTube Music',
+          duration: item.lengthSeconds || 210,
+          thumbnailUrl: item.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${item.videoId}/0.jpg`,
+          youtubeUrl: `https://www.youtube.com/watch?v=${item.videoId}`,
+          lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
+        } as Track))
+    }
   ];
 
   try {
     const remotePromise = Promise.any(
-      pipedInstances.map(async (inst) => {
-        const res = await fetch(`${inst}/search?q=${encodeURIComponent(query)}&filter=music_songs`, {
-          signal: AbortSignal.timeout(2200)
-        });
-        if (!res.ok) throw new Error('Failed');
+      searchEndpoints.map(async (ep) => {
+        const res = await fetch(ep.url, { signal: AbortSignal.timeout(3000) });
+        if (!res.ok) throw new Error('Endpoint failed');
         const data = await res.json();
-        const items = data.items || data;
-        if (!Array.isArray(items) || items.length === 0) throw new Error('Empty');
-        return items
-          .filter((it: any) => it.url || it.id)
-          .slice(0, 15)
-          .map((item: any) => {
-            const vidId = (item.url ? item.url.replace('/watch?v=', '') : item.id) || '';
-            return {
-              id: vidId || `yt-${Math.random().toString(36).substring(7)}`,
-              title: item.title || 'Untitled Song',
-              artist: item.uploaderName || item.artist || 'Artist',
-              album: item.album || 'YouTube Music',
-              duration: item.duration || 210,
-              thumbnailUrl: item.thumbnail || `https://img.youtube.com/vi/${vidId}/0.jpg`,
-              youtubeUrl: `https://www.youtube.com/watch?v=${vidId}`,
-              lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
-            } as Track;
-          });
+        const parsed = ep.parse(data);
+        if (!parsed || parsed.length === 0) throw new Error('No items');
+        return parsed;
       })
     );
 
-    const remoteResults = await remotePromise;
+    const remoteResults = (await remotePromise) as Track[];
     if (remoteResults && remoteResults.length > 0) {
-      // Merge unique
-      const ids = new Set(remoteResults.map(r => r.id));
-      const combined = [...remoteResults, ...localMatches.filter(l => !ids.has(l.id))];
-      return combined;
+      const ids = new Set(remoteResults.map((r: Track) => r.id));
+      return [...remoteResults, ...localMatches.filter((l) => !ids.has(l.id))];
     }
   } catch (_) {
-    // If online search timed out or device is offline, gracefully return local matches
+    // Online endpoints timed out or offline
   }
 
-  return localMatches.length > 0 ? localMatches : POPULAR_TRACKS;
+  // Fallback to exact/fuzzy local matches, NEVER return random popular tracks for a specific search
+  return localMatches;
 }

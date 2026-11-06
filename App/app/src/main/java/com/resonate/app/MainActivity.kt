@@ -28,9 +28,18 @@ class MainActivity : AppCompatActivity() {
     private val RECORD_AUDIO_PERMISSION_REQUEST = 1001
     private var pendingPermissionRequest: PermissionRequest? = null
 
-    class AppNativeBridge {
+    inner class AppNativeBridge {
         @android.webkit.JavascriptInterface
         fun isNative(): Boolean = true
+
+        @android.webkit.JavascriptInterface
+        fun openExternalUrl(url: String) {
+            try {
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                this@MainActivity.startActivity(intent)
+            } catch (_: Exception) {}
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -87,6 +96,7 @@ class MainActivity : AppCompatActivity() {
         val assetLoader = WebViewAssetLoader.Builder()
             .setDomain("resonate.app")
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .addPathHandler("/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
 
         webView.settings.apply {
@@ -120,6 +130,22 @@ class MainActivity : AppCompatActivity() {
                     if (assetResponse != null) return assetResponse
                 }
                 return super.shouldInterceptRequest(view, request)
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                val url = request?.url?.toString() ?: return false
+                if (!url.startsWith("https://resonate.app")) {
+                    try {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        this@MainActivity.startActivity(intent)
+                        return true
+                    } catch (_: Exception) {}
+                }
+                return false
             }
         }
 

@@ -1,6 +1,7 @@
-// Platform detection and GitHub update checker
+// Platform detection, native bridge, and GitHub update checker
 
 export const CURRENT_APP_VERSION = 'v1.0.0';
+export const CURRENT_BUILD_COMMIT = 'b6afd5d';
 
 export interface UpdateInfo {
   hasUpdate: boolean;
@@ -27,7 +28,32 @@ export function isNativeAndroidApp(): boolean {
 }
 
 /**
- * Checks GitHub Releases API for new Resonate releases
+ * Opens external URLs safely via Android Intent (in native app) or window.open (in browser).
+ * Prevents Android WebView from dropping blank links.
+ */
+export function openExternalUrl(url: string): void {
+  if (typeof window !== 'undefined' && (window as any).ResonateNative?.openExternalUrl) {
+    (window as any).ResonateNative.openExternalUrl(url);
+  } else if (typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+}
+
+function parseSemVer(v: string): [number, number, number] | null {
+  const match = v.trim().replace(/^v/, '').match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!match) return null;
+  return [parseInt(match[1], 10), parseInt(match[2], 10), parseInt(match[3], 10)];
+}
+
+function compareSemVer(a: [number, number, number], b: [number, number, number]): number {
+  if (a[0] !== b[0]) return a[0] - b[0];
+  if (a[1] !== b[1]) return a[1] - b[1];
+  return a[2] - b[2];
+}
+
+/**
+ * Checks GitHub Releases API for new Resonate releases.
+ * Handles semver tags as well as rolling 'latest' auto-builds intelligently.
  */
 export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
   const current = CURRENT_APP_VERSION;
@@ -44,12 +70,30 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
     }
 
     const data = await res.json();
-    const tag = (data.tag_name || '').trim();
-    const cleanTag = tag.replace(/^v/, '');
-    const cleanCurrent = current.replace(/^v/, '');
+    const rawTag = (data.tag_name || '').trim();
+    const releaseName = (data.name || rawTag || 'Latest Release').trim();
+    const releaseCommit = (releaseName.match(/\(([a-f0-9]{7,40})\)/i)?.[1] || data.target_commitish || '').toLowerCase();
 
-    // Compare versions (semver-like)
-    const hasUpdate = cleanTag !== '' && cleanTag !== cleanCurrent && cleanTag > cleanCurrent;
+    // Check version numbers
+    const remoteSem = parseSemVer(rawTag) || parseSemVer(releaseName);
+    const localSem = parseSemVer(current) || [1, 0, 0];
+
+    let hasUpdate = false;
+    if (remoteSem) {
+      hasUpdate = compareSemVer(remoteSem, localSem) > 0;
+    } else if (rawTag.toLowerCase().includes('latest') || releaseName.toLowerCase().includes('auto-build')) {
+      const currentCommit = CURRENT_BUILD_COMMIT.toLowerCase();
+      const lastInstalled = (localStorage.getItem('resonate_installed_commit') || '').toLowerCase();
+
+      // If the release commit matches our current build commit or user just installed it, no false alert!
+      if (releaseCommit && (releaseCommit === currentCommit || releaseCommit === lastInstalled)) {
+        hasUpdate = false;
+      } else if (releaseCommit && currentCommit && releaseCommit !== currentCommit) {
+        hasUpdate = true;
+      } else {
+        hasUpdate = false;
+      }
+    }
 
     // Find apk asset download URL if available
     let apkDownloadUrl: string | undefined;
@@ -63,8 +107,8 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
     return {
       hasUpdate,
       currentVersion: current,
-      latestVersion: tag || current,
-      releaseName: data.name || tag || 'Latest Release',
+      latestVersion: rawTag || current,
+      releaseName: releaseName,
       releaseNotes: data.body || 'No release notes provided.',
       downloadUrl: apkDownloadUrl || data.html_url,
       htmlUrl: data.html_url || 'https://github.com/ayushmanchakraborty254-create/Resonate/releases'
@@ -81,4 +125,3 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
     };
   }
 }
-

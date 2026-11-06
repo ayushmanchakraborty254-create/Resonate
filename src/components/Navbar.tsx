@@ -8,6 +8,7 @@ import { POPULAR_TRACKS } from '../utils/youtube';
 import { useBreakpoint } from '../utils/responsive';
 import { AppDownloadModal } from './AppDownloadModal';
 import { isNativeAndroidApp } from '../utils/appPlatform';
+import logoImg from '../assets/logo.png';
 
 interface NavbarProps {
   currentView?: string;
@@ -172,22 +173,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         ) : (
           <>
-            {/* Left Brand / Mobile Title (Reference Match: Image 4 & 5) */}
-            <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {isMobile ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <img src="/logo.png" alt="Resonate" style={{ width: '26px', height: '26px', borderRadius: '7px', objectFit: 'cover' }} />
-                  <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff', letterSpacing: '-0.4px', fontFamily: "'Outfit', sans-serif" }}>
-                    {currentView === 'library' ? 'Library' : currentView === 'favourites' ? 'Favourites' : 'Home'}
-                  </span>
-                </div>
-              ) : (
-                <a href="#" className="brand" onClick={() => setView('home')} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-                  <img src="/logo.png" alt="Resonate" style={{ width: '30px', height: '30px', borderRadius: '8px', objectFit: 'cover' }} />
-                  <span style={{ fontSize: '20px', fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', fontFamily: "'Outfit', sans-serif" }}>Resonate</span>
-                </a>
-              )}
-            </div>
+            {/* Left Brand / Mobile Title (Only on Mobile; Sidebar has brand on desktop) */}
+            {isMobile && (
+              <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <img src={logoImg} alt="Resonate" style={{ width: '26px', height: '26px', borderRadius: '7px', objectFit: 'cover' }} />
+                <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff', letterSpacing: '-0.4px', fontFamily: "'Outfit', sans-serif" }}>
+                  {currentView === 'library' ? 'Library' : currentView === 'favourites' ? 'Favourites' : 'Home'}
+                </span>
+              </div>
+            )}
 
             {/* Center Search (Tablet & Desktop) */}
             {!isMobile && (
@@ -326,55 +320,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <History size={18} />
                 </button>
 
-                {/* Download Android APK Direct Button - Only on Web Browsers */}
+                {/* Single Install App Button (QR Code + GitHub APK download modal) - Only on Web */}
                 {!isNativeAndroidApp() && (
                   <button
-                    onClick={handleDownloadApk}
+                    onClick={() => setShowDownloadModal(true)}
                     style={{
-                      backgroundColor: 'rgba(34, 197, 94, 0.12)',
-                      color: '#4ade80',
-                      border: '1px solid rgba(34, 197, 94, 0.25)',
-                      padding: '7px 12px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                      color: '#38bdf8',
+                      border: '1px solid rgba(56, 189, 248, 0.28)',
+                      padding: '7px 14px',
                       borderRadius: '20px',
-                      fontSize: '12px',
+                      fontSize: '13px',
                       fontWeight: 600,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      gap: '7px',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       whiteSpace: 'nowrap',
                     }}
-                    title="Download latest Android APK directly from GitHub"
+                    title="Install Resonate App (Scan QR Code, Download APK, or Desktop)"
                   >
-                    <Download size={14} />
-                    <span>APK</span>
-                  </button>
-                )}
-
-                {/* Install Desktop App Button */}
-                {!isStandalone && (
-                  <button
-                    onClick={handleInstallApp}
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                      color: '#fff',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      padding: '7px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'nowrap',
-                    }}
-                    title="Install Resonate as a Standalone App"
-                  >
-                    <Smartphone size={14} />
-                    <span>App</span>
+                    <Smartphone size={15} />
+                    <span>Install App</span>
                   </button>
                 )}
 

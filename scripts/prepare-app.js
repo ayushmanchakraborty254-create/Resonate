@@ -11,5 +11,14 @@ if (!fs.existsSync(distDir)) {
 
 fs.mkdirSync(targetDir, { recursive: true });
 fs.cpSync(distDir, targetDir, { recursive: true });
+
+// Also ensure root-level assets are available at App/app/src/main/assets/
+const assetsRoot = path.resolve('App/app/src/main/assets');
+if (fs.existsSync(path.join(distDir, 'logo.png'))) {
+  fs.copyFileSync(path.join(distDir, 'logo.png'), path.join(assetsRoot, 'logo.png'));
+}
+if (fs.existsSync(path.join(distDir, 'favicon.png'))) {
+  fs.copyFileSync(path.join(distDir, 'favicon.png'), path.join(assetsRoot, 'favicon.png'));
+}
 console.log('✓ Successfully synced dist/ to App/app/src/main/assets/dist/');
 

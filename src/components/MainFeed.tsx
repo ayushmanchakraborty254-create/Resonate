@@ -4,6 +4,7 @@ import {
   CheckCircle, ArrowUpDown, MoreVertical, Plus, Cloud, TrendingUp, RefreshCw, Search, List
 } from 'lucide-react';
 import type { Track, Playlist } from '../types';
+import { useBreakpoint } from '../utils/responsive';
 import { 
   POPULAR_TRACKS,
   SPEED_DIAL_ITEMS,
@@ -43,6 +44,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   onRemoveTrackFromPlaylist,
   onCreatePlaylist,
 }) => {
+  const { isMobile } = useBreakpoint();
   const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId);
   const [selectedMood, setSelectedMood] = useState('Podcasts');
 
@@ -225,7 +227,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
 
         {/* Quick picks (Reference Match: Image 5) */}
         <div className="home-section" style={{ marginBottom: '24px' }}>
-          <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingRight: isMobile ? '64px' : '0' }}>
             <span style={{ fontSize: '20px', fontWeight: 800, color: '#93c5fd' }}>
               Quick picks
             </span>

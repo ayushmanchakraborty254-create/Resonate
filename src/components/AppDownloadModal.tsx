@@ -88,20 +88,17 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({
 
         {/* Modal Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
-          <div
+          <img
+            src="/logo.png"
+            alt="Resonate"
             style={{
               width: '52px',
               height: '52px',
               borderRadius: '16px',
-              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 20px rgba(34, 197, 94, 0.35)',
+              objectFit: 'cover',
+              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4)',
             }}
-          >
-            <Smartphone size={28} color="#fff" />
-          </div>
+          />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#fff' }}>

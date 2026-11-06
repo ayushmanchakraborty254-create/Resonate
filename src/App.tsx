@@ -11,16 +11,19 @@ import { ListenTogetherModal } from './components/ListenTogetherModal';
 import { StatsModal } from './components/StatsModal';
 import { HistoryModal } from './components/HistoryModal';
 import { AppDownloadModal } from './components/AppDownloadModal';
+import { MobileSearchView } from './components/MobileSearchView';
+import { ProfileView } from './components/ProfileView';
 import { SpotifyAuthManager } from './utils/spotifyAuth';
 import type { Track, Playlist, UnifiedTrack, UnifiedPlaylist } from './types';
 import { POPULAR_TRACKS, searchYouTube } from './utils/youtube';
 import { syncManager } from './utils/syncManager';
+import { floatingPlayer } from './utils/floatingPlayer';
 import { UniversalLibrary } from './components/UniversalLibrary';
 import { personalization } from './utils/personalization';
 import { useBreakpoint } from './utils/responsive';
 import { useNavigation } from './utils/navigation';
 import type { ActiveView } from './utils/navigation';
-import { Home, Search, Library, RefreshCw, User, BarChart2, History as HistoryIcon, Mic, Radio, Download, Music } from 'lucide-react';
+import { Home, Search, Library, Mic, Radio } from 'lucide-react';
 
 // Color themes mapped to each track's visual identity to simulate Material You dynamic theme
 const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }> = {
@@ -100,6 +103,7 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [newPlaylistDesc, setNewPlaylistDesc] = useState('');
+  const [syncToYouTube, setSyncToYouTube] = useState(false);
 
   // Save changes to localstorage
   useEffect(() => {
@@ -349,7 +353,7 @@ function App() {
   };
 
   // Playlist management
-  const handleCreatePlaylist = () => {
+  const handleCreatePlaylist = async () => {
     if (!newPlaylistName.trim()) return;
     const newPlaylist: Playlist = {
       id: Date.now().toString(),
@@ -357,10 +361,21 @@ function App() {
       description: newPlaylistDesc,
       tracks: [],
       createdAt: new Date().toISOString(),
+      syncToYouTube,
     };
     setPlaylists([...playlists, newPlaylist]);
+
+    if (syncToYouTube) {
+      try {
+        await syncManager.pushPlaylistToYouTube(newPlaylist);
+      } catch (err) {
+        console.warn('[YouTube Sync]', err);
+      }
+    }
+
     setNewPlaylistName('');
     setNewPlaylistDesc('');
+    setSyncToYouTube(false);
     setIsModalOpen(false);
   };
 
@@ -422,21 +437,26 @@ function App() {
     }
   };
 
+  const hideNavbarOnMobile = isMobile && (currentView === 'explore' || currentView === 'profile');
+
   return (
-    <div className={`app-container dynamic-theme ${isMobile ? 'mobile-layout' : ''}`}>
-      {/* Top Navbar */}
-      <Navbar
-        onSearch={handleSearch}
-        setView={setView}
-        onPlayTrackImmediate={handlePlayTrackImmediate}
-        user={user}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
-        onLogout={() => setUser(null)}
-        onOpenListenTogether={() => setIsListenTogetherOpen(true)}
-        onOpenStats={() => setIsStatsOpen(true)}
-        onOpenHistory={() => setIsHistoryOpen(true)}
-        onOpenRecognizer={() => setIsRecognizerOpen(true)}
-      />
+    <div className={`app-container dynamic-theme ${isMobile ? 'mobile-layout' : ''} ${hideNavbarOnMobile ? 'no-mobile-nav' : ''}`}>
+      {/* Top Navbar (Hidden on mobile search & profile to allow dedicated edge-to-edge headers) */}
+      {!hideNavbarOnMobile && (
+        <Navbar
+          currentView={currentView}
+          onSearch={handleSearch}
+          setView={setView}
+          onPlayTrackImmediate={handlePlayTrackImmediate}
+          user={user}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onLogout={() => setUser(null)}
+          onOpenListenTogether={() => setIsListenTogetherOpen(true)}
+          onOpenStats={() => setIsStatsOpen(true)}
+          onOpenHistory={() => setIsHistoryOpen(true)}
+          onOpenRecognizer={() => setIsRecognizerOpen(true)}
+        />
+      )}
 
       {/* Side Navigation Bar */}
       {!isMobile && (
@@ -453,243 +473,22 @@ function App() {
 
       {/* Main Content Layout containing Feed and Drawer */}
       <div className="main-layout" style={{ gridArea: 'main' }}>
-        <main className="main-content">
+        <main className={`main-content ${hideNavbarOnMobile ? 'no-pad' : ''}`}>
           {currentView === 'profile' ? (
-            <div style={{ padding: '24px 16px', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                <div style={{ width: '96px', height: '96px', borderRadius: '50%', backgroundColor: 'var(--yt-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: 'bold', color: '#fff', overflow: 'hidden', boxShadow: '0 8px 24px var(--yt-accent-glow)' }}>
-                  {user ? (user.avatar ? <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : user.name[0].toUpperCase()) : <User size={48} />}
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{user ? user.name : 'Guest Listener'}</h3>
-                  <p style={{ color: 'var(--yt-text-secondary)', fontSize: '14px', marginTop: '4px' }}>{user ? user.email : 'Sign in to sync across devices'}</p>
-                </div>
-              </div>
-
-              {/* Quick Actions & Features Hub for Mobile & Tablet */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <h4 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--yt-text-secondary)', fontWeight: 700, margin: '8px 4px 4px 4px' }}>
-                  Features & Tools
-                </h4>
-
-                {/* Music Recognizer */}
-                <div
-                  onClick={() => setIsRecognizerOpen(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    backgroundColor: 'rgba(141, 168, 214, 0.08)',
-                    border: '1px solid rgba(141, 168, 214, 0.2)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(141, 168, 214, 0.2)', color: '#8da8d6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Mic size={22} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Music Recognizer</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Identify songs playing around you</div>
-                  </div>
-                </div>
-
-                {/* Listen Together */}
-                <div
-                  onClick={() => setIsListenTogetherOpen(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    backgroundColor: 'rgba(167, 139, 250, 0.08)',
-                    border: '1px solid rgba(167, 139, 250, 0.2)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(167, 139, 250, 0.2)', color: '#c4b5fd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Radio size={22} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Listen Together</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Host or join a group music room</div>
-                  </div>
-                </div>
-
-                {/* Listening Stats */}
-                <div
-                  onClick={() => setIsStatsOpen(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                    border: '1px solid rgba(59, 130, 246, 0.2)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <BarChart2 size={22} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Listening Stats</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Analytics, top artists & duration breakdown</div>
-                  </div>
-                </div>
-
-                {/* History */}
-                <div
-                  onClick={() => setIsHistoryOpen(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                    border: '1px solid rgba(245, 158, 11, 0.2)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <HistoryIcon size={22} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Listening History</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Browse recently played tracks</div>
-                  </div>
-                </div>
-
-                {/* Direct Android APK Download */}
-                <div
-                  onClick={() => setIsDownloadApkOpen(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    backgroundColor: 'rgba(34, 197, 94, 0.08)',
-                    border: '1px solid rgba(34, 197, 94, 0.25)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Download size={22} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 700, fontSize: '15px', color: '#4ade80' }}>Download Android App (.apk)</span>
-                      <span style={{ fontSize: '10px', backgroundColor: '#22c55e', color: '#000', padding: '2px 6px', borderRadius: '10px', fontWeight: 800 }}>v1.0.0</span>
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Download directly from GitHub releases without Android Studio</div>
-                  </div>
-                </div>
-
-                {/* Universal Library */}
-                <div
-                  onClick={() => pushView('universal_library')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    backgroundColor: 'rgba(236, 72, 153, 0.08)',
-                    border: '1px solid rgba(236, 72, 153, 0.2)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(236, 72, 153, 0.2)', color: '#f472b6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Music size={22} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Universal Library & Sync</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Spotify, YouTube & cloud playlists</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Account Actions */}
-              <div style={{ marginTop: '8px' }}>
-                {user ? (
-                  <button className="btn btn-secondary" onClick={() => setUser(null)} style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 600 }}>
-                    Sign Out Account
-                  </button>
-                ) : (
-                  <button className="btn btn-primary" onClick={() => setIsAuthModalOpen(true)} style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 600 }}>
-                    Sign In to Resonate
-                  </button>
-                )}
-              </div>
-            </div>
+            <ProfileView
+              user={user}
+              onOpenAuth={() => setIsAuthModalOpen(true)}
+              onLogout={() => setUser(null)}
+              onNavigateToUniversal={() => pushView('universal_library')}
+              onOpenDownloadModal={() => setIsDownloadApkOpen(true)}
+              onBack={() => pushView('home')}
+            />
           ) : isMobile && currentView === 'explore' ? (
-            <div style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', position: 'relative' }}>
-                <input 
-                  type="text" 
-                  placeholder="Artists, songs, or playlists..." 
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '16px', outline: 'none' }}
-                />
-                <button 
-                  onClick={() => {
-                    const phrase = prompt("Speak now to voice search...");
-                    if (phrase) {
-                      setSearchQuery(phrase);
-                      handleSearch(phrase);
-                    }
-                  }}
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 19v4M8 23h8"/></svg>
-                </button>
-              </div>
-
-              {searchQuery ? (
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>Search Results</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {searchResults.length === 0 ? (
-                      <div style={{ color: 'var(--yt-text-secondary)' }}>No results found.</div>
-                    ) : (
-                      searchResults.map(track => (
-                        <div key={track.id} className="song-row-card" onClick={() => handlePlayTrackImmediate(track)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>
-                          <img src={track.thumbnailUrl} alt={track.title} style={{ width: '48px', height: '48px', borderRadius: '4px', objectFit: 'cover' }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.title}</div>
-                            <div style={{ color: 'var(--yt-text-secondary)', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artist}</div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <h4 style={{ fontSize: '14px', textTransform: 'uppercase', color: 'var(--yt-text-secondary)', fontWeight: 700, marginBottom: '12px', letterSpacing: '0.5px' }}>Trending Suggestions</h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
-                    {['Lofi Beats', 'Gaming Mix 2026', 'Chill Instrumentals', 'Workout Hits', 'Bollywood Beats'].map(term => (
-                      <button 
-                        key={term} 
-                        onClick={() => {
-                          setSearchQuery(term);
-                          handleSearch(term);
-                        }}
-                        style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '13px', cursor: 'pointer' }}
-                      >
-                        {term}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <MobileSearchView
+              onBack={() => pushView('home')}
+              onPlayTrackImmediate={handlePlayTrackImmediate}
+              onOpenRecognizer={() => setIsRecognizerOpen(true)}
+            />
           ) : currentView === 'universal_library' ? (
             <UniversalLibrary
               onPlayTrack={(track) => {
@@ -717,6 +516,7 @@ function App() {
               onAddTrackToPlaylist={handleAddTrackToPlaylist}
               onRemovePlaylist={handleRemovePlaylist}
               onRemoveTrackFromPlaylist={handleRemoveTrackFromPlaylist}
+              onCreatePlaylist={() => setIsModalOpen(true)}
             />
           )}
         </main>
@@ -741,6 +541,11 @@ function App() {
               setIsPlaying(false);
             }}
             progress={progress}
+            duration={currentTrack?.duration || 180}
+            onSeek={(secs) => {
+              setProgress(secs);
+              floatingPlayer.seek(secs);
+            }}
           />
         )}
       </div>
@@ -769,28 +574,96 @@ function App() {
         onToggleLike={handleToggleLike}
       />
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Mobile Floating Action Buttons on Home (Reference Match: Image 5) */}
+      {isMobile && currentView === 'home' && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '145px',
+            right: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            zIndex: 60,
+          }}
+        >
+          {/* Floating Mic for Music Recognizer / Voice Search */}
+          <button
+            onClick={() => setIsRecognizerOpen(true)}
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              backgroundColor: '#3b5478',
+              color: '#fff',
+              border: 'none',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+            }}
+            title="Music Recognizer (Metrolist / Shazam)"
+          >
+            <Mic size={20} />
+          </button>
+
+          {/* Floating Listen Together / Shuffle Room button */}
+          <button
+            onClick={() => setIsListenTogetherOpen(true)}
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              backgroundColor: '#384358',
+              color: '#fff',
+              border: 'none',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+            }}
+            title="Listen Together Room"
+          >
+            <Radio size={20} />
+          </button>
+        </div>
+      )}
+
+      {/* Mobile Bottom Navigation Bar (Material You 3-Tab - Reference Match: Images 3, 4, 5) */}
       {isMobile && (
-        <div className="bottom-nav">
-          <button className={`nav-tab-btn ${currentView === 'home' ? 'active' : ''}`} onClick={() => pushView('home')}>
-            <Home size={20} />
+        <div className="bottom-nav-material">
+          <button
+            className={`nav-tab-pill ${currentView === 'home' ? 'active' : ''}`}
+            onClick={() => pushView('home')}
+          >
+            <div className="tab-icon-wrapper">
+              <Home size={22} />
+            </div>
             <span>Home</span>
           </button>
-          <button className={`nav-tab-btn ${currentView === 'explore' ? 'active' : ''}`} onClick={() => pushView('explore')}>
-            <Search size={20} />
+
+          <button
+            className={`nav-tab-pill ${currentView === 'explore' ? 'active' : ''}`}
+            onClick={() => pushView('explore')}
+          >
+            <div className="tab-icon-wrapper">
+              <Search size={22} />
+            </div>
             <span>Search</span>
           </button>
-          <button className={`nav-tab-btn ${currentView === 'library' ? 'active' : ''}`} onClick={() => pushView('library')}>
-            <Library size={20} />
+
+          <button
+            className={`nav-tab-pill ${currentView === 'library' || currentView === 'universal_library' ? 'active' : ''}`}
+            onClick={() => pushView('library')}
+          >
+            <div className="tab-icon-wrapper">
+              <Library size={22} />
+            </div>
             <span>Library</span>
-          </button>
-          <button className={`nav-tab-btn ${currentView === 'universal_library' ? 'active' : ''}`} onClick={() => pushView('universal_library')}>
-            <RefreshCw size={20} />
-            <span>Universal</span>
-          </button>
-          <button className={`nav-tab-btn ${currentView === 'profile' ? 'active' : ''}`} onClick={() => pushView('profile')}>
-            <User size={20} />
-            <span>Profile</span>
           </button>
         </div>
       )}
@@ -814,6 +687,31 @@ function App() {
               value={newPlaylistDesc}
               onChange={(e) => setNewPlaylistDesc(e.target.value)}
             />
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                margin: '12px 0 16px 0',
+                fontSize: '13px',
+                color: '#e2e8f0',
+                userSelect: 'none',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={syncToYouTube}
+                onChange={(e) => setSyncToYouTube(e.target.checked)}
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  accentColor: '#e50914',
+                  cursor: 'pointer',
+                }}
+              />
+              <span>Also add this playlist to YouTube Music</span>
+            </label>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
                 Cancel
@@ -844,7 +742,10 @@ function App() {
         onPrev={handlePrev}
         progress={progress}
         duration={currentTrack?.duration || 180}
-        onSeek={(secs) => setProgress(secs)}
+        onSeek={(secs) => {
+          setProgress(secs);
+          floatingPlayer.seek(secs);
+        }}
       />
 
       {/* Music Recognizer Modal (Metrolist / Shazam Engine) */}

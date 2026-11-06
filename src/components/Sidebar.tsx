@@ -27,6 +27,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="sidebar">
+      <div 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          padding: '14px 18px', 
+          cursor: 'pointer',
+          marginBottom: '8px',
+        }}
+        onClick={() => setView('home')}
+      >
+        <img src="/logo.png" alt="Resonate" style={{ width: '30px', height: '30px', borderRadius: '8px', objectFit: 'cover', boxShadow: '0 4px 14px rgba(0,0,0,0.5)' }} />
+        <span style={{ fontSize: '20px', fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', fontFamily: "'Outfit', sans-serif" }}>Resonate</span>
+      </div>
+
       <div
         className={`sidebar-item ${currentView === 'home' ? 'active' : ''}`}
         onClick={() => setView('home')}

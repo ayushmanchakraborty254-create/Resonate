@@ -1,0 +1,412 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  User as UserIcon, RefreshCw, Download, ArrowUpRight, CheckCircle2, 
+  Sparkles, ExternalLink, LogOut, ArrowLeft, Trash2
+} from 'lucide-react';
+import { isNativeAndroidApp, checkGitHubReleaseUpdate, CURRENT_APP_VERSION, type UpdateInfo } from '../utils/appPlatform';
+
+interface ProfileViewProps {
+  user: { name: string; email: string; avatar?: string; isGoogle?: boolean } | null;
+  onOpenAuth: () => void;
+  onLogout: () => void;
+  onNavigateToUniversal: () => void;
+  onOpenDownloadModal: () => void;
+  onBack?: () => void;
+}
+
+export const ProfileView: React.FC<ProfileViewProps> = ({
+  user,
+  onOpenAuth,
+  onLogout,
+  onNavigateToUniversal,
+  onOpenDownloadModal,
+  onBack
+}) => {
+  const isNative = isNativeAndroidApp();
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateCheckStatus, setUpdateCheckStatus] = useState<'idle' | 'up-to-date' | 'update-available' | 'error'>('idle');
+
+  // Check for updates automatically on view load
+  useEffect(() => {
+    handleCheckUpdate();
+  }, []);
+
+  const handleCheckUpdate = async () => {
+    setIsCheckingUpdate(true);
+    try {
+      const info = await checkGitHubReleaseUpdate();
+      setUpdateInfo(info);
+      if (info.hasUpdate) {
+        setUpdateCheckStatus('update-available');
+      } else {
+        setUpdateCheckStatus('up-to-date');
+      }
+    } catch (_) {
+      setUpdateCheckStatus('error');
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
+  const handleUpdateNow = () => {
+    if (!updateInfo) return;
+    const targetUrl = updateInfo.downloadUrl || updateInfo.htmlUrl;
+    window.open(targetUrl, '_blank');
+  };
+
+  const handleClearCache = () => {
+    if (confirm('Clear local audio cache and temporary app data?')) {
+      try {
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            names.forEach((name) => caches.delete(name));
+          });
+        }
+        localStorage.removeItem('yt_music_progress');
+        alert('App cache cleared successfully!');
+        window.location.reload();
+      } catch (_) {}
+    }
+  };
+
+  return (
+    <div className="profile-view-container" style={{ padding: '16px 16px 140px 16px', maxWidth: '640px', margin: '0 auto', color: '#fff' }}>
+      {/* Top back button for mobile */}
+      {onBack && (
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={onBack}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <ArrowLeft size={22} />
+          </button>
+          <span style={{ fontSize: '18px', fontWeight: 700 }}>Account & Settings</span>
+        </div>
+      )}
+
+      {/* Profile Header */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          padding: '24px 16px',
+          marginBottom: '20px',
+        }}
+      >
+        <div
+          style={{
+            width: '84px',
+            height: '84px',
+            borderRadius: '50%',
+            backgroundColor: '#e50914',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 28px rgba(229, 9, 20, 0.4)',
+            marginBottom: '14px',
+            overflow: 'hidden',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+          }}
+        >
+          {user ? (
+            user.avatar && (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) ? (
+              <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: '32px', fontWeight: 800 }}>{user.name.charAt(0).toUpperCase()}</span>
+            )
+          ) : (
+            <UserIcon size={44} style={{ color: '#fff' }} />
+          )}
+        </div>
+
+        <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 4px 0' }}>
+          {user ? user.name : 'Guest Listener'}
+        </h2>
+        <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.55)', margin: '0 0 16px 0', maxWidth: '280px' }}>
+          {user ? user.email : 'Sign in to sync your library and playlists across devices'}
+        </p>
+
+        {user ? (
+          <button
+            className="btn btn-secondary"
+            onClick={onLogout}
+            style={{
+              padding: '8px 20px',
+              borderRadius: '20px',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <LogOut size={14} />
+            <span>Sign Out</span>
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary"
+            onClick={onOpenAuth}
+            style={{
+              padding: '10px 24px',
+              borderRadius: '24px',
+              fontSize: '14px',
+              fontWeight: 700,
+              boxShadow: '0 4px 16px rgba(229, 9, 20, 0.35)',
+            }}
+          >
+            Sign In to Resonate
+          </button>
+        )}
+      </div>
+
+      {/* CORE FEATURES (Universal Library & Updates) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.8px', paddingLeft: '4px' }}>
+          Library & System
+        </div>
+
+        {/* 1. Universal Library & Sync */}
+        <div
+          onClick={onNavigateToUniversal}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            padding: '14px 16px',
+            borderRadius: '14px',
+            backgroundColor: 'rgba(236, 72, 153, 0.08)',
+            border: '1px solid rgba(236, 72, 153, 0.22)',
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+          }}
+        >
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(236, 72, 153, 0.2)',
+              color: '#f472b6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <RefreshCw size={20} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Universal Library & Sync</div>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>
+              Connect Spotify, YouTube & Cloud playlists
+            </div>
+          </div>
+          <ArrowUpRight size={18} style={{ color: 'rgba(255,255,255,0.4)' }} />
+        </div>
+
+        {/* 2. Download APK Button - ONLY ON WEB VERSIONS (HIDDEN INSIDE ANDROID APP) */}
+        {!isNative && (
+          <div
+            onClick={onOpenDownloadModal}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '14px 16px',
+              borderRadius: '14px',
+              backgroundColor: 'rgba(34, 197, 94, 0.08)',
+              border: '1px solid rgba(34, 197, 94, 0.22)',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+          >
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(34, 197, 94, 0.18)',
+                color: '#4ade80',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Download size={20} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>Download Android App (.apk)</span>
+                <span style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px' }}>
+                  {CURRENT_APP_VERSION}
+                </span>
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>
+                Download directly from GitHub releases without Android Studio
+              </div>
+            </div>
+            <ArrowUpRight size={18} style={{ color: 'rgba(255,255,255,0.4)' }} />
+          </div>
+        )}
+
+        {/* 3. GitHub Update Detection & Update Now Card */}
+        <div
+          style={{
+            padding: '16px',
+            borderRadius: '14px',
+            backgroundColor: updateCheckStatus === 'update-available' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+            border: updateCheckStatus === 'update-available' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={18} style={{ color: updateCheckStatus === 'update-available' ? '#fbbf24' : '#38bdf8' }} />
+              <span style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>App Version & Updates</span>
+            </div>
+
+            <button
+              onClick={handleCheckUpdate}
+              disabled={isCheckingUpdate}
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#fff',
+                padding: '6px 12px',
+                borderRadius: '16px',
+                fontSize: '12px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              <RefreshCw size={13} style={{ animation: isCheckingUpdate ? 'spin 1s linear infinite' : 'none' }} />
+              <span>{isCheckingUpdate ? 'Checking...' : 'Check'}</span>
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.6)' }}>Current Version:</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '6px' }}>
+              {CURRENT_APP_VERSION}
+            </span>
+            {isNative && (
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '2px 8px', borderRadius: '6px' }}>
+                Android APK Native
+              </span>
+            )}
+          </div>
+
+          {/* Status Message */}
+          {updateCheckStatus === 'update-available' && updateInfo ? (
+            <div style={{ marginTop: '12px', padding: '12px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fbbf24', fontWeight: 700, fontSize: '13px', marginBottom: '4px' }}>
+                <span>✨ New Update Available: {updateInfo.latestVersion}</span>
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '12px' }}>
+                {updateInfo.releaseName || 'A new version with performance improvements is available on GitHub.'}
+              </div>
+              <button
+                onClick={handleUpdateNow}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  borderRadius: '12px',
+                  backgroundColor: '#e50914',
+                  color: '#fff',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(229, 9, 20, 0.4)',
+                }}
+              >
+                <Download size={16} />
+                <span>Update Now</span>
+              </button>
+            </div>
+          ) : updateCheckStatus === 'up-to-date' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4ade80', fontSize: '12px', marginTop: '6px' }}>
+              <CheckCircle2 size={15} />
+              <span>You have the latest version installed.</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginTop: '4px' }}>
+              Connected to GitHub Releases. Tap 'Check' to verify latest builds.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* STORAGE & SETTINGS UTILITIES */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.8px', paddingLeft: '4px' }}>
+          Maintenance & Storage
+        </div>
+
+        <button
+          onClick={handleClearCache}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            color: '#fff',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Trash2 size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>Clear App Cache & Data</span>
+          </div>
+          <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.4)' }}>Free storage</span>
+        </button>
+
+        <a
+          href="https://github.com/ayushmanchakraborty254-create/Resonate"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            color: '#fff',
+            textDecoration: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ExternalLink size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>Resonate GitHub Repository</span>
+          </div>
+          <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.4)' }}>v1.0.0</span>
+        </a>
+      </div>
+    </div>
+  );
+};

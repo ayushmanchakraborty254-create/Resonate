@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2, Disc, Play } from 'lucide-react';
 import type { Track } from '../types';
+import { KaraokeLyrics } from './KaraokeLyrics';
 
 interface LyricsAndQueueProps {
   showLyrics: boolean;
@@ -11,6 +12,8 @@ interface LyricsAndQueueProps {
   onSelectFromQueue: (index: number) => void;
   onClearQueue: () => void;
   progress: number;
+  duration?: number;
+  onSeek?: (seconds: number) => void;
 }
 
 export const LyricsAndQueue: React.FC<LyricsAndQueueProps> = ({
@@ -22,53 +25,10 @@ export const LyricsAndQueue: React.FC<LyricsAndQueueProps> = ({
   onSelectFromQueue,
   onClearQueue,
   progress,
+  duration,
+  onSeek,
 }) => {
   if (!showLyrics && !showQueue) return null;
-
-  // Simple parser to display scrollable lines for lyrics
-  const renderLyrics = () => {
-    if (!currentTrack || !currentTrack.lyrics) {
-      return (
-        <div style={{ color: 'var(--yt-text-secondary)', textAlign: 'center', marginTop: '40px' }}>
-          No lyrics available for this song.
-        </div>
-      );
-    }
-
-    const lines = currentTrack.lyrics.split('\n');
-    return (
-      <div style={{ padding: '8px 0' }}>
-        {lines.map((line, index) => {
-          // Highlight mock synchronized lines based on song play-time ranges
-          const isHeader = line.startsWith('[') && line.endsWith(']');
-          const isHighlighted =
-            !isHeader &&
-            index === Math.floor((progress / (currentTrack.duration || 180)) * lines.length);
-
-          return (
-            <div
-              key={index}
-              className={`lyrics-line ${isHighlighted ? 'active' : ''}`}
-              style={{
-                color: isHeader
-                  ? 'var(--yt-accent)'
-                  : isHighlighted
-                  ? 'var(--yt-text-primary)'
-                  : 'var(--yt-text-secondary)',
-                opacity: isHeader ? 0.7 : 1,
-                fontSize: isHeader ? '13px' : undefined,
-                fontWeight: isHeader ? 'bold' : undefined,
-                letterSpacing: isHeader ? '0.5px' : undefined,
-                textAlign: isHeader ? 'center' : 'left',
-              }}
-            >
-              {line}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
 
   return (
     <div className="right-drawer">
@@ -82,7 +42,16 @@ export const LyricsAndQueue: React.FC<LyricsAndQueueProps> = ({
       </div>
 
       <div className="drawer-content">
-        {showLyrics && renderLyrics()}
+        {showLyrics && (
+          <KaraokeLyrics
+            lyrics={currentTrack?.lyrics}
+            progress={progress}
+            duration={duration || currentTrack?.duration || 180}
+            onSeek={onSeek}
+            compact
+            fontSize="small"
+          />
+        )}
 
         {showQueue && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

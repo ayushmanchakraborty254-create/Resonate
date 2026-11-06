@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { Play, Trash2, Heart, Music, Sparkles, Flame, Radio, Disc, Compass } from 'lucide-react';
+import { 
+  Play, Trash2, Heart, Music, Sparkles, Flame, Radio, Disc, Compass,
+  CheckCircle, ArrowUpDown, MoreVertical, Plus, Cloud, TrendingUp, RefreshCw, Search, List
+} from 'lucide-react';
 import type { Track, Playlist } from '../types';
 import { 
   POPULAR_TRACKS,
+  SPEED_DIAL_ITEMS,
   NOSTALGIC_SHELF,
   NEW_RELEASES_SHELF,
   COMMUNITY_PLAYLISTS,
@@ -23,6 +27,7 @@ interface MainFeedProps {
   onAddTrackToPlaylist: (track: Track, playlistId: string) => void;
   onRemovePlaylist: (playlistId: string) => void;
   onRemoveTrackFromPlaylist: (playlistId: string, trackId: string) => void;
+  onCreatePlaylist?: () => void;
 }
 
 export const MainFeed: React.FC<MainFeedProps> = ({
@@ -36,11 +41,10 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   onAddTrackToPlaylist,
   onRemovePlaylist,
   onRemoveTrackFromPlaylist,
+  onCreatePlaylist,
 }) => {
   const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId);
-  const [selectedMood, setSelectedMood] = useState('All');
-
-  const MOOD_PILLS = ['All', 'Energize', 'Relax', 'Focus', 'Commute', 'Party', 'Nostalgia', 'Bollywood'];
+  const [selectedMood, setSelectedMood] = useState('Podcasts');
 
   // Explore categories
   const exploreCategories = [
@@ -133,9 +137,9 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   if (view === 'home') {
     return (
       <div style={{ width: '100%', maxWidth: '100%' }}>
-        {/* Interactive Mood Filter Pills */}
+        {/* Interactive Mood Filter Pills (Reference Match: Image 5) */}
         <div className="pills-container">
-          {MOOD_PILLS.map((pill) => (
+          {['Podcasts', 'Romance', 'Relax', 'Feel good', 'Sleep', 'Energize', 'Focus', 'Party'].map((pill) => (
             <div
               key={pill}
               className={`pill ${selectedMood === pill ? 'active' : ''}`}
@@ -145,6 +149,136 @@ export const MainFeed: React.FC<MainFeedProps> = ({
               {pill}
             </div>
           ))}
+        </div>
+
+        {/* Speed Dial 3x3 Grid (Reference Match: Image 5) */}
+        <div className="home-section" style={{ marginBottom: '24px' }}>
+          <div className="section-title" style={{ marginBottom: '12px' }}>
+            <span style={{ fontSize: '20px', fontWeight: 800, color: '#93c5fd' }}>
+              Speed dial
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))',
+              gap: '12px'
+            }}
+          >
+            {SPEED_DIAL_ITEMS.map((track) => (
+              <div
+                key={track.id}
+                onClick={() => onPlayTrack(track)}
+                style={{
+                  position: 'relative',
+                  aspectRatio: '1',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  backgroundColor: '#181a20'
+                }}
+              >
+                <img
+                  src={track.thumbnailUrl}
+                  alt={track.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    padding: '8px 6px'
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#fff',
+                      lineHeight: '1.25',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {track.title}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Dots Indicator */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '12px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
+          </div>
+        </div>
+
+        {/* Quick picks (Reference Match: Image 5) */}
+        <div className="home-section" style={{ marginBottom: '24px' }}>
+          <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <span style={{ fontSize: '20px', fontWeight: 800, color: '#93c5fd' }}>
+              Quick picks
+            </span>
+            <button
+              onClick={() => onPlayTrack(QUICK_PICKS_EXPANDED[0])}
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                color: '#fff',
+                borderRadius: '16px',
+                padding: '5px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Play all
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {QUICK_PICKS_EXPANDED.slice(0, 4).map((track) => (
+              <div 
+                key={track.id} 
+                className="track-row" 
+                onClick={() => onPlayTrack(track)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.02)',
+                  cursor: 'pointer'
+                }}
+              >
+                <img 
+                  src={track.thumbnailUrl} 
+                  alt={track.title} 
+                  style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover' }} 
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '15px', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {track.title}
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {track.artist}
+                  </div>
+                </div>
+                <MoreVertical size={18} style={{ color: 'rgba(255,255,255,0.4)' }} />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Listen Again Shelf */}
@@ -502,85 +636,213 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   }
 
   if (view === 'library') {
-    return (
-      <div>
-        <h2 style={{ fontSize: '28px', marginBottom: '24px', fontWeight: 800 }}>Library</h2>
+    const libraryFilterChips = ['Playlists', 'Songs', 'Albums', 'Artists', 'Podcasts'];
 
-        <div className="home-section">
-          <div className="section-title">
-            <span>Liked Songs ({likedTracks.length})</span>
+    const quickActions = [
+      { id: 'liked', label: 'Liked', icon: Heart, count: `${likedTracks.length} ${likedTracks.length === 1 ? 'song' : 'songs'}`, color: '#f43f5e' },
+      { id: 'downloaded', label: 'Downloaded', icon: CheckCircle, count: '0 offline', color: '#10b981' },
+      { id: 'cached', label: 'Cached', icon: RefreshCw, count: '0 cached', color: '#06b6d4' },
+      { id: 'top50', label: 'My Top 50', icon: TrendingUp, count: 'Frequently played', color: '#f59e0b' },
+      { id: 'uploaded', label: 'Uploaded', icon: Cloud, count: '0 songs', color: '#8b5cf6' },
+    ];
+
+    return (
+      <div style={{ paddingBottom: '120px' }}>
+        {/* Category Filter Chips Carousel (Reference Image 4) */}
+        <div className="pills-container" style={{ marginBottom: '16px' }}>
+          {libraryFilterChips.map((chip, idx) => (
+            <div
+              key={chip}
+              className={`pill ${idx === 0 ? 'active' : ''}`}
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              {chip}
+            </div>
+          ))}
+        </div>
+
+        {/* Sort and View Mode Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600, color: '#93c5fd', cursor: 'pointer' }}>
+            <span>Date added</span>
+            <ArrowUpDown size={14} />
           </div>
-          {likedTracks.length === 0 ? (
-            <div style={{ color: 'var(--yt-text-secondary)', fontSize: '14px' }}>
-              Your liked songs will show up here.
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', color: 'rgba(255,255,255,0.6)' }}>
+            <Search size={18} style={{ cursor: 'pointer' }} />
+            <List size={18} style={{ cursor: 'pointer' }} />
+          </div>
+        </div>
+
+        {/* Quick Action Cards (Reference Image 4) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <div
+                key={action.id}
+                onClick={() => {
+                  if (action.id === 'liked' && likedTracks.length > 0) {
+                    onPlayTrack(likedTracks[0]);
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  cursor: 'pointer'
+                }}
+              >
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: action.color
+                  }}
+                >
+                  <Icon size={22} fill={action.id === 'liked' ? action.color : 'none'} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '15px', color: '#fff' }}>{action.label}</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
+                    {action.count}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Playlists List with Artwork (Reference Image 4) */}
+        <div style={{ marginBottom: '24px' }}>
+          {playlists.length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '36px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderRadius: '14px',
+                border: '1px dashed rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <Music size={32} style={{ color: 'rgba(255, 255, 255, 0.3)', margin: '0 auto 10px auto' }} />
+              <div style={{ fontWeight: 600, fontSize: '15px', color: '#fff' }}>No custom playlists yet</div>
+              <div
+                style={{
+                  fontSize: '12px',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  marginTop: '4px',
+                  maxWidth: '280px',
+                  margin: '4px auto 16px auto',
+                }}
+              >
+                Create your first playlist using the + button below or sync with YouTube / Spotify.
+              </div>
+              {onCreatePlaylist && (
+                <button
+                  className="btn btn-primary"
+                  onClick={onCreatePlaylist}
+                  style={{ padding: '8px 20px', borderRadius: '20px', fontSize: '13px', fontWeight: 600 }}
+                >
+                  Create Playlist
+                </button>
+              )}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {likedTracks.map((track) => (
-                <div key={track.id} className="track-row" onClick={() => onPlayTrack(track)}>
-                  <img src={track.thumbnailUrl} className="track-row-img" alt={track.title} />
-                  <div className="track-row-info">
-                    <div className="track-row-title">{track.title}</div>
-                    <div className="track-row-subtitle">{track.artist}</div>
-                  </div>
-                  <div className="track-row-right">
-                    <Heart size={16} fill="var(--yt-accent)" style={{ color: 'var(--yt-accent)' }} />
-                    <span style={{ fontSize: '12px', marginLeft: '8px' }}>
-                      {formatSecs(track.duration)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="home-section">
-          <div className="section-title">Playlists</div>
-          {playlists.length === 0 ? (
-            <div style={{ color: 'var(--yt-text-secondary)', fontSize: '14px' }}>
-              No custom playlists created. Use "New Playlist" to create one.
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
               {playlists.map((playlist) => (
                 <div
                   key={playlist.id}
+                  onClick={() => onPlayTrack(playlist.tracks[0] || POPULAR_TRACKS[0])}
                   style={{
-                    backgroundColor: 'rgba(255,255,255,0.03)',
-                    padding: '16px',
-                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 255, 255, 0.02)',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
-                  }}
-                  onClick={() => {
-                    // Navigate to playlist detail view
-                    onPlayTrack(playlist.tracks[0] || POPULAR_TRACKS[0]);
                   }}
                 >
                   <div
                     style={{
-                      width: '100%',
-                      aspectRatio: '1',
-                      borderRadius: '4px',
-                      backgroundColor: '#2a2a2a',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: '12px',
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      backgroundColor: '#222',
                     }}
                   >
-                    <Music size={40} style={{ color: 'var(--yt-text-secondary)' }} />
+                    <PlaylistCover
+                      tracks={
+                        playlist.tracks.length > 0
+                          ? playlist.tracks
+                          : [{ thumbnailUrl: POPULAR_TRACKS[0].thumbnailUrl }]
+                      }
+                      name={playlist.name}
+                      size="100%"
+                      rounded="8px"
+                    />
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '15px' }}>{playlist.name}</div>
-                  <div style={{ color: 'var(--yt-text-secondary)', fontSize: '12px', marginTop: '2px' }}>
-                    {playlist.tracks.length} Songs
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: '15px',
+                        color: '#fff',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {playlist.name}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.55)', marginTop: '2px' }}>
+                      {playlist.tracks.length} songs
+                    </div>
                   </div>
+                  <MoreVertical size={18} style={{ color: 'rgba(255, 255, 255, 0.4)' }} />
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {/* Floating Action Button: + Create Playlist (Reference Image 4) */}
+        {onCreatePlaylist && (
+          <button
+            onClick={onCreatePlaylist}
+            style={{
+              position: 'fixed',
+              bottom: '145px',
+              right: '20px',
+              width: '52px',
+              height: '52px',
+              borderRadius: '16px',
+              backgroundColor: '#3b5478',
+              color: '#fff',
+              border: 'none',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 60
+            }}
+            title="Create Playlist"
+          >
+            <Plus size={24} />
+          </button>
+        )}
       </div>
     );
   }

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { X, Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 import type { Track } from '../types';
+import { KaraokeLyrics } from './KaraokeLyrics';
 
 interface LyricsModalProps {
   isOpen: boolean;
@@ -27,9 +28,6 @@ export const LyricsModal: React.FC<LyricsModalProps> = ({
   duration,
   onSeek,
 }) => {
-  const activeLineRef = useRef<HTMLDivElement | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,23 +43,9 @@ export const LyricsModal: React.FC<LyricsModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, onTogglePlay]);
 
-  // Smoothly auto-scroll to the active lyric line
-  useEffect(() => {
-    if (activeLineRef.current && scrollContainerRef.current) {
-      activeLineRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
-  }, [progress]);
-
   if (!isOpen || !currentTrack) return null;
 
-  const lines = currentTrack.lyrics ? currentTrack.lyrics.split('\n') : [];
   const trackDuration = duration || currentTrack.duration || 180;
-  const activeLineIndex = lines.length > 0
-    ? Math.floor((progress / trackDuration) * lines.length)
-    : -1;
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -184,66 +168,22 @@ export const LyricsModal: React.FC<LyricsModalProps> = ({
           )}
         </div>
 
-        {/* Right Side: Fluid Lyrics Stream */}
+        {/* Right Side: Fluid Karaoke Lyrics Stream */}
         <div
-          ref={scrollContainerRef}
           style={{
             height: '100%',
-            overflowY: 'auto',
-            paddingRight: '24px',
-            scrollBehavior: 'smooth',
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: lines.length === 0 ? 'center' : 'flex-start',
-            paddingTop: '60px',
-            paddingBottom: '120px',
           }}
         >
-          {lines.length === 0 ? (
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '20px', textAlign: 'center' }}>
-              Lyrics aren't available for this track yet. Enjoy the music!
-            </div>
-          ) : (
-            lines.map((line, idx) => {
-              const isHeader = line.startsWith('[') && line.endsWith(']');
-              const isActive = idx === activeLineIndex;
-              const isPast = idx < activeLineIndex;
-
-              return (
-                <div
-                  key={idx}
-                  ref={isActive ? activeLineRef : null}
-                  onClick={() => {
-                    if (!isHeader && lines.length > 0) {
-                      const seekTarget = Math.floor((idx / lines.length) * trackDuration);
-                      onSeek(seekTarget);
-                    }
-                  }}
-                  style={{
-                    padding: isHeader ? '16px 0 8px 0' : '12px 0',
-                    fontSize: isHeader ? '15px' : isActive ? '32px' : '24px',
-                    fontWeight: isHeader ? 700 : isActive ? 800 : 600,
-                    color: isHeader
-                      ? 'var(--yt-accent)'
-                      : isActive
-                      ? '#ffffff'
-                      : isPast
-                      ? 'rgba(255,255,255,0.5)'
-                      : 'rgba(255,255,255,0.25)',
-                    transform: isActive ? 'scale(1.03) translateX(8px)' : 'scale(1)',
-                    transformOrigin: 'left center',
-                    transition: 'all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                    cursor: isHeader ? 'default' : 'pointer',
-                    userSelect: 'none',
-                    lineHeight: 1.4,
-                    textShadow: isActive ? '0 0 30px rgba(255,255,255,0.4)' : 'none',
-                  }}
-                >
-                  {line}
-                </div>
-              );
-            })
-          )}
+          <KaraokeLyrics
+            lyrics={currentTrack.lyrics}
+            progress={progress}
+            duration={trackDuration}
+            onSeek={onSeek}
+            fontSize="large"
+          />
         </div>
       </div>
 

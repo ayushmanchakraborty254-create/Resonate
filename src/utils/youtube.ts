@@ -423,51 +423,239 @@ export const QUICK_PICKS_EXPANDED: Track[] = [
   }
 ];
 
+// Speed dial items matching reference design (Page 7 / Home)
+export const SPEED_DIAL_ITEMS: Track[] = [
+  {
+    id: 'sd-1',
+    title: "Hedwig's Theme",
+    artist: 'John Williams & Patrik Pietschmann',
+    album: 'Harry Potter OST',
+    duration: 290,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Hedwig's Theme - Iconic Harry Potter Orchestral Motif]`
+  },
+  {
+    id: 'sd-2',
+    title: 'naadaniyan',
+    artist: 'Akshath',
+    album: 'naadaniyan Single',
+    duration: 165,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[naadaniyan - Akshath]`
+  },
+  {
+    id: 'sd-3',
+    title: 'Raabta',
+    artist: 'Arijit Singh, Pritam',
+    album: 'Agent Vinod',
+    duration: 245,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Kehte Hain Khuda Ne Iss Jahan Mein - Raabta]`
+  },
+  {
+    id: 'sd-4',
+    title: 'Interstellar (Original Soundtrack)',
+    artist: 'Hans Zimmer',
+    album: 'Interstellar',
+    duration: 248,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Hans Zimmer - S.T.A.Y. & First Step]`
+  },
+  {
+    id: 'sd-5',
+    title: 'Doja Cat x The Weeknd',
+    artist: 'Doja Cat, The Weeknd',
+    album: 'Planet Her',
+    duration: 186,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[You Right - Doja Cat & The Weeknd]`
+  },
+  {
+    id: 'sd-6',
+    title: 'Believer',
+    artist: 'Imagine Dragons',
+    album: 'Evolve',
+    duration: 204,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[First things first, I'ma say all the words that are inside my head - Believer]`
+  },
+  {
+    id: 'sd-7',
+    title: 'Interstellar on Piano',
+    artist: 'Patrik Pietschmann',
+    album: 'Piano Covers',
+    duration: 312,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Interstellar Main Theme Piano Solo]`
+  },
+  {
+    id: 'sd-8',
+    title: 'Mere Naam Tu (From Zero)',
+    artist: 'Abhay Jodhpurkar, Ajay-Atul',
+    album: 'Zero',
+    duration: 339,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Woh Rang Bhi Kya Rang Hai - Mere Naam Tu]`
+  },
+  {
+    id: 'sd-9',
+    title: 'Star Wars Jedi Theme',
+    artist: 'Capn Wolf',
+    album: 'Force Echoes',
+    duration: 218,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Star Wars Jedi Survivor Ambient Theme]`
+  }
+];
+
+// Expanded curated catalog for instant search and playback
+export const EXTENDED_CATALOG: Track[] = [
+  ...POPULAR_TRACKS,
+  ...SPEED_DIAL_ITEMS,
+  ...QUICK_PICKS_EXPANDED,
+  {
+    id: 'ext-gh',
+    title: 'golden hour',
+    artist: 'JVKE',
+    album: 'this is what ____ feels like',
+    duration: 209,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[It was just two lovers sittin' in the car - golden hour]`
+  },
+  {
+    id: 'ext-gh-piano',
+    title: "golden hour on piano",
+    artist: 'Patrik Pietschmann',
+    album: 'Piano Essentials',
+    duration: 215,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[golden hour Piano Arrangement]`
+  },
+  {
+    id: 'ext-pehli',
+    title: 'Pehli Baar',
+    artist: 'Ajay Gogavale, Sukwinder Singh',
+    album: 'Dhadak',
+    duration: 312,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Pehli Baar Hai Ji Pehli Baar Hai]`
+  },
+  {
+    id: 'ext-tinka',
+    title: 'Tinka',
+    artist: 'Aditya Rikhari',
+    album: 'Tinka Single',
+    duration: 198,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Tinka Tinka Zara Zara - Aditya Rikhari]`
+  },
+  {
+    id: 'ext-saiyara',
+    title: 'Saiyara',
+    artist: 'Mohit Chauhan, Taraannum Mallik',
+    album: 'Ek Tha Tiger',
+    duration: 253,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Aasmaan Tera Mera Hua - Saiyara]`
+  },
+  {
+    id: 'ext-aewatan',
+    title: 'Ae Watan',
+    artist: 'Arijit Singh, Sunidhi Chauhan',
+    album: 'Raazi',
+    duration: 223,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80',
+    lyrics: `[Ae Watan Mere Watan Aabaad Rahe Tu]`
+  }
+];
+
+// Real-time suggestions query (fast, responsive)
+export async function getSearchSuggestions(query: string): Promise<string[]> {
+  if (!query || query.trim().length === 0) return [];
+  const q = query.trim().toLowerCase();
+
+  // Try Google suggest first
+  try {
+    const res = await fetch(`https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${encodeURIComponent(q)}`, {
+      signal: AbortSignal.timeout(1500)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[1])) {
+        return data[1].slice(0, 8);
+      }
+    }
+  } catch (_) {}
+
+  // Fallback: match from local extended catalog
+  const matched = EXTENDED_CATALOG
+    .filter(t => t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q))
+    .map(t => `${t.title} - ${t.artist}`)
+    .slice(0, 8);
+  return matched;
+}
+
 export async function searchYouTube(query: string): Promise<Track[]> {
   if (!query || query.trim() === '') {
-    return POPULAR_TRACKS;
+    return EXTENDED_CATALOG.slice(0, 12);
   }
 
-  const lowercaseQuery = query.toLowerCase();
-  
-  // Try searching Invidious instance first for real results
-  const invidiousInstances = [
-    'https://invidious.projectsegfau.lt',
-    'https://inv.tux.im',
-    'https://invidious.io.lol',
-    'https://invidious.flokinet.to'
-  ];
+  const lowercaseQuery = query.toLowerCase().trim();
 
-  for (const instance of invidiousInstances) {
-    try {
-      const response = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`, {
-        signal: AbortSignal.timeout(4000)
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data) && data.length > 0) {
-          return data.map((item: any) => ({
-            id: item.videoId,
-            title: item.title,
-            artist: item.author || 'Unknown Artist',
-            album: 'YouTube Video',
-            duration: item.lengthSeconds || 180,
-            thumbnailUrl: `https://img.youtube.com/vi/${item.videoId}/0.jpg`,
-            youtubeUrl: `https://www.youtube.com/watch?v=${item.videoId}`,
-            lyrics: `[Lyrics not available for this track]\nEnjoy listening to ${item.title}!`
-          }));
-        }
-      }
-    } catch (e) {
-      console.warn(`Failed fetching from Invidious instance: ${instance}`, e);
-    }
-  }
-
-  // Fallback: search within POPULAR_TRACKS
-  return POPULAR_TRACKS.filter(
+  // 1. Instant local match
+  const localMatches = EXTENDED_CATALOG.filter(
     (track) =>
       track.title.toLowerCase().includes(lowercaseQuery) ||
       track.artist.toLowerCase().includes(lowercaseQuery) ||
       (track.album && track.album.toLowerCase().includes(lowercaseQuery))
   );
+
+  // 2. Fetch from active Piped instances with fast timeout
+  const pipedInstances = [
+    'https://pipedapi.kavin.rocks',
+    'https://api.piped.privacydev.net',
+    'https://pipedapi.drgns.space'
+  ];
+
+  try {
+    const remotePromise = Promise.any(
+      pipedInstances.map(async (inst) => {
+        const res = await fetch(`${inst}/search?q=${encodeURIComponent(query)}&filter=music_songs`, {
+          signal: AbortSignal.timeout(2200)
+        });
+        if (!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        const items = data.items || data;
+        if (!Array.isArray(items) || items.length === 0) throw new Error('Empty');
+        return items
+          .filter((it: any) => it.url || it.id)
+          .slice(0, 15)
+          .map((item: any) => {
+            const vidId = (item.url ? item.url.replace('/watch?v=', '') : item.id) || '';
+            return {
+              id: vidId || `yt-${Math.random().toString(36).substring(7)}`,
+              title: item.title || 'Untitled Song',
+              artist: item.uploaderName || item.artist || 'Artist',
+              album: item.album || 'YouTube Music',
+              duration: item.duration || 210,
+              thumbnailUrl: item.thumbnail || `https://img.youtube.com/vi/${vidId}/0.jpg`,
+              youtubeUrl: `https://www.youtube.com/watch?v=${vidId}`,
+              lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
+            } as Track;
+          });
+      })
+    );
+
+    const remoteResults = await remotePromise;
+    if (remoteResults && remoteResults.length > 0) {
+      // Merge unique
+      const ids = new Set(remoteResults.map(r => r.id));
+      const combined = [...remoteResults, ...localMatches.filter(l => !ids.has(l.id))];
+      return combined;
+    }
+  } catch (_) {
+    // If online search timed out or device is offline, gracefully return local matches
+  }
+
+  return localMatches.length > 0 ? localMatches : POPULAR_TRACKS;
 }

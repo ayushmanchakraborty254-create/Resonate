@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Search, Music, Disc, LogOut, User as UserIcon, Mic, Radio,
-  BarChart2, History, Download, MoreVertical, X, Smartphone
+  Search, Music, LogOut, User as UserIcon, Mic, Radio,
+  BarChart2, History, Download, X, Smartphone, Users
 } from 'lucide-react';
 import type { Track } from '../types';
 import { POPULAR_TRACKS } from '../utils/youtube';
 import { useBreakpoint } from '../utils/responsive';
 import { AppDownloadModal } from './AppDownloadModal';
+import { isNativeAndroidApp } from '../utils/appPlatform';
 
 interface NavbarProps {
+  currentView?: string;
   onSearch: (query: string) => void;
   setView: (view: string) => void;
   onPlayTrackImmediate: (track: Track) => void;
@@ -22,6 +24,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  currentView,
   onSearch,
   setView,
   onPlayTrackImmediate,
@@ -169,12 +172,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         ) : (
           <>
-            {/* Left Brand */}
-            <div className="nav-left">
-              <a href="#" className="brand" onClick={() => setView('home')}>
-                <Disc className="brand-icon" size={28} />
-                <span>Resonate</span>
-              </a>
+            {/* Left Brand / Mobile Title (Reference Match: Image 4 & 5) */}
+            <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isMobile ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <img src="/logo.png" alt="Resonate" style={{ width: '26px', height: '26px', borderRadius: '7px', objectFit: 'cover' }} />
+                  <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff', letterSpacing: '-0.4px', fontFamily: "'Outfit', sans-serif" }}>
+                    {currentView === 'library' ? 'Library' : currentView === 'favourites' ? 'Favourites' : 'Home'}
+                  </span>
+                </div>
+              ) : (
+                <a href="#" className="brand" onClick={() => setView('home')} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+                  <img src="/logo.png" alt="Resonate" style={{ width: '30px', height: '30px', borderRadius: '8px', objectFit: 'cover' }} />
+                  <span style={{ fontSize: '20px', fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', fontFamily: "'Outfit', sans-serif" }}>Resonate</span>
+                </a>
+              )}
             </div>
 
             {/* Center Search (Tablet & Desktop) */}
@@ -314,29 +326,31 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <History size={18} />
                 </button>
 
-                {/* Download Android APK Direct Button */}
-                <button
-                  onClick={handleDownloadApk}
-                  style={{
-                    backgroundColor: 'rgba(34, 197, 94, 0.12)',
-                    color: '#4ade80',
-                    border: '1px solid rgba(34, 197, 94, 0.25)',
-                    padding: '7px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap',
-                  }}
-                  title="Download latest Android APK directly from GitHub"
-                >
-                  <Download size={14} />
-                  <span>APK</span>
-                </button>
+                {/* Download Android APK Direct Button - Only on Web Browsers */}
+                {!isNativeAndroidApp() && (
+                  <button
+                    onClick={handleDownloadApk}
+                    style={{
+                      backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                      color: '#4ade80',
+                      border: '1px solid rgba(34, 197, 94, 0.25)',
+                      padding: '7px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
+                    }}
+                    title="Download latest Android APK directly from GitHub"
+                  >
+                    <Download size={14} />
+                    <span>APK</span>
+                  </button>
+                )}
 
                 {/* Install Desktop App Button */}
                 {!isStandalone && (
@@ -379,8 +393,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <div className="profile-name">{user.name}</div>
                           <div className="profile-email">{user.email}</div>
                         </div>
-                        <button className="dropdown-item" onClick={() => { setView('library'); setShowDropdown(false); }}>
+                        <button className="dropdown-item" onClick={() => { setView('profile'); setShowDropdown(false); }}>
                           <UserIcon size={16} />
+                          Account & Updates
+                        </button>
+                        <button className="dropdown-item" onClick={() => { setView('library'); setShowDropdown(false); }}>
+                          <Music size={16} />
                           My Library
                         </button>
                         <button className="dropdown-item" onClick={() => { onOpenStats?.(); setShowDropdown(false); }}>
@@ -406,96 +424,122 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Mobile Top Actions (EXACTLY what was missing on mobile!) */}
+            {/* Mobile Top Actions (Reference Match: Image 4 & 5) */}
             {isMobile && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {/* Mobile Search Toggle */}
+                {/* Listening History */}
                 <button
-                  onClick={() => setIsMobileSearchOpen(true)}
+                  onClick={onOpenHistory}
                   style={{
                     background: 'none',
                     border: 'none',
                     color: '#fff',
-                    padding: '8px',
+                    padding: '6px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
-                  title="Search"
+                  title="History"
                 >
-                  <Search size={20} />
+                  <History size={20} />
                 </button>
 
-                {/* Music Recognizer Pulsing Mic Button */}
+                {/* Stats / Trends */}
                 <button
-                  onClick={onOpenRecognizer}
+                  onClick={onOpenStats}
                   style={{
-                    backgroundColor: 'rgba(141, 168, 214, 0.2)',
-                    color: '#8da8d6',
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    border: '1px solid rgba(141, 168, 214, 0.4)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#fff',
+                    padding: '6px',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: '0 0 12px rgba(141, 168, 214, 0.25)',
                   }}
-                  title="Recognize Music"
+                  title="Stats"
                 >
-                  <Mic size={18} />
+                  <BarChart2 size={20} />
                 </button>
 
-                {/* Listen Together Radio Button */}
+                {/* Listen Together */}
                 <button
                   onClick={onOpenListenTogether}
                   style={{
-                    backgroundColor: 'rgba(167, 139, 250, 0.15)',
-                    color: '#c4b5fd',
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    border: '1px solid rgba(167, 139, 250, 0.3)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#fff',
+                    padding: '6px',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer',
                   }}
                   title="Listen Together"
                 >
-                  <Radio size={18} />
+                  <Users size={20} />
                 </button>
 
-                {/* Mobile Hub Menu Button (More / Profile) */}
-                <button
-                  onClick={() => setShowMobileMenu(true)}
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: 'none',
-                    color: '#fff',
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    overflow: 'hidden',
-                  }}
-                  title="Menu"
-                >
-                  {user ? (
-                    user.avatar && (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) ? (
+                {/* Profile Avatar / Sign In (Navigates to Redesigned Profile View) */}
+                {user ? (
+                  <div
+                    onClick={() => setView('profile')}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      border: '1.5px solid rgba(255, 255, 255, 0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginLeft: '2px',
+                    }}
+                    title="Account & Updates"
+                  >
+                    {user.avatar && (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) ? (
                       <img src={user.avatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <span style={{ fontSize: '13px', fontWeight: 700 }}>{user.name[0].toUpperCase()}</span>
-                    )
-                  ) : (
-                    <MoreVertical size={18} />
-                  )}
-                </button>
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          background: '#e50914',
+                          color: '#fff',
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {user.avatar || user.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setView('profile')}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#fff',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      marginLeft: '2px',
+                    }}
+                    title="Account & Updates"
+                  >
+                    <UserIcon size={16} />
+                  </button>
+                )}
               </div>
             )}
           </>

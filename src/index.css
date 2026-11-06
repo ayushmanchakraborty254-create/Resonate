@@ -1132,7 +1132,7 @@ body {
 @media (max-width: 768px) {
   .app-container,
   .app-container.mobile-layout {
-    grid-template-rows: 56px 1fr calc(56px + env(safe-area-inset-bottom, 0px));
+    grid-template-rows: auto 1fr auto;
     grid-template-columns: 1fr;
     grid-template-areas:
       "navbar"
@@ -1140,6 +1140,14 @@ body {
       "bottomnav";
     height: 100vh;
     height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app-container.mobile-layout.no-mobile-nav {
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+      "main"
+      "bottomnav";
   }
 
   .sidebar {
@@ -1147,19 +1155,32 @@ body {
   }
 
   .navbar {
-    padding: 0 14px;
+    padding: 0 16px;
     height: 56px;
+    background: rgba(10, 10, 12, 0.95);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-sizing: border-box;
   }
 
   .brand span {
-    font-size: 19px;
+    font-size: 20px;
   }
 
   .main-content {
-    padding: 14px 14px calc(140px + env(safe-area-inset-bottom, 0px)) 14px !important; /* space for mini player + bottom nav */
+    padding: 16px 16px calc(150px + env(safe-area-inset-bottom, 0px)) 16px !important; /* space for floating pill mini player + bottom nav */
     overflow-y: auto;
     height: 100%;
     -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  }
+
+  .main-content.no-pad {
+    padding: 0 0 calc(150px + env(safe-area-inset-bottom, 0px)) 0 !important;
   }
 
   .playlist-grid, .feed-grid {
@@ -1172,17 +1193,40 @@ body {
   }
 }
 
-/* Bottom Navigation Bar (Mobile) */
-.bottom-nav {
+/* Tablet Layout (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-container {
+    grid-template-columns: 200px 1fr;
+  }
+  
+  .sidebar {
+    width: 200px;
+  }
+
+  .main-content {
+    padding: 20px 24px 100px 24px;
+  }
+
+  .playlist-grid, .feed-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+/* Material You 3-Tab Bottom Navigation Bar */
+.bottom-nav,
+.bottom-nav-material {
   grid-area: bottomnav;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background: rgba(10, 10, 10, 0.95);
-  backdrop-filter: blur(20px);
+  background: rgba(12, 12, 15, 0.98);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  height: calc(56px + env(safe-area-inset-bottom, 0px));
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -1190,26 +1234,42 @@ body {
   z-index: 99;
 }
 
-.nav-tab-btn {
+.nav-tab-pill {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   background: none;
   border: none;
-  color: var(--yt-text-secondary);
-  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   flex: 1;
   height: 100%;
   padding: 6px 0;
-  transition: color 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-tab-btn.active {
-  color: #fff;
+.nav-tab-pill .tab-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 30px;
+  border-radius: 16px;
+  transition: all 0.25s ease;
+}
+
+.nav-tab-pill.active {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.nav-tab-pill.active .tab-icon-wrapper {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
 }
 
 /* Skeletons Pulsing Animation */

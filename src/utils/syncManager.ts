@@ -283,6 +283,36 @@ export class YouTubeProvider implements MusicProvider {
     console.log(playlists);
     return { playlists, likedSongs };
   }
+
+  async createPlaylist(name: string, description: string = ''): Promise<string | null> {
+    const token = localStorage.getItem('resonate_google_access_token');
+    if (!token) return null;
+    try {
+      const res = await fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet,status', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          snippet: {
+            title: name,
+            description: description || 'Created with Resonate Music',
+          },
+          status: {
+            privacyStatus: 'private',
+          },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.id || null;
+      }
+    } catch (e) {
+      console.warn('[YouTube createPlaylist failed]', e);
+    }
+    return null;
+  }
 }
 
 // -------------------------------------------------------------
@@ -613,6 +643,14 @@ export class SyncManager {
     } finally {
       this.isSyncing = false;
     }
+  }
+
+  async pushPlaylistToYouTube(playlist: { name: string; description?: string }): Promise<string | null> {
+    const yt = this.providers['youtube'] as YouTubeProvider;
+    if (yt && typeof yt.createPlaylist === 'function') {
+      return await yt.createPlaylist(playlist.name, playlist.description || '');
+    }
+    return null;
   }
 }
 

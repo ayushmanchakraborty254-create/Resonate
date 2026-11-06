@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Music, Disc } from 'lucide-react';
-import { ArtisticCover } from './ArtisticCover';
+import { Music } from 'lucide-react';
 
 interface PlaylistCoverProps {
   tracks?: Array<{ thumbnailUrl?: string }>;
@@ -65,7 +64,6 @@ export const PlaylistCover: React.FC<PlaylistCoverProps> = ({
   tracks,
   thumbnailUrl,
   name = 'Playlist',
-  creator,
   size = '100%',
   className = '',
   style = {},
@@ -88,7 +86,7 @@ export const PlaylistCover: React.FC<PlaylistCoverProps> = ({
     ...style,
   };
 
-  // 1. If 4 or more track thumbnails are available, create an aesthetic 2x2 collage
+  // 1. If 4 or more track thumbnails are available, create a clean 2x2 collage
   if (validThumbnails.length >= 4) {
     return (
       <div
@@ -101,8 +99,8 @@ export const PlaylistCover: React.FC<PlaylistCoverProps> = ({
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gridTemplateRows: '1fr 1fr',
-            gap: '1.5px',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            gap: '1px',
+            backgroundColor: '#0a0a0a',
             width: '100%',
             height: '100%',
           }}
@@ -111,48 +109,81 @@ export const PlaylistCover: React.FC<PlaylistCoverProps> = ({
             <CollageTile key={index} url={thumb} index={index} />
           ))}
         </div>
-
-        {/* Center Frosted Glass Spindle Emblem */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: '1.5px solid rgba(255, 255, 255, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
-            pointerEvents: 'none',
-          }}
-        >
-          <Disc size={16} style={{ color: '#fff' }} />
-        </div>
       </div>
     );
   }
 
-  // 2. Single custom thumbnail URL or 1-3 tracks -> Delegate to ArtisticCover for rock-solid presentation
+  // 2. Single custom thumbnail URL or 1-3 tracks -> Render clean single artwork
   const singleImage = thumbnailUrl || (validThumbnails.length > 0 ? validThumbnails[0] : undefined);
 
+  if (singleImage) {
+    return (
+      <div
+        className={`playlist-cover-single ${className}`}
+        style={{
+          ...containerStyle,
+          backgroundColor: '#181a20',
+        }}
+        onClick={onClick}
+      >
+        <img
+          src={singleImage}
+          alt={name}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+          }}
+        />
+      </div>
+    );
+  }
+
+  // 3. Fallback when playlist has no tracks and no thumbnail -> Sleek, clean card with Resonate logo
   return (
-    <ArtisticCover
-      title={name}
-      subtitle={creator}
-      thumbnailUrl={singleImage}
-      tag="PLAYLIST"
-      size={size}
-      rounded={typeof rounded === 'number' ? `${rounded}px` : rounded}
-      className={className}
-      style={style}
+    <div
+      className={`playlist-cover-empty ${className}`}
+      style={{
+        ...containerStyle,
+        background: 'linear-gradient(135deg, #181920 0%, #0d0e12 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '8px',
+        textAlign: 'center',
+        boxSizing: 'border-box',
+      }}
       onClick={onClick}
-    />
+    >
+      <img
+        src="/logo.png"
+        alt="Resonate"
+        style={{
+          width: typeof size === 'number' ? `${Math.max(20, Math.floor(size / 3))}px` : '42%',
+          height: typeof size === 'number' ? `${Math.max(20, Math.floor(size / 3))}px` : '42%',
+          borderRadius: '8px',
+          objectFit: 'cover',
+          marginBottom: '6px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        }}
+      />
+      <span
+        style={{
+          fontSize: '11px',
+          fontWeight: 600,
+          color: 'rgba(255,255,255,0.7)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          width: '100%',
+          padding: '0 4px',
+        }}
+      >
+        {name}
+      </span>
+    </div>
   );
 };

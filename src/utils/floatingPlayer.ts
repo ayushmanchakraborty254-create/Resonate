@@ -41,6 +41,10 @@ class FloatingPlayerManager {
     this.actions = actions;
   }
 
+  seek(seconds: number) {
+    this.actions?.onSeek(seconds);
+  }
+
   updateState(state: Partial<FloatingPlayerState>) {
     this.state = { ...this.state, ...state };
     this.render();

@@ -18,6 +18,7 @@ export interface Playlist {
   description?: string;
   tracks: Track[];
   createdAt: string;
+  syncToYouTube?: boolean;
 }
 
 export interface PlaybackState {

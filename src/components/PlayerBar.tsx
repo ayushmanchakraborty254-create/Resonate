@@ -12,11 +12,14 @@ import {
   FileText,
   Heart,
   PictureInPicture2,
+  RotateCcw,
+  RotateCw,
 } from 'lucide-react';
 import type { Track } from '../types';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import { useBreakpoint } from '../utils/responsive';
 import { floatingPlayer } from '../utils/floatingPlayer';
+import { KaraokeLyrics } from './KaraokeLyrics';
 
 interface PlayerBarProps {
   currentTrack: Track | null;
@@ -234,7 +237,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     };
   }, [isPlaying, isDragging, currentTrack]);
 
-  // Smooth seeker drag handlers
+  // Smooth seeker drag handlers & immediate seek execution
   const handleSliderMouseDown = () => {
     setIsDragging(true);
     setDragProgress(progress);
@@ -243,6 +246,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     setDragProgress(val);
+    setProgress(val);
+    if (playerRef.current && playerRef.current.seekTo) {
+      playerRef.current.seekTo(val, true);
+    }
   };
 
   const handleSliderMouseUp = () => {
@@ -250,6 +257,16 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     setProgress(dragProgress);
     if (playerRef.current && playerRef.current.seekTo) {
       playerRef.current.seekTo(dragProgress, true);
+    }
+  };
+
+  const seekRelative = (deltaSeconds: number) => {
+    const dur = duration || currentTrack?.duration || 180;
+    const target = Math.max(0, Math.min(dur, (isDragging ? dragProgress : progress) + deltaSeconds));
+    setProgress(target);
+    setDragProgress(target);
+    if (playerRef.current && playerRef.current.seekTo) {
+      playerRef.current.seekTo(target, true);
     }
   };
 
@@ -322,12 +339,20 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 <SkipBack size={20} />
               </button>
 
+              <button className="icon-btn" onClick={() => seekRelative(-10)} disabled={!currentTrack} title="Rewind 10s">
+                <RotateCcw size={16} />
+              </button>
+
               <button
                 className="icon-btn icon-btn-large"
                 onClick={() => setIsPlaying(!isPlaying)}
                 disabled={!currentTrack}
               >
                 {isPlaying ? <Pause size={20} fill="#000" /> : <Play size={20} fill="#000" style={{ transform: 'translateX(1px)' }} />}
+              </button>
+
+              <button className="icon-btn" onClick={() => seekRelative(10)} disabled={!currentTrack} title="Forward 10s">
+                <RotateCw size={16} />
               </button>
 
               <button className="icon-btn" onClick={onNext} disabled={queue.length <= 1}>
@@ -430,44 +455,142 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         /* MOBILE 3-STATE PLAYER LAYOUT */
         currentTrack && (
           <>
-            {/* MINI STATE */}
+            {/* MINI STATE (Floating Pill - Reference Match) */}
             {mobilePlayerState === 'mini' && (
               <div 
-                className="mobile-mini-player" 
+                className="mobile-mini-player-pill" 
                 onClick={() => setMobilePlayerState('full')}
                 onTouchStart={swipeHandlers.onTouchStart}
                 onTouchMove={swipeHandlers.onTouchMove}
                 onTouchEnd={swipeHandlers.onTouchEnd}
                 style={{
                   position: 'fixed',
-                  bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-                  left: 0,
-                  right: 0,
-                  height: '60px',
-                  background: 'rgba(20, 20, 20, 0.95)',
-                  backdropFilter: 'blur(20px)',
-                  borderTop: '1px solid rgba(255,255,255,0.06)',
+                  bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                  left: '12px',
+                  right: '12px',
+                  height: '56px',
+                  background: 'rgba(22, 23, 28, 0.97)',
+                  backdropFilter: 'blur(24px)',
+                  WebkitBackdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '32px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '0 16px',
+                  padding: '0 12px 0 8px',
                   zIndex: 99,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.65)',
+                  overflow: 'hidden'
                 }}
               >
+                {/* Thin bottom progress line indicator */}
+                <div 
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    height: '2.5px',
+                    width: `${Math.min(100, ((progress / (duration || currentTrack.duration || 180)) * 100))}%`,
+                    background: 'linear-gradient(90deg, #e50914, #ff3366)',
+                    boxShadow: '0 0 8px rgba(229, 9, 20, 0.6)',
+                    transition: 'width 0.25s linear'
+                  }}
+                />
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                  <img src={currentTrack.thumbnailUrl} alt={currentTrack.title} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
+                  {/* Circular Vinyl Disk Artwork */}
+                  <div 
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      animation: isPlaying ? 'spin 12s linear infinite' : 'none'
+                    }}
+                  >
+                    <img 
+                      src={currentTrack.thumbnailUrl} 
+                      alt={currentTrack.title} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#111',
+                        border: '1.5px solid rgba(255,255,255,0.4)'
+                      }} 
+                    />
+                  </div>
+
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '14px', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentTrack.title}</div>
-                    <div style={{ color: 'var(--yt-text-secondary)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentTrack.artist}</div>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {currentTrack.title}
+                    </div>
+                    <div style={{ color: 'rgba(255, 255, 255, 0.55)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {currentTrack.artist}
+                    </div>
                   </div>
                 </div>
+
+                {/* Right controls */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => setIsPlaying(!isPlaying)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                  <button 
+                    onClick={() => onToggleLike(currentTrack)} 
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: likedTracks.some(t => t.id === currentTrack.id) ? '#e50914' : 'rgba(255,255,255,0.65)', 
+                      cursor: 'pointer', 
+                      padding: '6px', 
+                      display: 'flex', 
+                      alignItems: 'center' 
+                    }}
+                  >
+                    <Heart size={18} fill={likedTracks.some(t => t.id === currentTrack.id) ? '#e50914' : 'none'} />
                   </button>
-                  <button onClick={onNext} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <SkipForward size={20} />
+
+                  <button 
+                    onClick={() => setIsPlaying(!isPlaying)} 
+                    style={{ 
+                      background: 'rgba(255, 255, 255, 0.1)', 
+                      border: '1px solid rgba(255, 255, 255, 0.15)', 
+                      color: '#fff', 
+                      cursor: 'pointer', 
+                      width: '34px', 
+                      height: '34px', 
+                      borderRadius: '50%',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center' 
+                    }}
+                  >
+                    {isPlaying ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: '2px' }} />}
+                  </button>
+
+                  <button 
+                    onClick={onNext} 
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: 'rgba(255, 255, 255, 0.8)', 
+                      cursor: 'pointer', 
+                      padding: '6px', 
+                      display: 'flex', 
+                      alignItems: 'center' 
+                    }}
+                  >
+                    <SkipForward size={18} />
                   </button>
                 </div>
               </div>
@@ -548,11 +671,21 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '24px 0', minHeight: 0, position: 'relative' }}>
                       {localShowLyrics ? (
-                        <div style={{ width: '100%', height: '100%', overflowY: 'auto', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', padding: '20px', textAlign: 'center', fontSize: '18px', lineHeight: '2', color: '#fff' }}>
-                          <h4 style={{ fontSize: '14px', color: 'var(--yt-text-secondary)', marginBottom: '16px' }}>LYRICS</h4>
-                          <div style={{ whiteSpace: 'pre-line' }}>
-                            {currentTrack.lyrics || "[No lyrics available for this track]"}
-                          </div>
+                        <div style={{ width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                          <KaraokeLyrics
+                            lyrics={currentTrack.lyrics}
+                            progress={isDragging ? dragProgress : progress}
+                            duration={duration || currentTrack.duration || 180}
+                            onSeek={(secs) => {
+                              setProgress(secs);
+                              setDragProgress(secs);
+                              if (playerRef.current && playerRef.current.seekTo) {
+                                playerRef.current.seekTo(secs, true);
+                              }
+                            }}
+                            compact
+                            fontSize="medium"
+                          />
                         </div>
                       ) : (
                         <img 
@@ -597,19 +730,25 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
                     <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                       <button className={`icon-btn ${isShuffle ? 'active' : ''}`} onClick={() => setIsShuffle(!isShuffle)}>
-                        <Shuffle size={20} />
+                        <Shuffle size={18} />
                       </button>
                       <button className="icon-btn" onClick={onPrev} disabled={queue.length <= 1}>
-                        <SkipBack size={28} />
+                        <SkipBack size={24} />
+                      </button>
+                      <button className="icon-btn" onClick={() => seekRelative(-10)} title="Rewind 10s">
+                        <RotateCcw size={20} />
                       </button>
                       <button 
                         onClick={() => setIsPlaying(!isPlaying)} 
-                        style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fff', color: '#000', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(255,255,255,0.1)' }}
+                        style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fff', color: '#000', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(255,255,255,0.1)' }}
                       >
-                        {isPlaying ? <Pause size={28} fill="#000" /> : <Play size={28} fill="#000" style={{ transform: 'translateX(2px)' }} />}
+                        {isPlaying ? <Pause size={26} fill="#000" /> : <Play size={26} fill="#000" style={{ transform: 'translateX(2px)' }} />}
+                      </button>
+                      <button className="icon-btn" onClick={() => seekRelative(10)} title="Forward 10s">
+                        <RotateCw size={20} />
                       </button>
                       <button className="icon-btn" onClick={onNext} disabled={queue.length <= 1}>
-                        <SkipForward size={28} />
+                        <SkipForward size={24} />
                       </button>
                       <button 
                         className={`icon-btn ${isRepeat !== 'none' ? 'active' : ''}`} 
@@ -619,7 +758,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                           else setIsRepeat('none');
                         }}
                       >
-                        <Repeat size={20} />
+                        <Repeat size={18} />
                       </button>
                     </div>
 

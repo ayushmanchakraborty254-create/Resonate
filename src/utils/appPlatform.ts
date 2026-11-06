@@ -65,11 +65,11 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
   const currentCommit = CURRENT_BUILD_COMMIT.toLowerCase();
   const lastInstalled = (localStorage.getItem('resonate_installed_commit') || '').toLowerCase();
 
-  // 1. First attempt: check raw version.json (Fastly/Cloudflare CDN, NO rate limits)
+  // 1. First attempt: check latest release version.json asset (published by GitHub Actions on every build)
   try {
     const rawRes = await fetch(
-      `https://raw.githubusercontent.com/${GITHUB_REPO}/main/version.json?t=${Date.now()}`,
-      { signal: AbortSignal.timeout(3000) }
+      `https://github.com/${GITHUB_REPO}/releases/download/latest/version.json?t=${Date.now()}`,
+      { signal: AbortSignal.timeout(3500) }
     );
     if (rawRes.ok) {
       const vData = await rawRes.json();
@@ -87,14 +87,14 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
         currentVersion: current,
         latestVersion: remoteVersion,
         releaseName: vData.commitMessage || `Resonate Auto-Build (${remoteCommit || 'latest'})`,
-        releaseNotes: vData.commitMessage || 'Performance optimizations and mobile refinements.',
+        releaseNotes: vData.commitMessage || 'Performance optimizations, background playback, and mobile refinements.',
         downloadUrl: vData.downloadUrl || DEFAULT_APK_DOWNLOAD_URL,
         htmlUrl: GITHUB_RELEASES_URL,
         releaseCommit: remoteCommit
       };
     }
   } catch (_) {
-    // CDN check failed, fall through to GitHub API
+    // Release asset check failed, fall through to GitHub Releases API
   }
 
   // 2. Second attempt: GitHub Releases API

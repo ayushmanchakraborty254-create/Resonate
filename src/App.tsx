@@ -36,7 +36,7 @@ const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }
   '09R8_2nJtjg': { primary: '#d81b60', glow: 'rgba(216, 27, 96, 0.25)', bg: '#1c050f' }, // Sugar - Pink
   'rtOvBOTyXkk': { primary: '#e53935', glow: 'rgba(229, 57, 53, 0.25)', bg: '#1a0505' }, // Stressed Out - Red/Black
   'CevxZvSJLk8': { primary: '#ffb300', glow: 'rgba(255, 179, 0, 0.25)', bg: '#1c1706' }, // Roar - Gold/Orange
-  'LHCob76kigA': { primary: '#8e24aa', glow: 'rgba(142, 36, 170, 0.25)', bg: '#16051c' }, // Lofi - Dark Violet
+  'kPa7bsKwL-8': { primary: '#e50914', glow: 'rgba(229, 9, 20, 0.25)', bg: '#1c0505' }, // Die With A Smile - Crimson/Red
 };
 
 const DEFAULT_THEME = { primary: '#ff0000', glow: 'rgba(255, 0, 0, 0.2)', bg: '#070707' };
@@ -326,6 +326,42 @@ function App() {
     setProgress(0);
   };
 
+  const handleAddToQueue = (track: Track) => {
+    setQueue((prev) => {
+      const updated = [...prev, track];
+      try {
+        localStorage.setItem('yt_music_queue', JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
+  };
+
+  const handleRemoveFromQueue = (index: number) => {
+    setQueue((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      try {
+        localStorage.setItem('yt_music_queue', JSON.stringify(updated));
+      } catch (_) {}
+      if (index < currentIndex) {
+        setCurrentIndex(currentIndex - 1);
+      } else if (index === currentIndex && updated.length > 0) {
+        const nextIdx = Math.min(index, updated.length - 1);
+        setCurrentIndex(nextIdx);
+        setCurrentTrack(updated[nextIdx]);
+      }
+      return updated;
+    });
+  };
+
+  const handleSelectFromQueue = (index: number) => {
+    if (index >= 0 && index < queue.length) {
+      setCurrentIndex(index);
+      setCurrentTrack(queue[index]);
+      setProgress(0);
+      setIsPlaying(true);
+    }
+  };
+
   const handleNext = () => {
     if (queue.length === 0) {
       if (POPULAR_TRACKS.length > 0) {
@@ -506,6 +542,7 @@ function App() {
               onBack={() => pushView('home')}
               onPlayTrackImmediate={handlePlayTrackImmediate}
               onOpenRecognizer={() => setIsRecognizerOpen(true)}
+              onAddToQueue={handleAddToQueue}
             />
           ) : currentView === 'universal_library' ? (
             <UniversalLibrary
@@ -535,6 +572,7 @@ function App() {
               onRemovePlaylist={handleRemovePlaylist}
               onRemoveTrackFromPlaylist={handleRemoveTrackFromPlaylist}
               onCreatePlaylist={() => setIsModalOpen(true)}
+              onAddToQueue={handleAddToQueue}
             />
           )}
         </main>
@@ -547,12 +585,8 @@ function App() {
             currentTrack={currentTrack}
             queue={queue}
             currentIndex={currentIndex}
-            onSelectFromQueue={(index) => {
-              setCurrentIndex(index);
-              setCurrentTrack(queue[index]);
-              setIsPlaying(true);
-              setProgress(0);
-            }}
+            onSelectFromQueue={handleSelectFromQueue}
+            onRemoveFromQueue={handleRemoveFromQueue}
             onClearQueue={() => {
               setQueue([]);
               setCurrentTrack(null);
@@ -590,6 +624,9 @@ function App() {
         setShowQueue={setShowQueue}
         likedTracks={likedTracks}
         onToggleLike={handleToggleLike}
+        onSelectFromQueue={handleSelectFromQueue}
+        onRemoveFromQueue={handleRemoveFromQueue}
+        onAddToQueue={handleAddToQueue}
       />
 
 

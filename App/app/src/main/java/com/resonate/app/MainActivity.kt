@@ -106,27 +106,86 @@ class MainActivity : AppCompatActivity() {
         fun searchYouTubeNative(query: String): String {
             return try {
                 val future = Executors.newSingleThreadExecutor().submit(java.util.concurrent.Callable {
-                    val encoded = java.net.URLEncoder.encode(query, "UTF-8")
-                    val url = URL("https://www.youtube.com/results?search_query=$encoded")
-                    val conn = url.openConnection() as HttpURLConnection
-                    conn.requestMethod = "GET"
-                    conn.setRequestProperty(
-                        "User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-                    )
-                    conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9")
-                    conn.connectTimeout = 7000
-                    conn.readTimeout = 7000
-                    val html = conn.inputStream.bufferedReader().use { it.readText() }
-                    conn.disconnect()
+                    // 1. Try YouTube Music InnerTube endpoint
+                    try {
+                        val itUrl = URL("https://music.youtube.com/youtubei/v1/search")
+                        val itConn = itUrl.openConnection() as HttpURLConnection
+                        itConn.requestMethod = "POST"
+                        itConn.setRequestProperty("Content-Type", "application/json")
+                        itConn.setRequestProperty(
+                            "User-Agent",
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                        )
+                        itConn.setRequestProperty("Origin", "https://music.youtube.com")
+                        itConn.setRequestProperty("Referer", "https://music.youtube.com/")
+                        itConn.connectTimeout = 6000
+                        itConn.readTimeout = 6000
+                        itConn.doOutput = true
 
-                    val regex = Regex("ytInitialData\\s*=\\s*(\\{.+?\\});<\\/script>", RegexOption.DOT_MATCHES_ALL)
-                    val match = regex.find(html) ?: Regex("var ytInitialData\\s*=\\s*(\\{.+?\\});").find(html)
-                    if (match != null) {
-                        match.groupValues[1]
-                    } else {
-                        "[]"
-                    }
+                        val body = """{"context":{"client":{"clientName":"WEB_REMIX","clientVersion":"1.20240318.01.00","hl":"en","gl":"US"}},"query":${org.json.JSONObject.quote(query)}}"""
+                        itConn.outputStream.use { os ->
+                            os.write(body.toByteArray(Charsets.UTF_8))
+                        }
+
+                        if (itConn.responseCode in 200..299) {
+                            val resp = itConn.inputStream.bufferedReader().use { it.readText() }
+                            itConn.disconnect()
+                            if (resp.isNotBlank() && resp.length > 50) {
+                                return@Callable resp
+                            }
+                        } else {
+                            itConn.disconnect()
+                        }
+                    } catch (_: Exception) {}
+
+                    // 2. Fallback to scraping YouTube HTML with linear brace extraction
+                    try {
+                        val encoded = java.net.URLEncoder.encode(query, "UTF-8")
+                        val url = URL("https://www.youtube.com/results?search_query=$encoded")
+                        val conn = url.openConnection() as HttpURLConnection
+                        conn.requestMethod = "GET"
+                        conn.setRequestProperty(
+                            "User-Agent",
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                        )
+                        conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9")
+                        conn.connectTimeout = 6000
+                        conn.readTimeout = 6000
+                        val html = conn.inputStream.bufferedReader().use { it.readText() }
+                        conn.disconnect()
+
+                        val startIdx = html.indexOf("ytInitialData")
+                        if (startIdx != -1) {
+                            val firstBrace = html.indexOf('{', startIdx)
+                            if (firstBrace != -1) {
+                                var depth = 0
+                                var endIdx = -1
+                                var inString = false
+                                var escape = false
+                                for (i in firstBrace until html.length) {
+                                    val c = html[i]
+                                    if (escape) { escape = false; continue }
+                                    if (c == '\\') { escape = true; continue }
+                                    if (c == '"') { inString = !inString; continue }
+                                    if (!inString) {
+                                        if (c == '{') depth++
+                                        else if (c == '}') {
+                                            depth--
+                                            if (depth == 0) {
+                                                endIdx = i + 1
+                                                break
+                                            }
+                                        }
+                                    }
+                                }
+                                if (endIdx != -1) {
+                                    return@Callable html.substring(firstBrace, endIdx)
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {}
+
+                    "[]"
                 })
                 future.get(8, java.util.concurrent.TimeUnit.SECONDS)
             } catch (e: Exception) {
@@ -288,6 +347,22 @@ class MainActivity : AppCompatActivity() {
             )
 
             nm.notify(NOTIFICATION_ID, notifBuilder.build())
+
+            // Start Android Foreground Media Service to guarantee continuous background audio
+            try {
+                val serviceIntent = Intent(this@MainActivity, MediaPlaybackService::class.java).apply {
+                    putExtra("title", title)
+                    putExtra("artist", artist)
+                    putExtra("isPlaying", isPlaying)
+                }
+                if (isPlaying) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(serviceIntent)
+                    } else {
+                        startService(serviceIntent)
+                    }
+                }
+            } catch (_: Exception) {}
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -543,6 +618,10 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         try {
             unregisterReceiver(mediaActionReceiver)
+        } catch (_: Exception) {}
+
+        try {
+            stopService(Intent(this, MediaPlaybackService::class.java))
         } catch (_: Exception) {}
 
         try {

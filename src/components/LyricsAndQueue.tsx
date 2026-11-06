@@ -11,6 +11,7 @@ interface LyricsAndQueueProps {
   queue: Track[];
   currentIndex: number;
   onSelectFromQueue: (index: number) => void;
+  onRemoveFromQueue?: (index: number) => void;
   onClearQueue: () => void;
   progress: number;
   duration?: number;
@@ -24,6 +25,7 @@ export const LyricsAndQueue: React.FC<LyricsAndQueueProps> = ({
   queue,
   currentIndex,
   onSelectFromQueue,
+  onRemoveFromQueue,
   onClearQueue,
   progress,
   duration,
@@ -99,11 +101,31 @@ export const LyricsAndQueue: React.FC<LyricsAndQueueProps> = ({
                       </div>
                       <div className="track-row-subtitle">{track.artist}</div>
                     </div>
-                    <div className="track-row-right">
+                    <div className="track-row-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {isActive ? (
                         <Disc size={14} className="spinning" style={{ color: 'var(--yt-accent)' }} />
                       ) : (
                         <Play size={12} />
+                      )}
+                      {onRemoveFromQueue && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveFromQueue(index);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'rgba(255,255,255,0.4)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                          title="Remove from queue"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       )}
                     </div>
                   </div>

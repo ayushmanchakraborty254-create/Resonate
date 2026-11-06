@@ -14,6 +14,9 @@ import {
   PictureInPicture2,
   RotateCcw,
   RotateCw,
+  Trash2,
+  Disc,
+  Plus,
 } from 'lucide-react';
 import type { Track } from '../types';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
@@ -43,6 +46,9 @@ interface PlayerBarProps {
   setShowQueue: (show: boolean) => void;
   likedTracks: Track[];
   onToggleLike: (track: Track) => void;
+  onSelectFromQueue?: (index: number) => void;
+  onRemoveFromQueue?: (index: number) => void;
+  onAddToQueue?: (track: Track) => void;
 }
 
 declare global {
@@ -73,6 +79,9 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   setShowQueue,
   likedTracks,
   onToggleLike,
+  onSelectFromQueue,
+  onRemoveFromQueue,
+  onAddToQueue,
 }) => {
   const playerRef = useRef<any>(null);
   const iframeContainerId = 'youtube-iframe-player';
@@ -124,7 +133,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         width: '1',
         videoId: currentTrack?.id || '',
         playerVars: {
-          autoplay: 0,
+          autoplay: 1,
           controls: 0,
           disablekb: 1,
           fs: 0,
@@ -132,6 +141,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
           rel: 0,
           showinfo: 0,
           iv_load_policy: 3,
+          playsinline: 1,
         },
         events: {
           onReady: () => {
@@ -412,8 +422,20 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
   return (
     <>
-      {/* Hidden YouTube player container */}
-      <div style={{ display: 'none' }}>
+      {/* Active Off-Screen YouTube player container (Never display:none to prevent Chromium/WebView throttling) */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          top: '-9999px', 
+          left: '-9999px', 
+          width: '200px', 
+          height: '200px', 
+          opacity: 0.01, 
+          pointerEvents: 'none', 
+          zIndex: -999 
+        }} 
+        aria-hidden="true"
+      >
         <div id={iframeContainerId}></div>
       </div>
 
@@ -625,39 +647,59 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                   }}
                 />
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                  {/* Circular Vinyl Disk Artwork */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                  {/* Song Cover Artwork with Play/Pause button directly over the cover */}
                   <div 
                     style={{
-                      width: '40px',
-                      height: '40px',
+                      width: '42px',
+                      height: '42px',
                       borderRadius: '50%',
                       position: 'relative',
                       overflow: 'hidden',
                       flexShrink: 0,
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      animation: isPlaying ? 'spin 12s linear infinite' : 'none'
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                      border: '1.5px solid rgba(255,255,255,0.18)',
                     }}
                   >
                     <img 
                       src={currentTrack.thumbnailUrl} 
                       alt={currentTrack.title} 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                    />
-                    <div 
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#111',
-                        border: '1.5px solid rgba(255,255,255,0.4)'
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover',
+                        animation: isPlaying ? 'spin 12s linear infinite' : 'none'
                       }} 
                     />
+                    {/* Play/Pause Button centered directly above the song cover */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsPlaying(!isPlaying);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'rgba(0, 0, 0, 0.42)',
+                        border: 'none',
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        padding: 0,
+                        zIndex: 2,
+                        transition: 'background 0.2s ease',
+                      }}
+                      title={isPlaying ? 'Pause' : 'Play'}
+                      aria-label={isPlaying ? 'Pause' : 'Play'}
+                    >
+                      {isPlaying ? (
+                        <Pause size={17} fill="#fff" />
+                      ) : (
+                        <Play size={17} fill="#fff" style={{ transform: 'translateX(1px)' }} />
+                      )}
+                    </button>
                   </div>
 
                   <div style={{ minWidth: 0 }}>
@@ -670,7 +712,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                   </div>
                 </div>
 
-                {/* Right controls */}
+                {/* Right controls: Heart and Next track */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
                   <button 
                     onClick={() => onToggleLike(currentTrack)} 
@@ -683,29 +725,9 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       display: 'flex', 
                       alignItems: 'center' 
                     }}
+                    title="Like"
                   >
                     <Heart size={18} fill={likedTracks.some(t => t.id === currentTrack.id) ? '#e50914' : 'none'} />
-                  </button>
-
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsPlaying(!isPlaying);
-                    }} 
-                    style={{ 
-                      background: 'rgba(255, 255, 255, 0.1)', 
-                      border: '1px solid rgba(255, 255, 255, 0.15)', 
-                      color: '#fff', 
-                      cursor: 'pointer', 
-                      width: '34px', 
-                      height: '34px', 
-                      borderRadius: '50%',
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center' 
-                    }}
-                  >
-                    {isPlaying ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: '2px' }} />}
                   </button>
 
                   <button 
@@ -724,7 +746,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     }}
                     title="Next track"
                   >
-                    <SkipForward size={18} />
+                    <SkipForward size={20} />
                   </button>
                 </div>
               </div>
@@ -761,20 +783,93 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 {mobilePlayerState === 'half' ? (
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Up Next</h3>
-                      <button onClick={() => setMobilePlayerState('full')} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#fff', borderRadius: '12px', padding: '6px 12px', fontSize: '12px', fontWeight: 600 }}>Expand Full</button>
+                      <div>
+                        <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Up Next</h3>
+                        <span style={{ fontSize: '11px', color: 'var(--yt-text-secondary)' }}>{queue.length} songs in queue</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {onAddToQueue && (
+                          <button
+                            onClick={() => {
+                              if (currentTrack) onAddToQueue(currentTrack);
+                            }}
+                            style={{
+                              background: 'rgba(255,255,255,0.08)',
+                              border: '1px solid rgba(255,255,255,0.12)',
+                              color: '#fff',
+                              borderRadius: '12px',
+                              padding: '5px 10px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              cursor: 'pointer',
+                            }}
+                            title="Duplicate or append to queue"
+                          >
+                            <Plus size={13} /> Add
+                          </button>
+                        )}
+                        <button onClick={() => setMobilePlayerState('full')} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#fff', borderRadius: '12px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Expand Full</button>
+                      </div>
                     </div>
                     <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px' }}>
-                      {queue.map((track, i) => (
-                        <div key={track.id + '-' + i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                          <span style={{ fontSize: '12px', color: 'var(--yt-text-secondary)', width: '20px' }}>{i + 1}</span>
-                          <img src={track.thumbnailUrl} alt={track.title} style={{ width: '36px', height: '36px', borderRadius: '4px' }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.title}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--yt-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artist}</div>
-                          </div>
+                      {queue.length === 0 ? (
+                        <div style={{ color: 'var(--yt-text-secondary)', textAlign: 'center', padding: '32px 0', fontSize: '13px' }}>
+                          Queue is empty.
                         </div>
-                      ))}
+                      ) : (
+                        queue.map((track, i) => {
+                          const isActive = currentTrack?.id === track.id;
+                          return (
+                            <div 
+                              key={track.id + '-' + i} 
+                              onClick={() => onSelectFromQueue && onSelectFromQueue(i)}
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '10px', 
+                                padding: '10px 8px', 
+                                borderRadius: '8px',
+                                background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                                borderLeft: isActive ? '3px solid var(--yt-accent)' : '3px solid transparent',
+                                borderBottom: '1px solid rgba(255,255,255,0.03)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <span style={{ fontSize: '12px', color: isActive ? 'var(--yt-accent)' : 'var(--yt-text-secondary)', width: '20px', fontWeight: isActive ? 700 : 400 }}>
+                                {isActive ? <Disc size={13} className="spinning" /> : i + 1}
+                              </span>
+                              <img src={track.thumbnailUrl} alt={track.title} style={{ width: '38px', height: '38px', borderRadius: '6px', objectFit: 'cover' }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '13px', fontWeight: 600, color: isActive ? 'var(--yt-accent)' : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.title}</div>
+                                <div style={{ fontSize: '11px', color: 'var(--yt-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artist}</div>
+                              </div>
+                              {onRemoveFromQueue && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemoveFromQueue(i);
+                                  }}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'rgba(255,255,255,0.35)',
+                                    padding: '6px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                  }}
+                                  title="Remove from queue"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 ) : (

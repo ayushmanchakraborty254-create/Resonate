@@ -149,13 +149,13 @@ I guess that I forgot I had a choice
 I let you push me past the breaking point`
   },
   {
-    id: 'LHCob76kigA',
-    title: 'Lady Gaga, Bruno Mars - Die With A Smile',
+    id: 'kPa7bsKwL-8',
+    title: 'Die With A Smile',
     artist: 'Lady Gaga & Bruno Mars',
     album: 'Single',
     duration: 251,
-    thumbnailUrl: 'https://img.youtube.com/vi/LHCob76kigA/0.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=LHCob76kigA',
+    thumbnailUrl: 'https://img.youtube.com/vi/kPa7bsKwL-8/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=kPa7bsKwL-8',
     lyrics: `[Lady Gaga, Bruno Mars - Die With A Smile]
 (Ooh, ooh)
 I, I just woke up from a dream
@@ -609,42 +609,107 @@ function parseYouTubeSearchResults(raw: string): Track[] {
     if (trimmed.startsWith('{')) {
       data = JSON.parse(trimmed);
     } else {
-      const match = trimmed.match(/ytInitialData\s*=\s*({.+?});<\/script>/s) || trimmed.match(/var ytInitialData\s*=\s*({.+?});/);
-      if (match) {
-        data = JSON.parse(match[1]);
-      }
-    }
-    if (!data) return [];
-
-    const sections = data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
-    if (Array.isArray(sections)) {
-      for (const sec of sections) {
-        const contents = sec?.itemSectionRenderer?.contents;
-        if (Array.isArray(contents)) {
-          for (const item of contents) {
-            const vr = item.videoRenderer;
-            if (vr && vr.videoId) {
-              const title = vr.title?.runs?.[0]?.text || 'Untitled Song';
-              const artist = vr.ownerText?.runs?.[0]?.text || vr.longBylineText?.runs?.[0]?.text || 'Artist';
-              const durationText = vr.lengthText?.simpleText || '3:30';
-              const parts = durationText.split(':').map(Number);
-              const duration = parts.length === 2 ? parts[0] * 60 + parts[1] : 210;
-              const thumb = vr.thumbnail?.thumbnails?.slice(-1)[0]?.url || `https://img.youtube.com/vi/${vr.videoId}/hqdefault.jpg`;
-              tracks.push({
-                id: vr.videoId,
-                title,
-                artist,
-                album: 'YouTube Music',
-                duration,
-                thumbnailUrl: thumb,
-                youtubeUrl: `https://www.youtube.com/watch?v=${vr.videoId}`,
-                lyrics: `[Enjoy listening to ${title} on Resonate!]`
-              });
+      const startIdx = trimmed.indexOf('ytInitialData');
+      if (startIdx !== -1) {
+        const firstBrace = trimmed.indexOf('{', startIdx);
+        if (firstBrace !== -1) {
+          let depth = 0;
+          let endIdx = -1;
+          let inString = false;
+          let escape = false;
+          for (let i = firstBrace; i < trimmed.length; i++) {
+            const c = trimmed[i];
+            if (escape) { escape = false; continue; }
+            if (c === '\\') { escape = true; continue; }
+            if (c === '"') { inString = !inString; continue; }
+            if (!inString) {
+              if (c === '{') depth++;
+              else if (c === '}') {
+                depth--;
+                if (depth === 0) {
+                  endIdx = i + 1;
+                  break;
+                }
+              }
             }
+          }
+          if (endIdx !== -1) {
+            data = JSON.parse(trimmed.substring(firstBrace, endIdx));
           }
         }
       }
     }
+    if (!data) return [];
+
+    const visited = new Set<string>();
+
+    function walk(node: any) {
+      if (!node || typeof node !== 'object') return;
+
+      // 1. YouTube Music InnerTube item
+      if (node.musicResponsiveListItemRenderer) {
+        const item = node.musicResponsiveListItemRenderer;
+        const flexColumns = item.flexColumns || [];
+        const titleRun = flexColumns[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0];
+        const title = titleRun?.text;
+        const navEndpoint = titleRun?.navigationEndpoint || item.navigationEndpoint;
+        const videoId = navEndpoint?.watchEndpoint?.videoId;
+        const artistRuns = flexColumns[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs || [];
+        const artist = artistRuns.map((r: any) => r.text).join('') || 'YouTube Music';
+        const thumbs = item.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails;
+        const thumb = thumbs ? thumbs[thumbs.length - 1].url : (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '');
+
+        if (videoId && title && !visited.has(videoId)) {
+          visited.add(videoId);
+          tracks.push({
+            id: videoId,
+            title,
+            artist,
+            album: 'YouTube Music',
+            duration: 210,
+            thumbnailUrl: thumb,
+            youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+            lyrics: `[Enjoy listening to ${title} on Resonate!]`
+          });
+        }
+      }
+
+      // 2. Standard YouTube videoRenderer
+      if (node.videoRenderer && node.videoRenderer.videoId) {
+        const vr = node.videoRenderer;
+        if (!visited.has(vr.videoId)) {
+          visited.add(vr.videoId);
+          const title = vr.title?.runs?.[0]?.text || vr.headline?.simpleText || 'Untitled Song';
+          const artist = vr.ownerText?.runs?.[0]?.text || vr.longBylineText?.runs?.[0]?.text || vr.shortBylineText?.runs?.[0]?.text || 'Artist';
+          const durationText = vr.lengthText?.simpleText || '3:30';
+          const parts = durationText.split(':').map(Number);
+          const duration = parts.length === 2 ? parts[0] * 60 + parts[1] : parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : 210;
+          const thumb = vr.thumbnail?.thumbnails?.slice(-1)[0]?.url || `https://i.ytimg.com/vi/${vr.videoId}/hqdefault.jpg`;
+          tracks.push({
+            id: vr.videoId,
+            title,
+            artist,
+            album: 'YouTube Music',
+            duration,
+            thumbnailUrl: thumb,
+            youtubeUrl: `https://www.youtube.com/watch?v=${vr.videoId}`,
+            lyrics: `[Enjoy listening to ${title} on Resonate!]`
+          });
+        }
+      }
+
+      if (Array.isArray(node)) {
+        for (const it of node) walk(it);
+      } else {
+        for (const k of Object.keys(node)) {
+          if (k !== 'videoRenderer' && k !== 'musicResponsiveListItemRenderer') {
+            walk(node[k]);
+          }
+        }
+      }
+    }
+
+    walk(data);
   } catch (_) {}
   return tracks;
 }

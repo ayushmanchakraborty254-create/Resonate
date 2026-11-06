@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
+import {
   Play, Trash2, Heart, Music, Sparkles, Flame, Radio, Disc, Compass,
-  CheckCircle, ArrowUpDown, MoreVertical, Plus, Cloud, TrendingUp, RefreshCw, Search, List
+  CheckCircle, ArrowUpDown, MoreVertical, Plus, Cloud, TrendingUp, RefreshCw, Search, List, ListPlus
 } from 'lucide-react';
 import type { Track, Playlist } from '../types';
 import { useBreakpoint } from '../utils/responsive';
-import { 
+import {
   POPULAR_TRACKS,
   NOSTALGIC_SHELF,
   NEW_RELEASES_SHELF,
@@ -28,6 +28,7 @@ interface MainFeedProps {
   onRemovePlaylist: (playlistId: string) => void;
   onRemoveTrackFromPlaylist: (playlistId: string, trackId: string) => void;
   onCreatePlaylist?: () => void;
+  onAddToQueue?: (track: Track) => void;
 }
 
 export const MainFeed: React.FC<MainFeedProps> = ({
@@ -42,6 +43,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   onRemovePlaylist,
   onRemoveTrackFromPlaylist,
   onCreatePlaylist,
+  onAddToQueue,
 }) => {
   const { isMobile } = useBreakpoint();
   const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId);
@@ -52,33 +54,33 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   // Verified Top Trending Music Hits (Curated music videos only, no shorts or non-music videos)
   const TRENDING_MUSIC_HITS = React.useMemo<Track[]>(() => [
     {
-      id: 'LHCob76kigA',
+      id: 'kPa7bsKwL-8',
       title: 'Die With A Smile',
       artist: 'Lady Gaga & Bruno Mars',
       album: 'Single',
       duration: 251,
-      thumbnailUrl: 'https://img.youtube.com/vi/LHCob76kigA/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=LHCob76kigA',
+      thumbnailUrl: 'https://img.youtube.com/vi/kPa7bsKwL-8/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=kPa7bsKwL-8',
       lyrics: `[Die With A Smile - Lady Gaga & Bruno Mars]`
     },
     {
-      id: 'eVli-tstM5E',
+      id: 'eVtxu9c36y0',
       title: 'Espresso',
       artist: 'Sabrina Carpenter',
       album: 'Short n\' Sweet',
       duration: 175,
-      thumbnailUrl: 'https://img.youtube.com/vi/eVli-tstM5E/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=eVli-tstM5E',
+      thumbnailUrl: 'https://img.youtube.com/vi/eVtxu9c36y0/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=eVtxu9c36y0',
       lyrics: `[Espresso - Sabrina Carpenter]`
     },
     {
-      id: 'V9PVRfjEBTI',
+      id: 'd5gf9dXb4AU',
       title: 'BIRDS OF A FEATHER',
       artist: 'Billie Eilish',
       album: 'HIT ME HARD AND SOFT',
       duration: 194,
-      thumbnailUrl: 'https://img.youtube.com/vi/V9PVRfjEBTI/hqdefault.jpg',
-      youtubeUrl: 'https://www.youtube.com/watch?v=V9PVRfjEBTI',
+      thumbnailUrl: 'https://img.youtube.com/vi/d5gf9dXb4AU/hqdefault.jpg',
+      youtubeUrl: 'https://www.youtube.com/watch?v=d5gf9dXb4AU',
       lyrics: `[BIRDS OF A FEATHER - Billie Eilish]`
     },
     {
@@ -467,9 +469,29 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                     <div className="track-row-title">{track.title}</div>
                     <div className="track-row-subtitle">{track.artist}</div>
                   </div>
-                  <div className="track-row-right">
+                  <div className="track-row-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {onAddToQueue && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddToQueue(track);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'rgba(255,255,255,0.6)',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                        title="Add to queue"
+                      >
+                        <ListPlus size={16} />
+                      </button>
+                    )}
                     <Heart size={16} fill="var(--yt-accent)" style={{ color: 'var(--yt-accent)' }} />
-                    <span style={{ fontSize: '12px', marginLeft: '8px' }}>{formatSecs(track.duration)}</span>
+                    <span style={{ fontSize: '12px', marginLeft: '4px' }}>{formatSecs(track.duration)}</span>
                   </div>
                 </div>
               ))}
@@ -667,9 +689,9 @@ export const MainFeed: React.FC<MainFeedProps> = ({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {quickPicksTracks.map((track) => (
-              <div 
-                key={track.id} 
-                className="track-row" 
+              <div
+                key={track.id}
+                className="track-row"
                 onClick={() => onPlayTrack(track)}
                 style={{
                   display: 'flex',
@@ -681,18 +703,11 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   cursor: 'pointer'
                 }}
               >
-                <div style={{ width: '48px', height: '48px', flexShrink: 0 }}>
-                  <ArtisticCover 
-                    title={track.title}
-                    subtitle={track.artist}
-                    thumbnailUrl={track.thumbnailUrl}
-                    size={48}
-                    aspectRatio="1"
-                    rounded="6px"
-                    showVinyl={false}
-                    showBadge={false}
-                  />
-                </div>
+                <img
+                  src={track.thumbnailUrl}
+                  alt={track.title}
+                  style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'cover' }}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: '15px', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {track.title}
@@ -701,7 +716,29 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                     {track.artist}
                   </div>
                 </div>
-                <MoreVertical size={18} style={{ color: 'rgba(255,255,255,0.4)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {onAddToQueue && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddToQueue(track);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'rgba(255,255,255,0.6)',
+                        cursor: 'pointer',
+                        padding: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                      title="Add to queue"
+                    >
+                      <ListPlus size={18} />
+                    </button>
+                  )}
+                  <MoreVertical size={18} style={{ color: 'rgba(255,255,255,0.4)' }} />
+                </div>
               </div>
             ))}
           </div>
@@ -771,8 +808,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           </div>
           <div className="shelf-scroll">
             {NOSTALGIC_SHELF.map((item) => (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className="song-card"
                 onClick={() => {
                   onPlayTrack({
@@ -846,8 +883,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           </div>
           <div className="shelf-scroll">
             {COMMUNITY_PLAYLISTS.map((pl) => (
-              <div 
-                key={pl.id} 
+              <div
+                key={pl.id}
                 className="song-card"
                 onClick={() => {
                   onPlayTrack({
@@ -884,7 +921,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
               Quick picks
             </span>
           </div>
-          <div 
+          <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
@@ -935,8 +972,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           </div>
           <div className="shelf-scroll">
             {MUSIC_VIDEOS_SHELF.map((video) => (
-              <div 
-                key={video.id} 
+              <div
+                key={video.id}
                 style={{ width: '280px', flexShrink: 0, cursor: 'pointer' }}
                 onClick={() => {
                   onPlayTrack({
@@ -995,8 +1032,8 @@ export const MainFeed: React.FC<MainFeedProps> = ({
             </div>
             <div className="shelf-scroll">
               {playlists.map((playlist) => (
-                <div 
-                  key={playlist.id} 
+                <div
+                  key={playlist.id}
                   className="song-card"
                   onClick={() => {
                     if (playlist.tracks.length > 0) onPlayTrack(playlist.tracks[0]);

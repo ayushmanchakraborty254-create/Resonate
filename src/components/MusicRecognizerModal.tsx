@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Mic, History, Play, RotateCcw, X, Trash2, Settings, Key, AlertCircle } from 'lucide-react';
 import { musicRecognizer, type RecognizedTrack } from '../utils/musicRecognizer';
+import { searchYouTube } from '../utils/youtube';
 import type { Track } from '../types';
 
 interface MusicRecognizerModalProps {
@@ -77,7 +78,16 @@ export const MusicRecognizerModal: React.FC<MusicRecognizerModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handlePlayRecognized = (track: RecognizedTrack) => {
+  const handlePlayRecognized = async (track: RecognizedTrack) => {
+    try {
+      const results = await searchYouTube(`${track.title} ${track.artist}`);
+      if (results && results.length > 0) {
+        onPlayTrackImmediate(results[0]);
+        onClose();
+        return;
+      }
+    } catch (_) {}
+
     onPlayTrackImmediate({
       id: track.id,
       title: track.title,
@@ -86,7 +96,7 @@ export const MusicRecognizerModal: React.FC<MusicRecognizerModalProps> = ({
       duration: 240,
       thumbnailUrl: track.thumbnailUrl,
       youtubeUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(`${track.title} ${track.artist}`)}`,
-      lyrics: `[Enjoy listening to ${track.title} by ${track.artist} on Resonate!]`,
+      lyrics: `[${track.title} - ${track.artist}]`,
     });
     onClose();
   };

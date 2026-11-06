@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Search, Clock, X, ArrowUpRight, Globe, Mic } from 'lucide-react';
+import { ArrowLeft, Search, Clock, X, ArrowUpRight, Globe, Mic, Plus, Check } from 'lucide-react';
 import type { Track } from '../types';
 import { searchYouTube, getSearchSuggestions } from '../utils/youtube';
 
@@ -7,6 +7,7 @@ interface MobileSearchViewProps {
   onBack: () => void;
   onPlayTrackImmediate: (track: Track) => void;
   onOpenRecognizer?: () => void;
+  onAddToQueue?: (track: Track) => void;
 }
 
 const DEFAULT_RECENT_SEARCHES = [
@@ -25,8 +26,10 @@ export const MobileSearchView: React.FC<MobileSearchViewProps> = ({
   onBack,
   onPlayTrackImmediate,
   onOpenRecognizer,
+  onAddToQueue,
 }) => {
   const [query, setQuery] = useState('');
+  const [addedTrackId, setAddedTrackId] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('resonate_recent_searches');
@@ -234,6 +237,41 @@ export const MobileSearchView: React.FC<MobileSearchViewProps> = ({
                       {track.artist}
                     </div>
                   </div>
+                  {onAddToQueue && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddToQueue(track);
+                        setAddedTrackId(track.id);
+                        setTimeout(() => setAddedTrackId(null), 1500);
+                      }}
+                      style={{
+                        background: addedTrackId === track.id ? 'rgba(52, 211, 153, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid ' + (addedTrackId === track.id ? 'rgba(52, 211, 153, 0.4)' : 'rgba(255, 255, 255, 0.12)'),
+                        color: addedTrackId === track.id ? '#34d399' : '#fff',
+                        borderRadius: '20px',
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        flexShrink: 0,
+                      }}
+                      title="Add to Queue"
+                    >
+                      {addedTrackId === track.id ? (
+                        <>
+                          <Check size={14} /> Added
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={14} /> Queue
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

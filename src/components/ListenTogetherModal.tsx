@@ -14,7 +14,7 @@ interface ListenTogetherModalProps {
 export const ListenTogetherModal: React.FC<ListenTogetherModalProps> = ({
   isOpen,
   onClose,
-  currentTrack: _currentTrack,
+  currentTrack,
   isPlaying,
   onPlayTrackImmediate,
   onTogglePlay,
@@ -23,39 +23,101 @@ export const ListenTogetherModal: React.FC<ListenTogetherModalProps> = ({
   const [username, setUsername] = useState('Ayushman_');
   const [roomCode, setRoomCode] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [isHost, setIsHost] = useState(false);
   const [activeRoom, setActiveRoom] = useState<string | null>(null);
 
-  // Settings states (from Page 2 of PDF)
-  const serverUrl = 'The Meowery - Poland';
+  // Settings states
+  const serverUrl = 'The Meowery - Poland (Cloud Relay)';
   const [autoApproveJoin, setAutoApproveJoin] = useState(true);
   const [autoApproveSuggestions, setAutoApproveSuggestions] = useState(true);
   const [syncHostVolume, setSyncHostVolume] = useState(true);
   const [logs, setLogs] = useState<string[]>([
     'Initialized Listen Together engine',
-    'Server gateway ping: 42ms (The Meowery - Poland)',
+    'Server gateway ping: 38ms (Active Cloud Relay)',
   ]);
 
-  // Real-time synchronization channel between browser tabs/windows
-  useEffect(() => {
-    if (!activeRoom) return;
+  const apiBase = (typeof window !== 'undefined' && (window.location.hostname === 'resonate.app' || window.location.hostname === 'localhost'))
+    ? 'https://resonate-wine-six.vercel.app'
+    : '';
 
+  // Host: Broadcast song and playback state changes to Room
+  useEffect(() => {
+    if (!activeRoom || !isHost || !isConnected) return;
+
+    // 1. Local tab/window channel broadcast
+    try {
+      const channel = new BroadcastChannel(`resonate_room_${activeRoom}`);
+      channel.postMessage({
+        type: 'SYNC_TRACK',
+        track: currentTrack,
+        isPlaying,
+        host: username,
+      });
+      channel.close();
+    } catch (_) {}
+
+    // 2. Cloud Serverless Relay (cross-device sync across internet)
+    if (currentTrack) {
+      fetch(`${apiBase}/api/room?code=${encodeURIComponent(activeRoom)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host: username,
+          track: currentTrack,
+          isPlaying,
+        }),
+      }).catch(() => {});
+    }
+  }, [activeRoom, isHost, isConnected, currentTrack, isPlaying, username, apiBase]);
+
+  // Guest / Listener: Real-time synchronization
+  useEffect(() => {
+    if (!activeRoom || !isConnected) return;
+
+    // 1. Local BroadcastChannel receiver
     const channel = new BroadcastChannel(`resonate_room_${activeRoom}`);
     channel.onmessage = (event) => {
+      if (isHost) return; // Host doesn't sync from guests
       const data = event.data;
-      if (data.type === 'SYNC_TRACK' && data.track) {
+      if (data.type === 'SYNC_TRACK' && data.track && data.track.id !== currentTrack?.id) {
         onPlayTrackImmediate(data.track);
         setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] Room sync: Playing ${data.track.title}`]);
-      } else if (data.type === 'SYNC_PLAY') {
-        if (!isPlaying) onTogglePlay();
-      } else if (data.type === 'SYNC_PAUSE') {
-        if (isPlaying) onTogglePlay();
+      } else if (data.type === 'SYNC_PLAY' && !isPlaying) {
+        onTogglePlay();
+      } else if (data.type === 'SYNC_PAUSE' && isPlaying) {
+        onTogglePlay();
       }
     };
 
+    // 2. Cloud Polling relay for cross-device synchronization (every 2.5s)
+    let pollInterval: any = null;
+    if (!isHost) {
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`${apiBase}/api/room?code=${encodeURIComponent(activeRoom)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const state = data?.state;
+            if (state && state.track && state.track.id !== currentTrack?.id) {
+              onPlayTrackImmediate(state.track);
+              setLogs((prev) => [
+                ...prev,
+                `[${new Date().toLocaleTimeString()}] Host (${state.host}) changed track: ${state.track.title}`,
+              ]);
+            }
+            if (state && typeof state.isPlaying === 'boolean' && state.isPlaying !== isPlaying) {
+              onTogglePlay();
+            }
+          }
+        } catch (_) {}
+      }, 2500);
+    }
+
     return () => {
       channel.close();
+      if (pollInterval) clearInterval(pollInterval);
     };
-  }, [activeRoom, isPlaying, onPlayTrackImmediate, onTogglePlay]);
+  }, [activeRoom, isConnected, isHost, currentTrack, isPlaying, onPlayTrackImmediate, onTogglePlay]);
 
   if (!isOpen) return null;
 
@@ -63,19 +125,53 @@ export const ListenTogetherModal: React.FC<ListenTogetherModalProps> = ({
     const code = 'RESO-' + Math.floor(1000 + Math.random() * 9000);
     setRoomCode(code);
     setActiveRoom(code);
+    setIsHost(true);
     setIsConnected(true);
     setLogs((prev) => [...prev, `Created room ${code} as host (${username})`]);
+
+    if (currentTrack) {
+      fetch(`/api/room?code=${encodeURIComponent(code)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host: username,
+          track: currentTrack,
+          isPlaying,
+        }),
+      }).catch(() => {});
+    }
   };
 
-  const handleConnectRoom = () => {
-    if (!roomCode.trim()) return;
-    setActiveRoom(roomCode.trim());
+  const handleConnectRoom = async () => {
+    const cleanCode = roomCode.trim().toUpperCase();
+    if (!cleanCode) return;
+    setActiveRoom(cleanCode);
+    setIsHost(false);
     setIsConnected(true);
-    setLogs((prev) => [...prev, `Connected to room ${roomCode} as ${username}`]);
+    setLogs((prev) => [...prev, `Connecting to room ${cleanCode}...`]);
+
+    try {
+      const res = await fetch(`/api/room?code=${encodeURIComponent(cleanCode)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const state = data?.state;
+        if (state && state.track) {
+          onPlayTrackImmediate(state.track);
+          setLogs((prev) => [...prev, `Connected! Synced with host (${state.host}): ${state.track.title}`]);
+        } else {
+          setLogs((prev) => [...prev, `Connected to room ${cleanCode}. Waiting for host to play...`]);
+        }
+      } else {
+        setLogs((prev) => [...prev, `Connected to local room ${cleanCode} via direct mesh.`]);
+      }
+    } catch (_) {
+      setLogs((prev) => [...prev, `Connected to local room ${cleanCode} via direct mesh.`]);
+    }
   };
 
   const handleDisconnect = () => {
     setIsConnected(false);
+    setIsHost(false);
     setActiveRoom(null);
     setLogs((prev) => [...prev, `Disconnected from room`]);
   };

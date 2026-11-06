@@ -33,6 +33,14 @@
       }
     </style>
     <script>
+      // Background Audio Keep-Alive: Spoof Page Visibility API so YouTube iframe never pauses when app is minimized or screen locks
+      try {
+        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+        window.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
+        document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
+      } catch (_) {}
+
       // Global error logging
       window.addEventListener('error', function(e) {
         console.warn('[Resonate Global Error]', e.message, e.filename, e.lineno);

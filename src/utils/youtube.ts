@@ -118,13 +118,13 @@ I don't wanna be needing your love
 I just wanna be deep in your love`
   },
   {
-    id: 'rtOvBOTyXkk',
+    id: 'rtOvBOTyX00',
     title: 'Christina Perri - A Thousand Years',
     artist: 'Christina Perri',
     album: 'The Twilight Saga: Breaking Dawn',
     duration: 285,
-    thumbnailUrl: 'https://img.youtube.com/vi/rtOvBOTyXkk/0.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=rtOvBOTyXkk',
+    thumbnailUrl: 'https://img.youtube.com/vi/rtOvBOTyX00/0.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=rtOvBOTyX00',
     lyrics: `[Christina Perri - A Thousand Years]
 Heart beats fast
 Colors and promises
@@ -149,13 +149,13 @@ I guess that I forgot I had a choice
 I let you push me past the breaking point`
   },
   {
-    id: 'kPa7bsKwL-8',
+    id: 'fnPxkuFIA48',
     title: 'Die With A Smile',
     artist: 'Lady Gaga & Bruno Mars',
     album: 'Single',
     duration: 251,
-    thumbnailUrl: 'https://img.youtube.com/vi/kPa7bsKwL-8/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=kPa7bsKwL-8',
+    thumbnailUrl: 'https://img.youtube.com/vi/fnPxkuFIA48/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=fnPxkuFIA48',
     lyrics: `[Lady Gaga, Bruno Mars - Die With A Smile]
 (Ooh, ooh)
 I, I just woke up from a dream
@@ -477,6 +477,116 @@ export const EXTENDED_CATALOG: Track[] = [
   ...POPULAR_TRACKS,
   ...SPEED_DIAL_ITEMS,
   {
+    id: '5rHzi_5rSyw',
+    title: 'Janam Janam',
+    artist: 'Arijit Singh, Antara Mitra',
+    album: 'Dilwale',
+    duration: 238,
+    thumbnailUrl: 'https://i.ytimg.com/vi/5rHzi_5rSyw/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=5rHzi_5rSyw',
+    lyrics: `[Janam Janam - Dilwale]`
+  },
+  {
+    id: 'HeBJMzrM7hU',
+    title: 'Naadaniyan',
+    artist: 'Akshath',
+    album: 'Single',
+    duration: 172,
+    thumbnailUrl: 'https://i.ytimg.com/vi/HeBJMzrM7hU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=HeBJMzrM7hU',
+    lyrics: `[Naadaniyan - Akshath]`
+  },
+  {
+    id: 'TbjbZFqLEtw',
+    title: 'Mere Naam Tu',
+    artist: 'Abhay Jodhpurkar',
+    album: 'Zero',
+    duration: 338,
+    thumbnailUrl: 'https://i.ytimg.com/vi/TbjbZFqLEtw/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=TbjbZFqLEtw',
+    lyrics: `[Mere Naam Tu - Zero]`
+  },
+  {
+    id: 'piUHBTXsoiY',
+    title: 'Raabta',
+    artist: 'Arijit Singh',
+    album: 'Agent Vinod',
+    duration: 244,
+    thumbnailUrl: 'https://i.ytimg.com/vi/piUHBTXsoiY/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=piUHBTXsoiY',
+    lyrics: `[Raabta - Arijit Singh]`
+  },
+  {
+    id: '1F3hm6MfR1k',
+    title: 'Hukum',
+    artist: 'Anirudh Ravichander',
+    album: 'Jailer',
+    duration: 207,
+    thumbnailUrl: 'https://i.ytimg.com/vi/1F3hm6MfR1k/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm6MfR1k',
+    lyrics: `[Hukum - Anirudh]`
+  },
+  {
+    id: 'I0-IiiVgvyU',
+    title: 'Teri Mitti',
+    artist: 'B Praak',
+    album: 'Kesari',
+    duration: 314,
+    thumbnailUrl: 'https://i.ytimg.com/vi/I0-IiiVgvyU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=I0-IiiVgvyU',
+    lyrics: `[Teri Mitti - Kesari]`
+  },
+  {
+    id: 'TIUjE7YgoTQ',
+    title: 'Coffee Houser Sei Addata',
+    artist: 'Manna Dey',
+    album: 'Classics',
+    duration: 382,
+    thumbnailUrl: 'https://i.ytimg.com/vi/TIUjE7YgoTQ/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=TIUjE7YgoTQ',
+    lyrics: `[Coffee Houser Sei Addata - Manna Dey]`
+  },
+  {
+    id: 'eVli-tstM5E',
+    title: 'Espresso',
+    artist: 'Sabrina Carpenter',
+    album: 'Short n\' Sweet',
+    duration: 175,
+    thumbnailUrl: 'https://i.ytimg.com/vi/eVli-tstM5E/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=eVli-tstM5E',
+    lyrics: `[Espresso - Sabrina Carpenter]`
+  },
+  {
+    id: 'V9PVRfjEBTI',
+    title: 'BIRDS OF A FEATHER',
+    artist: 'Billie Eilish',
+    album: 'HIT ME HARD AND SOFT',
+    duration: 194,
+    thumbnailUrl: 'https://i.ytimg.com/vi/V9PVRfjEBTI/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=V9PVRfjEBTI',
+    lyrics: `[BIRDS OF A FEATHER - Billie Eilish]`
+  },
+  {
+    id: 'ekr2nIex040',
+    title: 'APT.',
+    artist: 'ROSÉ & Bruno Mars',
+    album: 'rosie',
+    duration: 169,
+    thumbnailUrl: 'https://i.ytimg.com/vi/ekr2nIex040/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=ekr2nIex040',
+    lyrics: `[APT. - ROSÉ & Bruno Mars]`
+  },
+  {
+    id: '2Vv-BfVoq4g',
+    title: 'Perfect',
+    artist: 'Ed Sheeran',
+    album: '÷ (Divide)',
+    duration: 263,
+    thumbnailUrl: 'https://i.ytimg.com/vi/2Vv-BfVoq4g/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g',
+    lyrics: `[Perfect - Ed Sheeran]`
+  },
+  {
     id: 'PEM0Vs8jf1w',
     title: 'golden hour',
     artist: 'JVKE',
@@ -487,14 +597,14 @@ export const EXTENDED_CATALOG: Track[] = [
     lyrics: `[It was just two lovers sittin' in the car - golden hour]`
   },
   {
-    id: 'PEM0Vs8jf1w',
-    title: "golden hour on piano",
+    id: '4y33h81phKU',
+    title: 'Interstellar on Piano',
     artist: 'Patrik Pietschmann',
     album: 'Piano Series',
-    duration: 215,
-    thumbnailUrl: 'https://img.youtube.com/vi/PEM0Vs8jf1w/hqdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=PEM0Vs8jf1w',
-    lyrics: `[golden hour Piano Arrangement]`
+    duration: 275,
+    thumbnailUrl: 'https://i.ytimg.com/vi/4y33h81phKU/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=4y33h81phKU',
+    lyrics: `[Interstellar on Piano - Patrik Pietschmann]`
   },
   {
     id: 'BddP6PYo2gs',
@@ -843,7 +953,41 @@ export async function searchYouTube(query: string): Promise<Track[]> {
     }
   } catch (_) {}
 
-  // 6. Smart Fuzzy Fallback: Score against extended verified catalog
+  // 6. Global Music Metadata Search (iTunes Music API - 100% CORS-friendly worldwide)
+  try {
+    const itunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(cleanQuery)}&media=music&entity=song&limit=15`, {
+      signal: AbortSignal.timeout(2800)
+    });
+    if (itunesRes.ok) {
+      const data = await itunesRes.json();
+      if (Array.isArray(data.results) && data.results.length > 0) {
+        const itunesTracks: Track[] = data.results.map((r: any) => {
+          // If we have a catalog match for videoId, use that; otherwise generate a clean track ID
+          const match = EXTENDED_CATALOG.find(t => 
+            t.title.toLowerCase().includes(r.trackName.toLowerCase()) || 
+            r.trackName.toLowerCase().includes(t.title.toLowerCase())
+          );
+          const vidId = match?.id || `itunes-${r.trackId}`;
+          const artwork = (r.artworkUrl100 || '').replace('100x100bb', '600x600bb');
+          return {
+            id: vidId,
+            title: r.trackName || 'Untitled Song',
+            artist: r.artistName || 'Artist',
+            album: r.collectionName || 'Single',
+            duration: Math.round((r.trackTimeMillis || 210000) / 1000),
+            thumbnailUrl: artwork || `https://img.youtube.com/vi/${vidId}/hqdefault.jpg`,
+            youtubeUrl: match ? `https://www.youtube.com/watch?v=${match.id}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(r.trackName + ' ' + r.artistName)}`,
+            lyrics: `[Enjoy listening to ${r.trackName} by ${r.artistName} on Resonate!]`
+          };
+        });
+        if (itunesTracks.length > 0) {
+          return itunesTracks;
+        }
+      }
+    }
+  } catch (_) {}
+
+  // 7. Smart Fuzzy Fallback: Score against extended verified catalog
   const cleanTokens = cleanQuery.toLowerCase().replace(/[-–—]/g, ' ').split(/\s+/).filter(Boolean);
   const scoredCatalog = EXTENDED_CATALOG.map((track) => {
     const text = `${track.title} ${track.artist} ${track.album || ''}`.toLowerCase();

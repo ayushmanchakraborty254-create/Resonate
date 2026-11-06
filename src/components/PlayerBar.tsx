@@ -160,6 +160,14 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
               onNext();
             }
           },
+          onError: (event: any) => {
+            console.warn('[Resonate] YouTube Player error:', event.data);
+            // 150/101: Embedding not allowed, 100: Video removed/not found, 2: Invalid id
+            if (event.data === 150 || event.data === 101 || event.data === 100 || event.data === 2) {
+              console.warn('[Resonate] Track unavailable, auto-advancing to next track...');
+              setTimeout(() => onNext(), 800);
+            }
+          },
         },
       });
     }
@@ -224,11 +232,14 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
       progress: isDragging ? dragProgress : progress,
       duration: duration || currentTrack?.duration || 180,
     });
+  }, [currentTrack, isPlaying, progress, dragProgress, isDragging, duration]);
 
-    // Native & Web MediaSession OS Integration (Lock screen, Quick Settings media tile, Android notification)
+  // Native & Web MediaSession OS Integration (Lock screen, Quick Settings media tile, Android notification)
+  // Only updates on Track, Play state, or Duration change - NOT on every 100ms progress tick to prevent Android IPC flooding
+  useEffect(() => {
     if (currentTrack && typeof window !== 'undefined') {
       const totalDur = duration || currentTrack.duration || 180;
-      const currentPos = isDragging ? dragProgress : progress;
+      const currentPos = progress;
 
       // 1. Android Native Notification Bridge
       try {
@@ -301,7 +312,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         } catch (_) {}
       }
     }
-  }, [currentTrack, isPlaying, progress, duration, isDragging, dragProgress, onNext, onPrev]);
+  }, [currentTrack?.id, isPlaying, duration, onNext, onPrev]);
 
   // Two-way Remote Control Dispatcher (invoked by Native Android Notification Actions)
   useEffect(() => {
@@ -371,10 +382,6 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     e.stopPropagation();
     const val = parseInt(e.target.value, 10);
     setDragProgress(val);
-    setProgress(val);
-    if (playerRef.current && playerRef.current.seekTo) {
-      playerRef.current.seekTo(val, true);
-    }
   };
 
   const handleSliderMouseUp = (e?: React.MouseEvent | React.TouchEvent) => {

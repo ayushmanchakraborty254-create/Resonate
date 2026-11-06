@@ -106,7 +106,34 @@ class MainActivity : AppCompatActivity() {
         fun searchYouTubeNative(query: String): String {
             return try {
                 val future = Executors.newSingleThreadExecutor().submit(java.util.concurrent.Callable {
-                    // 1. Try YouTube Music InnerTube endpoint
+                    // 1. YouTube InnerTube ANDROID Client endpoint (Zero CORS, zero auth/cookies required, pristine JSON response)
+                    try {
+                        val androidUrl = URL("https://www.youtube.com/youtubei/v1/search")
+                        val aConn = androidUrl.openConnection() as HttpURLConnection
+                        aConn.requestMethod = "POST"
+                        aConn.setRequestProperty("Content-Type", "application/json")
+                        aConn.setRequestProperty("User-Agent", "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip")
+                        aConn.connectTimeout = 5000
+                        aConn.readTimeout = 5000
+                        aConn.doOutput = true
+
+                        val body = """{"context":{"client":{"clientName":"ANDROID","clientVersion":"19.09.37","hl":"en","gl":"US"}},"query":${org.json.JSONObject.quote(query)}}"""
+                        aConn.outputStream.use { os ->
+                            os.write(body.toByteArray(Charsets.UTF_8))
+                        }
+
+                        if (aConn.responseCode in 200..299) {
+                            val resp = aConn.inputStream.bufferedReader().use { it.readText() }
+                            aConn.disconnect()
+                            if (resp.isNotBlank() && resp.length > 50) {
+                                return@Callable resp
+                            }
+                        } else {
+                            aConn.disconnect()
+                        }
+                    } catch (_: Exception) {}
+
+                    // 2. Fallback to YouTube Music InnerTube endpoint
                     try {
                         val itUrl = URL("https://music.youtube.com/youtubei/v1/search")
                         val itConn = itUrl.openConnection() as HttpURLConnection
@@ -118,8 +145,8 @@ class MainActivity : AppCompatActivity() {
                         )
                         itConn.setRequestProperty("Origin", "https://music.youtube.com")
                         itConn.setRequestProperty("Referer", "https://music.youtube.com/")
-                        itConn.connectTimeout = 6000
-                        itConn.readTimeout = 6000
+                        itConn.connectTimeout = 5000
+                        itConn.readTimeout = 5000
                         itConn.doOutput = true
 
                         val body = """{"context":{"client":{"clientName":"WEB_REMIX","clientVersion":"1.20240318.01.00","hl":"en","gl":"US"}},"query":${org.json.JSONObject.quote(query)}}"""
@@ -138,7 +165,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     } catch (_: Exception) {}
 
-                    // 2. Fallback to scraping YouTube HTML with linear brace extraction
+                    // 3. Fallback to scraping YouTube HTML with linear brace extraction
                     try {
                         val encoded = java.net.URLEncoder.encode(query, "UTF-8")
                         val url = URL("https://www.youtube.com/results?search_query=$encoded")
@@ -149,8 +176,8 @@ class MainActivity : AppCompatActivity() {
                             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
                         )
                         conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9")
-                        conn.connectTimeout = 6000
-                        conn.readTimeout = 6000
+                        conn.connectTimeout = 5000
+                        conn.readTimeout = 5000
                         val html = conn.inputStream.bufferedReader().use { it.readText() }
                         conn.disconnect()
 
@@ -607,12 +634,20 @@ class MainActivity : AppCompatActivity() {
     // Keep music playing in background when app is minimized
     override fun onPause() {
         super.onPause()
-        // DO NOT pause webView or webView timers here so background audio continues
+        try {
+            if (::webView.isInitialized) {
+                webView.resumeTimers()
+            }
+        } catch (_: Exception) {}
     }
 
     override fun onStop() {
         super.onStop()
-        // DO NOT stop webView here so background audio continues
+        try {
+            if (::webView.isInitialized) {
+                webView.resumeTimers()
+            }
+        } catch (_: Exception) {}
     }
 
     override fun onDestroy() {

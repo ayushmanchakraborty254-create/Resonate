@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
   Play, Trash2, Heart, Music, Sparkles, Flame, Radio, Disc, Compass,
-  CheckCircle, ArrowUpDown, MoreVertical, Plus, Cloud, TrendingUp, RefreshCw, Search, List, ListPlus
+  CheckCircle, ArrowUpDown, MoreVertical, Plus, Cloud, TrendingUp, RefreshCw, Search, List, ListPlus,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import type { Track, Playlist } from '../types';
 import { useBreakpoint } from '../utils/responsive';
@@ -50,6 +51,45 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   const [selectedMood, setSelectedMood] = useState('Podcasts');
   const [speedDialPage, setSpeedDialPage] = useState(0);
   const speedDialContainerRef = React.useRef<HTMLDivElement>(null);
+  const [isPointerDown, setIsPointerDown] = useState(false);
+  const pointerStartX = React.useRef(0);
+  const scrollStartLeft = React.useRef(0);
+  const hasMoved = React.useRef(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsPointerDown(true);
+    hasMoved.current = false;
+    pointerStartX.current = e.clientX;
+    scrollStartLeft.current = speedDialContainerRef.current?.scrollLeft || 0;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isPointerDown || !speedDialContainerRef.current) return;
+    const delta = e.clientX - pointerStartX.current;
+    if (Math.abs(delta) > 6) {
+      hasMoved.current = true;
+    }
+    speedDialContainerRef.current.scrollLeft = scrollStartLeft.current - delta;
+  };
+
+  const handlePointerUp = () => {
+    if (!isPointerDown || !speedDialContainerRef.current) return;
+    setIsPointerDown(false);
+    const container = speedDialContainerRef.current;
+    const pageWidth = container.clientWidth;
+    const targetPage = Math.max(0, Math.min(2, Math.round(container.scrollLeft / pageWidth)));
+    setSpeedDialPage(targetPage);
+    container.scrollTo({ left: targetPage * pageWidth, behavior: 'smooth' });
+  };
+
+  const goToSpeedDialPage = (page: number) => {
+    const clamped = Math.max(0, Math.min(2, page));
+    setSpeedDialPage(clamped);
+    if (speedDialContainerRef.current) {
+      const pageWidth = speedDialContainerRef.current.clientWidth;
+      speedDialContainerRef.current.scrollTo({ left: clamped * pageWidth, behavior: 'smooth' });
+    }
+  };
 
   // Verified Top Trending Music Hits (Curated music videos only, no shorts or non-music videos)
   // Verified Top Trending Music Hits (Curated official studio music tracks & verified instrumental covers only)
@@ -592,14 +632,61 @@ export const MainFeed: React.FC<MainFeedProps> = ({
             <span style={{ fontSize: '20px', fontWeight: 800, color: '#93c5fd' }}>
               Speed dial
             </span>
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-              Page {speedDialPage + 1} of 3
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => goToSpeedDialPage(speedDialPage - 1)}
+                disabled={speedDialPage === 0}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: 'none',
+                  color: speedDialPage === 0 ? 'rgba(255,255,255,0.2)' : '#fff',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: speedDialPage === 0 ? 'default' : 'pointer',
+                  transition: 'background 0.2s',
+                }}
+                title="Previous page"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                {speedDialPage + 1} / 3
+              </span>
+              <button
+                onClick={() => goToSpeedDialPage(speedDialPage + 1)}
+                disabled={speedDialPage === 2}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: 'none',
+                  color: speedDialPage === 2 ? 'rgba(255,255,255,0.2)' : '#fff',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: speedDialPage === 2 ? 'default' : 'pointer',
+                  transition: 'background 0.2s',
+                }}
+                title="Next page"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
 
           <div
             ref={speedDialContainerRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
             onScroll={(e) => {
+              if (isPointerDown) return;
               const el = e.currentTarget;
               if (el.clientWidth > 0) {
                 const page = Math.round(el.scrollLeft / el.clientWidth);
@@ -611,12 +698,14 @@ export const MainFeed: React.FC<MainFeedProps> = ({
             style={{
               display: 'flex',
               overflowX: 'auto',
-              scrollSnapType: 'x mandatory',
+              scrollSnapType: isPointerDown ? 'none' : 'x mandatory',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-x',
               gap: '16px',
+              cursor: isPointerDown ? 'grabbing' : 'grab',
+              userSelect: 'none',
             }}
           >
             {[0, 1, 2].map((pageIdx) => {
@@ -638,7 +727,11 @@ export const MainFeed: React.FC<MainFeedProps> = ({
                   {pageTracks.map((track) => (
                     <div
                       key={track.id}
-                      onClick={() => onPlayTrack(track)}
+                      onClick={() => {
+                        if (!hasMoved.current) {
+                          onPlayTrack(track);
+                        }
+                      }}
                       style={{
                         position: 'relative',
                         aspectRatio: '1',
@@ -701,16 +794,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
               return (
                 <button
                   key={idx}
-                  onClick={() => {
-                    setSpeedDialPage(idx);
-                    if (speedDialContainerRef.current) {
-                      const targetLeft = idx * speedDialContainerRef.current.clientWidth;
-                      speedDialContainerRef.current.scrollTo({
-                        left: targetLeft,
-                        behavior: 'smooth',
-                      });
-                    }
-                  }}
+                  onClick={() => goToSpeedDialPage(idx)}
                   style={{
                     width: isActive ? '20px' : '6px',
                     height: '6px',

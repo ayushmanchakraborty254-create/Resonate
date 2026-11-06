@@ -38,12 +38,18 @@ export const StatsModal: React.FC<StatsModalProps> = ({
   const [topArtists, setTopArtists] = useState<ComputedArtistStat[]>([]);
   const [topPlaylists, setTopPlaylists] = useState<Array<{ id: string; name: string; tracks: Track[] }>>([]);
 
+  const [totalListeningMinutes, setTotalListeningMinutes] = useState(0);
+
   // Calculate dynamic stats based on chosen timeframe and user listening history
   const loadStats = async () => {
     try {
       const history: Array<{ trackId: string; timestamp: number; duration: number }> = await db.getAll('history');
       const metrics: Array<{ id: string; playCount: number; totalListeningTime: number; lastPlayed: number }> = await db.getAll('metrics');
       const allCachedTracks: Track[] = await db.getAll('tracks');
+
+      // Also incorporate localStorage history for real-time immediate updates
+      const rawLocal = localStorage.getItem('resonate_history');
+      const localHistory: Array<Track & { playedAt?: number }> = rawLocal ? JSON.parse(rawLocal) : [];
 
       // 1. Timeframe Cutoff Filter
       const now = Date.now();
@@ -57,13 +63,28 @@ export const StatsModal: React.FC<StatsModalProps> = ({
       const filteredHistory = history.filter((h) => h.timestamp >= cutoffTime);
 
       // Track play frequency map
-      const trackPlayMap: Record<string, { plays: number; totalTime: number }> = {};
+      const trackPlayMap: Record<string, { plays: number; totalTime: number; trackMeta?: Track }> = {};
+      
+      // Merge IndexedDB history
       filteredHistory.forEach((item) => {
         if (!trackPlayMap[item.trackId]) {
           trackPlayMap[item.trackId] = { plays: 0, totalTime: 0 };
         }
         trackPlayMap[item.trackId].plays += 1;
-        trackPlayMap[item.trackId].totalTime += item.duration || 60;
+        trackPlayMap[item.trackId].totalTime += item.duration || 180;
+      });
+
+      // Merge localStorage real played tracks
+      localHistory.forEach((t) => {
+        if (!t.playedAt || t.playedAt >= cutoffTime) {
+          if (!trackPlayMap[t.id]) {
+            trackPlayMap[t.id] = { plays: 1, totalTime: t.duration || 180, trackMeta: t };
+          } else {
+            trackPlayMap[t.id].plays += 1;
+            trackPlayMap[t.id].totalTime += t.duration || 180;
+            if (!trackPlayMap[t.id].trackMeta) trackPlayMap[t.id].trackMeta = t;
+          }
+        }
       });
 
       // Also merge all-time metrics if continuous or if history is fresh
@@ -78,9 +99,16 @@ export const StatsModal: React.FC<StatsModalProps> = ({
         }
       });
 
+      // Calculate total listening minutes
+      let totalSecs = 0;
+      Object.values(trackPlayMap).forEach((st) => { totalSecs += st.totalTime; });
+      setTotalListeningMinutes(Math.round(totalSecs / 60));
+
       // Find Track Metadata lookup
       const findTrack = (id: string): Track => {
+        if (trackPlayMap[id]?.trackMeta) return trackPlayMap[id].trackMeta!;
         const found = allCachedTracks.find((t) => t.id === id || t.id.endsWith(id)) ||
+                      localHistory.find((t) => t.id === id) ||
                       POPULAR_TRACKS.find((t) => t.id === id);
         if (found) return found;
         return {
@@ -286,6 +314,35 @@ export const StatsModal: React.FC<StatsModalProps> = ({
               {tf}
             </button>
           ))}
+        </div>
+
+        {/* Listening Highlight Badges / Summary Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '32px' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(141,168,214,0.15), rgba(255,255,255,0.02))', border: '1px solid rgba(141,168,214,0.25)', borderRadius: '16px', padding: '16px 20px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: '#8da8d6', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Listening Time</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '4px', color: '#fff' }}>{totalListeningMinutes} mins</div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>Filtered by {timeframe}</div>
+          </div>
+
+          <div style={{ background: 'linear-gradient(135deg, rgba(255,75,75,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,75,75,0.2)', borderRadius: '16px', padding: '16px 20px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: '#ff6b6b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Top Track</div>
+            <div style={{ fontSize: '16px', fontWeight: 700, marginTop: '4px', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {topSongs[0]?.track?.title || 'None yet'}
+            </div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>
+              {topSongs[0] ? `${topSongs[0].plays} plays` : 'Start listening'}
+            </div>
+          </div>
+
+          <div style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(168,85,247,0.2)', borderRadius: '16px', padding: '16px 20px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Top Artist</div>
+            <div style={{ fontSize: '16px', fontWeight: 700, marginTop: '4px', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {topArtists[0]?.name || 'None yet'}
+            </div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>
+              {topArtists[0]?.plays || 'Most played'}
+            </div>
+          </div>
         </div>
 
         {/* 1. Playlists Shelf (with 2x2 collage covers) */}

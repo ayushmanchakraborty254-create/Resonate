@@ -1,6 +1,6 @@
 Add-Type -AssemblyName System.Drawing
 
-$srcPath = 'C:/Users/ayush/.gemini/antigravity/brain/6088c53b-f9a4-40c1-b29c-d75f22938609/.user_uploaded/media_1793929804387_d7780994.jpg'
+$srcPath = 'C:/Users/ayush/.gemini/antigravity/brain/6088c53b-f9a4-40c1-b29c-d75f22938609/.user_uploaded/media_1793936678857_afd7c9f1.jpg'
 $src = [System.Drawing.Image]::FromFile($srcPath)
 
 function Resize-Image($img, $w, $h, $destPath) {

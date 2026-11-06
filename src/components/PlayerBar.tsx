@@ -20,6 +20,7 @@ import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import { useBreakpoint } from '../utils/responsive';
 import { floatingPlayer } from '../utils/floatingPlayer';
 import { KaraokeLyrics } from './KaraokeLyrics';
+import { useTrackLyrics } from '../utils/lyrics';
 
 interface PlayerBarProps {
   currentTrack: Track | null;
@@ -87,6 +88,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const { isMobile } = useBreakpoint();
   const [mobilePlayerState, setMobilePlayerState] = useState<'mini' | 'half' | 'full'>('mini');
   const [localShowLyrics, setLocalShowLyrics] = useState(false);
+  const dynamicLyrics = useTrackLyrics(currentTrack);
 
   const swipeHandlers = useSwipeGesture({
     onSwipeDown: () => {
@@ -440,12 +442,15 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 className="slider"
                 min={0}
                 max={1}
-                step={0.05}
-                value={volume}
+                step={0.01}
+                value={isMuted ? 0 : volume}
                 onChange={(e) => {
                   const v = parseFloat(e.target.value);
                   setVolume(v);
                   if (v > 0) setIsMuted(false);
+                  if (playerRef.current && playerRef.current.setVolume) {
+                    playerRef.current.setVolume(Math.round(v * 100));
+                  }
                 }}
               />
             </div>
@@ -673,7 +678,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       {localShowLyrics ? (
                         <div style={{ width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                           <KaraokeLyrics
-                            lyrics={currentTrack.lyrics}
+                            lyrics={dynamicLyrics || currentTrack.lyrics}
                             progress={isDragging ? dragProgress : progress}
                             duration={duration || currentTrack.duration || 180}
                             onSeek={(secs) => {
@@ -760,6 +765,33 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       >
                         <Repeat size={18} />
                       </button>
+                    </div>
+
+                    {/* Volume Slider in Mobile Full Player */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px', marginBottom: '20px' }}>
+                      <button
+                        onClick={toggleMute}
+                        style={{ background: 'none', border: 'none', color: isMuted || volume === 0 ? 'var(--yt-accent)' : 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                      >
+                        {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                      </button>
+                      <input
+                        type="range"
+                        className="slider"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={isMuted ? 0 : volume}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          setVolume(v);
+                          if (v > 0) setIsMuted(false);
+                          if (playerRef.current && playerRef.current.setVolume) {
+                            playerRef.current.setVolume(Math.round(v * 100));
+                          }
+                        }}
+                        style={{ flex: 1, touchAction: 'none' }}
+                      />
                     </div>
 
                     <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-around', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>

@@ -48,6 +48,58 @@ export const MainFeed: React.FC<MainFeedProps> = ({
   const activePlaylist = playlists.find((p) => p.id === selectedPlaylistId);
   const [selectedMood, setSelectedMood] = useState('Podcasts');
 
+  // Dynamic User Preference Engine:
+  // Merges user's liked tracks and recent listening history.
+  // If fresh install or no preferences, seamlessly defaults to the world's most famous hits.
+  const userPreferences = React.useMemo<Track[]>(() => {
+    let history: Track[] = [];
+    try {
+      const raw = localStorage.getItem('resonate_history');
+      if (raw) history = JSON.parse(raw);
+    } catch (_) {}
+
+    const combined = [...likedTracks, ...history];
+    const seen = new Set<string>();
+    const unique: Track[] = [];
+    for (const t of combined) {
+      if (t && t.id && !seen.has(t.id)) {
+        seen.add(t.id);
+        unique.push(t);
+      }
+    }
+    return unique;
+  }, [likedTracks]);
+
+  // Speed Dial items (3x3 grid)
+  const speedDialTracks = React.useMemo<Track[]>(() => {
+    if (userPreferences.length >= 4) {
+      const preferred = userPreferences.slice(0, 9);
+      if (preferred.length < 9) {
+        const pIds = new Set(preferred.map((p) => p.id));
+        const fillers = SPEED_DIAL_ITEMS.filter((f) => !pIds.has(f.id));
+        return [...preferred, ...fillers].slice(0, 9);
+      }
+      return preferred;
+    }
+    return SPEED_DIAL_ITEMS;
+  }, [userPreferences]);
+
+  // Quick picks items
+  const quickPicksTracks = React.useMemo<Track[]>(() => {
+    if (userPreferences.length >= 4) {
+      return userPreferences.slice(0, 4);
+    }
+    return POPULAR_TRACKS.slice(0, 4);
+  }, [userPreferences]);
+
+  // Listen again shelf
+  const listenAgainTracks = React.useMemo<Track[]>(() => {
+    if (userPreferences.length > 0) {
+      return userPreferences.slice(0, 8);
+    }
+    return POPULAR_TRACKS.slice(0, 8);
+  }, [userPreferences]);
+
   // Explore categories
   const exploreCategories = [
     { title: 'Chill & Relax', color: '#1db954' },
@@ -168,7 +220,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
               gap: '12px'
             }}
           >
-            {SPEED_DIAL_ITEMS.map((track) => (
+            {speedDialTracks.map((track) => (
               <div
                 key={track.id}
                 onClick={() => onPlayTrack(track)}
@@ -232,7 +284,9 @@ export const MainFeed: React.FC<MainFeedProps> = ({
               Quick picks
             </span>
             <button
-              onClick={() => onPlayTrack(QUICK_PICKS_EXPANDED[0])}
+              onClick={() => {
+                if (quickPicksTracks.length > 0) onPlayTrack(quickPicksTracks[0]);
+              }}
               style={{
                 background: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.15)',
@@ -249,7 +303,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {QUICK_PICKS_EXPANDED.slice(0, 4).map((track) => (
+            {quickPicksTracks.map((track) => (
               <div 
                 key={track.id} 
                 className="track-row" 
@@ -292,7 +346,7 @@ export const MainFeed: React.FC<MainFeedProps> = ({
             </span>
           </div>
           <div className="shelf-scroll">
-            {POPULAR_TRACKS.slice(0, 5).map((track) => (
+            {listenAgainTracks.map((track) => (
               <div key={track.id} className="song-card" onClick={() => onPlayTrack(track)}>
                 <ArtisticCover
                   title={track.title}

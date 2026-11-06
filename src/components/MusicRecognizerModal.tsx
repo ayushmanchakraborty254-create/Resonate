@@ -19,12 +19,19 @@ export const MusicRecognizerModal: React.FC<MusicRecognizerModalProps> = ({
   const [historyList, setHistoryList] = useState<RecognizedTrack[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [volumeLevel, setVolumeLevel] = useState(0);
+  const timersRef = React.useRef<any[]>([]);
 
   // API Tokens
   const [auddKey, setAuddKey] = useState(() => localStorage.getItem('resonate_audd_api_key') || '');
   const [rapidKey, setRapidKey] = useState(() => localStorage.getItem('resonate_rapidapi_key') || '');
 
+  const clearAllTimers = () => {
+    timersRef.current.forEach((t) => clearTimeout(t));
+    timersRef.current = [];
+  };
+
   const startListeningSession = async () => {
+    clearAllTimers();
     setError(null);
     setStage('listening');
     setResult(null);
@@ -35,18 +42,42 @@ export const MusicRecognizerModal: React.FC<MusicRecognizerModalProps> = ({
         setVolumeLevel(vol);
       });
 
-      // Listen for 5 seconds to capture a clean audio fingerprint
-      setTimeout(async () => {
+      // Adaptive Listening Flow:
+      // Step 1: At 3.5s, check if we already have an unambiguous match.
+      // If yes, stop listening and show result immediately (instant match)!
+      const fastTimer = setTimeout(async () => {
         try {
-          const match = await musicRecognizer.stopAndRecognize();
-          setResult(match);
-          setStage('result');
-          setHistoryList(musicRecognizer.getHistory());
-        } catch (err: any) {
-          setError(err.message || 'Could not recognize music.');
-          setStage('listening');
-        }
-      }, 5000);
+          const snapshot = await musicRecognizer.requestSnapshot();
+          if (snapshot) {
+            const quickMatch = await musicRecognizer.testSnapshotRecognize(snapshot);
+            if (quickMatch) {
+              musicRecognizer.cancel();
+              musicRecognizer.saveToHistory(quickMatch);
+              setResult(quickMatch);
+              setStage('result');
+              setHistoryList(musicRecognizer.getHistory());
+              return;
+            }
+          }
+        } catch (_) {}
+
+        // Step 2: If not yet recognized (covers, instrumentals, low-volume),
+        // keep listening up to 8.5 seconds to build a deeper acoustic spectrum.
+        const deepTimer = setTimeout(async () => {
+          try {
+            const match = await musicRecognizer.stopAndRecognize();
+            setResult(match);
+            setStage('result');
+            setHistoryList(musicRecognizer.getHistory());
+          } catch (err: any) {
+            setError(err.message || 'Could not recognize music.');
+            setStage('listening');
+          }
+        }, 5000);
+        timersRef.current.push(deepTimer);
+      }, 3500);
+
+      timersRef.current.push(fastTimer);
     } catch (err: any) {
       setError(err.message || 'Microphone access denied or unavailable.');
     }
@@ -57,6 +88,7 @@ export const MusicRecognizerModal: React.FC<MusicRecognizerModalProps> = ({
       setHistoryList(musicRecognizer.getHistory());
       startListeningSession();
     } else {
+      clearAllTimers();
       musicRecognizer.cancel();
       setStage('listening');
       setResult(null);

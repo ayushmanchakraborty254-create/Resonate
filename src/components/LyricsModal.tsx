@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { X, Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 import type { Track } from '../types';
 import { KaraokeLyrics } from './KaraokeLyrics';
+import { useTrackLyrics } from '../utils/lyrics';
 
 interface LyricsModalProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ export const LyricsModal: React.FC<LyricsModalProps> = ({
   duration,
   onSeek,
 }) => {
+  const dynamicLyrics = useTrackLyrics(currentTrack);
+
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -178,7 +181,7 @@ export const LyricsModal: React.FC<LyricsModalProps> = ({
           }}
         >
           <KaraokeLyrics
-            lyrics={currentTrack.lyrics}
+            lyrics={dynamicLyrics || currentTrack.lyrics}
             progress={progress}
             duration={trackDuration}
             onSeek={onSeek}

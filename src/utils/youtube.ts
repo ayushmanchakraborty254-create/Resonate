@@ -172,215 +172,215 @@ export const SPEED_DIAL_ITEMS: Track[] = [
     artist: 'John Williams',
     album: "Harry Potter OST",
     duration: 310,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/K6MlhX0Q3sQ/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=K6MlhX0Q3sQ',
     lyrics: `[Hedwig's Theme - Orchestral Instrumental]`
   },
   {
-    id: 'naadaniyan-akshath',
-    title: 'naadaniyan',
+    id: 'gSuhcWpX2_A',
+    title: 'Naadaniyan',
     artist: 'Akshath',
     album: 'Single',
     duration: 172,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/gSuhcWpX2_A/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=gSuhcWpX2_A',
-    lyrics: `[naadaniyan - Akshath]`
+    lyrics: `[Naadaniyan - Akshath]`
   },
   {
-    id: 'raabta-agent-vinod',
+    id: 'zlt3bhMWw_E',
     title: 'Raabta',
     artist: 'Arijit Singh',
     album: 'Agent Vinod',
     duration: 244,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/zlt3bhMWw_E/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=zlt3bhMWw_E',
     lyrics: `[Raabta - Arijit Singh]`
   },
   {
-    id: 'hans-zimmer-interstellar',
-    title: 'Interstellar (Original Soundtrack)',
+    id: 'UDVtMYqUAyw',
+    title: 'Interstellar (Main Theme)',
     artist: 'Hans Zimmer',
     album: 'Interstellar OST',
     duration: 248,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/UDVtMYqUAyw/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=UDVtMYqUAyw',
     lyrics: `[Interstellar Main Theme - Hans Zimmer]`
   },
   {
-    id: 'doja-weeknd-you-right',
-    title: 'Doja Cat x The Weeknd',
+    id: 'm4_9TFeMfJE',
+    title: 'You Right',
     artist: 'Doja Cat & The Weeknd',
     album: 'Planet Her',
     duration: 186,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/m4_9TFeMfJE/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=m4_9TFeMfJE',
     lyrics: `[You Right - Doja Cat & The Weeknd]`
   },
   {
-    id: 'imagine-dragons-believer',
+    id: '7wtfhZwyrcc',
     title: 'Believer',
     artist: 'Imagine Dragons',
     album: 'Evolve',
     duration: 204,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/7wtfhZwyrcc/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=7wtfhZwyrcc',
     lyrics: `[Believer - Imagine Dragons]`
   },
   {
-    id: 'interstellar-piano',
+    id: '4y33h81phKU',
     title: 'Interstellar on Piano',
     artist: 'Patrik Pietschmann',
     album: 'Piano Covers',
     duration: 275,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-507124cd5371?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/4y33h81phKU/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=4y33h81phKU',
     lyrics: `[Interstellar on Piano - Patrik Pietschmann]`
   },
   {
-    id: 'mere-naam-tu-zero',
+    id: 'd_k8qFzOuhE',
     title: 'Mere Naam Tu (From Zero)',
     artist: 'Abhay Jodhpurkar, Ajay-Atul',
     album: 'Zero',
     duration: 338,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/d_k8qFzOuhE/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=d_k8qFzOuhE',
     lyrics: `[Mere Naam Tu - Zero]`
   },
   {
-    id: 'star-wars-jedi-theme',
-    title: 'Star Wars Jedi Theme',
+    id: '0kFhPVAhV_o',
+    title: 'Star Wars Main Theme',
     artist: 'John Williams',
     album: 'Star Wars OST',
     duration: 215,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/0kFhPVAhV_o/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=0kFhPVAhV_o',
-    lyrics: `[Star Wars Jedi Theme - John Williams]`
+    lyrics: `[Star Wars Theme - John Williams]`
   }
 ];
 
 export const NOSTALGIC_SHELF: Track[] = [
   {
-    id: 'nostalgic-1',
-    title: 'The Hits: \'10s',
-    artist: 'Drake, Rihanna, Justin Bieber, Nick...',
-    album: 'Nostalgic Hits',
-    duration: 210,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
+    id: 'fLexgOxsZu0',
+    title: 'That’s What I Like',
+    artist: 'Bruno Mars',
+    album: '24K Magic',
+    duration: 206,
+    thumbnailUrl: 'https://img.youtube.com/vi/fLexgOxsZu0/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=fLexgOxsZu0',
-    lyrics: `['10s Pop Anthems Collection]`
+    lyrics: `[That's What I Like - Bruno Mars]`
   },
   {
-    id: 'nostalgic-2',
-    title: '00s Bollywood Romance',
-    artist: 'Alka Yagnik, Pritam, Sonu Nigam, Shreya Ghoshal',
-    album: 'Evergreen 00s',
-    duration: 320,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&auto=format&fit=crop&q=80',
+    id: 'zlt3bhMWw_E',
+    title: 'Raabta (00s Evergreen)',
+    artist: 'Arijit Singh, Pritam',
+    album: 'Agent Vinod',
+    duration: 244,
+    thumbnailUrl: 'https://img.youtube.com/vi/zlt3bhMWw_E/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=zlt3bhMWw_E',
-    lyrics: `[00s Bollywood Romance Classics]`
+    lyrics: `[Raabta - Arijit Singh]`
   },
   {
-    id: 'nostalgic-3',
-    title: '10s Bollywood Romance Hits',
-    artist: 'Arijit Singh, Pritam, Vishal-Shekhar, Atif Aslam',
-    album: 'Modern Romance',
-    duration: 280,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    id: 'd_k8qFzOuhE',
+    title: 'Mere Naam Tu',
+    artist: 'Abhay Jodhpurkar, Ajay-Atul',
+    album: 'Zero',
+    duration: 338,
+    thumbnailUrl: 'https://img.youtube.com/vi/d_k8qFzOuhE/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=d_k8qFzOuhE',
-    lyrics: `[10s Bollywood Romance Hits]`
+    lyrics: `[Mere Naam Tu - Zero]`
   },
   {
-    id: 'nostalgic-4',
-    title: '90s Chill: Bollywood',
-    artist: 'Kumar Sanu, Alka Yagnik, Udit Narayan',
-    album: '90s Golden Era',
-    duration: 310,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&auto=format&fit=crop&q=80',
+    id: 'UDVtMYqUAyw',
+    title: 'Interstellar Theme',
+    artist: 'Hans Zimmer',
+    album: 'Interstellar OST',
+    duration: 248,
+    thumbnailUrl: 'https://img.youtube.com/vi/UDVtMYqUAyw/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=UDVtMYqUAyw',
-    lyrics: `[90s Chill: Bollywood Melodies]`
+    lyrics: `[Interstellar Main Theme - Hans Zimmer]`
   },
   {
-    id: 'nostalgic-5',
-    title: "'90s Indian Pop",
-    artist: 'Shankar Mahadevan, K.K., Lucky Ali',
-    album: 'Indipop Waves',
-    duration: 260,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80',
+    id: '7wtfhZwyrcc',
+    title: 'Believer',
+    artist: 'Imagine Dragons',
+    album: 'Evolve',
+    duration: 204,
+    thumbnailUrl: 'https://img.youtube.com/vi/7wtfhZwyrcc/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=7wtfhZwyrcc',
-    lyrics: `['90s Indian Pop Essentials]`
+    lyrics: `[Believer - Imagine Dragons]`
   },
   {
-    id: 'nostalgic-6',
-    title: '10s Bollywood Dance',
-    artist: 'Neha Kakkar, Vishal-Shekhar, Badshah',
-    album: 'Party Mix',
-    duration: 195,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=300&auto=format&fit=crop&q=80',
+    id: 'm4_9TFeMfJE',
+    title: 'You Right',
+    artist: 'Doja Cat & The Weeknd',
+    album: 'Planet Her',
+    duration: 186,
+    thumbnailUrl: 'https://img.youtube.com/vi/m4_9TFeMfJE/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=m4_9TFeMfJE',
-    lyrics: `[10s Bollywood Dance Anthems]`
+    lyrics: `[You Right - Doja Cat & The Weeknd]`
   }
 ];
 
 export const NEW_RELEASES_SHELF: Track[] = [
   {
-    id: 'new-1',
-    title: 'Jailer 2 (Original Motion Picture)',
-    artist: 'Anirudh',
-    album: 'Jailer 2 Single',
-    duration: 215,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&auto=format&fit=crop&q=80',
-    youtubeUrl: 'https://www.youtube.com/watch?v=OPf0YbXqDm0',
-    lyrics: `[Jailer 2 - Anirudh]`
+    id: '1F3hm63481o',
+    title: 'Hukum - Thalaivar Alappara',
+    artist: 'Anirudh Ravichander',
+    album: 'Jailer Single',
+    duration: 208,
+    thumbnailUrl: 'https://img.youtube.com/vi/1F3hm63481o/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=1F3hm63481o',
+    lyrics: `[Hukum - Anirudh]`
   },
   {
-    id: 'new-2',
-    title: 'Halo - Never Forget',
-    artist: 'Mathias Fritsche',
-    album: 'Single',
-    duration: 195,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&auto=format&fit=crop&q=80',
-    youtubeUrl: 'https://www.youtube.com/watch?v=K6MlhX0Q3sQ',
-    lyrics: `[Halo - Never Forget]`
+    id: '4NRXx6U8ABQ',
+    title: 'Blinding Lights',
+    artist: 'The Weeknd',
+    album: 'After Hours',
+    duration: 200,
+    thumbnailUrl: 'https://img.youtube.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=4NRXx6U8ABQ',
+    lyrics: `[Blinding Lights - The Weeknd]`
   },
   {
-    id: 'new-3',
-    title: 'Transformers (Symphonic)',
-    artist: 'Imperial Orchestra',
-    album: 'EP',
-    duration: 330,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-507124cd5371?w=300&auto=format&fit=crop&q=80',
-    youtubeUrl: 'https://www.youtube.com/watch?v=UDVtMYqUAyw',
-    lyrics: `[Transformers Symphonic Suite]`
+    id: '34Na4j8AVgA',
+    title: 'Starboy',
+    artist: 'The Weeknd ft. Daft Punk',
+    album: 'Starboy',
+    duration: 230,
+    thumbnailUrl: 'https://img.youtube.com/vi/34Na4j8AVgA/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=34Na4j8AVgA',
+    lyrics: `[Starboy - The Weeknd ft. Daft Punk]`
   },
   {
-    id: 'new-4',
-    title: "I'll Do It",
-    artist: 'TommyMuzzic & ...',
-    album: 'Album',
-    duration: 180,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&auto=format&fit=crop&q=80',
+    id: 'JGwWNGJdvx8',
+    title: 'Shape of You',
+    artist: 'Ed Sheeran',
+    album: '÷ (Divide)',
+    duration: 233,
+    thumbnailUrl: 'https://img.youtube.com/vi/JGwWNGJdvx8/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=JGwWNGJdvx8',
-    lyrics: `[I'll Do It - Electronic Remix]`
+    lyrics: `[Shape of You - Ed Sheeran]`
   },
   {
-    id: 'new-5',
-    title: 'Winter Light',
-    artist: 'Ludovico Einaudi',
-    album: 'EP',
-    duration: 240,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    id: 'rtOvBOTyXkk',
+    title: 'A Thousand Years',
+    artist: 'Christina Perri',
+    album: 'The Twilight Saga',
+    duration: 285,
+    thumbnailUrl: 'https://img.youtube.com/vi/rtOvBOTyXkk/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=rtOvBOTyXkk',
-    lyrics: `[Winter Light - Ludovico Einaudi]`
+    lyrics: `[A Thousand Years - Christina Perri]`
   },
   {
-    id: 'new-6',
-    title: "Don't Walk Away (Zara Zara)",
-    artist: 'Shirley Setia & Arjun',
-    album: 'Single',
-    duration: 205,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&auto=format&fit=crop&q=80',
-    youtubeUrl: 'https://www.youtube.com/watch?v=zlt3bhMWw_E',
-    lyrics: `[Don't Walk Away - Zara Zara Remix]`
+    id: 'kJQP7kiw5Fk',
+    title: 'Despacito',
+    artist: 'Luis Fonsi ft. Daddy Yankee',
+    album: 'VIDA',
+    duration: 228,
+    thumbnailUrl: 'https://img.youtube.com/vi/kJQP7kiw5Fk/hqdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk',
+    lyrics: `[Despacito - Luis Fonsi ft. Daddy Yankee]`
   }
 ];
 
@@ -431,39 +431,39 @@ export const COMMUNITY_PLAYLISTS = [
 
 export const MUSIC_VIDEOS_SHELF: Track[] = [
   {
-    id: 'mv-1',
+    id: 'K6MlhX0Q3sQ',
     title: "Hedwig's Theme (Orchestral Video)",
     artist: 'Patrik Pietschmann • 30m views',
     album: 'Orchestral',
     duration: 310,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/K6MlhX0Q3sQ/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=K6MlhX0Q3sQ'
   },
   {
-    id: 'mv-2',
+    id: 'gSuhcWpX2_A',
     title: 'KALYANI Official Music Video',
     artist: 'ARJN, KDS, FIFTY4 & Ronn • 59m views',
     album: 'Single',
     duration: 215,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/gSuhcWpX2_A/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=gSuhcWpX2_A'
   },
   {
-    id: 'mv-3',
+    id: 'zlt3bhMWw_E',
     title: 'Satranga - Animal | Melodious Flute Cover',
     artist: 'Swarnim Maharjan • 104k views',
     album: 'Animal OST',
     duration: 260,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/zlt3bhMWw_E/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=zlt3bhMWw_E'
   },
   {
-    id: 'mv-4',
+    id: 'OPf0YbXqDm0',
     title: "It's A Man's Man's Man's World (Live)",
     artist: 'James Brown & Luciano Pavarotti • 141m views',
     album: 'Live Concert',
     duration: 335,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    thumbnailUrl: 'https://img.youtube.com/vi/OPf0YbXqDm0/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=OPf0YbXqDm0'
   }
 ];
@@ -477,52 +477,52 @@ export const EXTENDED_CATALOG: Track[] = [
   ...POPULAR_TRACKS,
   ...SPEED_DIAL_ITEMS,
   {
-    id: 'golden-hour-jvke',
+    id: 'PEM0Vs8jf1w',
     title: 'golden hour',
     artist: 'JVKE',
     album: 'this is what ____ feels like',
     duration: 209,
-    thumbnailUrl: 'https://img.youtube.com/vi/PEM0Vs8jf1w/0.jpg',
+    thumbnailUrl: 'https://img.youtube.com/vi/PEM0Vs8jf1w/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=PEM0Vs8jf1w',
     lyrics: `[It was just two lovers sittin' in the car - golden hour]`
   },
   {
-    id: 'golden-hour-piano',
+    id: 'PEM0Vs8jf1w',
     title: "golden hour on piano",
     artist: 'Patrik Pietschmann',
     album: 'Piano Series',
     duration: 215,
-    thumbnailUrl: 'https://img.youtube.com/vi/PEM0Vs8jf1w/0.jpg',
+    thumbnailUrl: 'https://img.youtube.com/vi/PEM0Vs8jf1w/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=PEM0Vs8jf1w',
     lyrics: `[golden hour Piano Arrangement]`
   },
   {
-    id: 'kesariya-brahmastra',
+    id: 'BddP6PYo2gs',
     title: 'Kesariya',
     artist: 'Arijit Singh, Pritam',
     album: 'Brahmastra',
     duration: 268,
-    thumbnailUrl: 'https://img.youtube.com/vi/BddP6PYo2gs/0.jpg',
+    thumbnailUrl: 'https://img.youtube.com/vi/BddP6PYo2gs/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=BddP6PYo2gs',
     lyrics: `[Kesariya tera ishq hai piya]`
   },
   {
-    id: 'apna-bana-le',
+    id: 'ElZfdU54Cp8',
     title: 'Apna Bana Le',
     artist: 'Arijit Singh, Sachin-Jigar',
     album: 'Bhediya',
     duration: 261,
-    thumbnailUrl: 'https://img.youtube.com/vi/ElZfdU54Cp8/0.jpg',
+    thumbnailUrl: 'https://img.youtube.com/vi/ElZfdU54Cp8/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=ElZfdU54Cp8',
     lyrics: `[Tu mera koi na hoke bhi kuch laage]`
   },
   {
-    id: 'chaleya-jawan',
+    id: 'VAdGW7QDJiU',
     title: 'Chaleya',
     artist: 'Arijit Singh, Shilpa Rao, Anirudh',
     album: 'Jawan',
     duration: 200,
-    thumbnailUrl: 'https://img.youtube.com/vi/VAdGW7QDJiU/0.jpg',
+    thumbnailUrl: 'https://img.youtube.com/vi/VAdGW7QDJiU/hqdefault.jpg',
     youtubeUrl: 'https://www.youtube.com/watch?v=VAdGW7QDJiU',
     lyrics: `[Ishq mein dil bana hai, ishq mein dil fanaa hai]`
   }
@@ -597,14 +597,25 @@ async function searchWithYouTubeDataApi(query: string): Promise<Track[]> {
 }
 
 /**
- * Parses raw YouTube HTML search results for video IDs
+ * Parses raw YouTube HTML search results or InnerTube JSON string for video IDs
  */
-function parseYouTubeSearchResults(html: string): Track[] {
+function parseYouTubeSearchResults(raw: string): Track[] {
   const tracks: Track[] = [];
+  if (!raw || typeof raw !== 'string' || raw.trim().length === 0) return tracks;
+
   try {
-    const match = html.match(/ytInitialData\s*=\s*({.+?});<\/script>/s) || html.match(/var ytInitialData\s*=\s*({.+?});/);
-    if (!match) return [];
-    const data = JSON.parse(match[1]);
+    let data: any = null;
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('{')) {
+      data = JSON.parse(trimmed);
+    } else {
+      const match = trimmed.match(/ytInitialData\s*=\s*({.+?});<\/script>/s) || trimmed.match(/var ytInitialData\s*=\s*({.+?});/);
+      if (match) {
+        data = JSON.parse(match[1]);
+      }
+    }
+    if (!data) return [];
+
     const sections = data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
     if (Array.isArray(sections)) {
       for (const sec of sections) {
@@ -614,14 +625,17 @@ function parseYouTubeSearchResults(html: string): Track[] {
             const vr = item.videoRenderer;
             if (vr && vr.videoId) {
               const title = vr.title?.runs?.[0]?.text || 'Untitled Song';
-              const artist = vr.ownerText?.runs?.[0]?.text || 'Artist';
-              const thumb = vr.thumbnail?.thumbnails?.slice(-1)[0]?.url || `https://img.youtube.com/vi/${vr.videoId}/0.jpg`;
+              const artist = vr.ownerText?.runs?.[0]?.text || vr.longBylineText?.runs?.[0]?.text || 'Artist';
+              const durationText = vr.lengthText?.simpleText || '3:30';
+              const parts = durationText.split(':').map(Number);
+              const duration = parts.length === 2 ? parts[0] * 60 + parts[1] : 210;
+              const thumb = vr.thumbnail?.thumbnails?.slice(-1)[0]?.url || `https://img.youtube.com/vi/${vr.videoId}/hqdefault.jpg`;
               tracks.push({
                 id: vr.videoId,
                 title,
                 artist,
                 album: 'YouTube Music',
-                duration: 210,
+                duration,
                 thumbnailUrl: thumb,
                 youtubeUrl: `https://www.youtube.com/watch?v=${vr.videoId}`,
                 lyrics: `[Enjoy listening to ${title} on Resonate!]`
@@ -636,11 +650,12 @@ function parseYouTubeSearchResults(html: string): Track[] {
 }
 
 /**
- * Advanced Multi-Engine YouTube Search
- * 1. Checks YouTube Data API v3 (Google Token or API Key)
- * 2. Queries Rotating Invidious / Piped Mirrors + CORS Fallbacks in parallel
- * 3. Scrapes YouTube search HTML via transparent CORS gateway
- * 4. Fulfills queries with smart local catalog token-matching as instantaneous baseline
+ * Advanced Multi-Engine Universal YouTube Search
+ * 1. Native Android bridge (CORS-free direct connection via MainActivity.kt)
+ * 2. Vercel / Vite Serverless API (/api/search)
+ * 3. YouTube Data API v3 (if user/admin configured API key)
+ * 4. Transparent CORS Gateways & Invidious/Piped Live Mirrors
+ * 5. Smart Fuzzy catalog match with weighted token scoring
  */
 export async function searchYouTube(query: string): Promise<Track[]> {
   if (!query || query.trim() === '') {
@@ -649,74 +664,68 @@ export async function searchYouTube(query: string): Promise<Track[]> {
 
   const cleanQuery = query.trim();
 
-  // 1. Smart multi-token local match (e.g. "golden hour - JVKE" matches title="golden hour" and artist="JVKE")
-  const cleanTokens = cleanQuery.toLowerCase().replace(/[-–—]/g, ' ').split(/\s+/).filter(Boolean);
-  const localMatches = EXTENDED_CATALOG.filter((track) => {
-    const combinedText = `${track.title} ${track.artist} ${track.album || ''}`.toLowerCase();
-    return cleanTokens.every((token) => combinedText.includes(token));
-  });
+  // 1. Android Native App Bridge (Zero CORS, 100% reliable in APK)
+  if (typeof window !== 'undefined' && (window as any).ResonateNative?.searchYouTubeNative) {
+    try {
+      const rawNative = (window as any).ResonateNative.searchYouTubeNative(cleanQuery);
+      if (rawNative && rawNative !== '[]' && rawNative.length > 50) {
+        const nativeTracks = parseYouTubeSearchResults(rawNative);
+        if (nativeTracks.length > 0) {
+          return nativeTracks;
+        }
+      }
+    } catch (e) {
+      console.warn('Native search failed, falling back to web endpoints:', e);
+    }
+  }
 
-  // 2. Try YouTube Data API first if configured
+  // 2. Vercel Serverless / Vite dev search API (Zero CORS for website & webapp)
+  try {
+    const apiRes = await fetch(`/api/search?q=${encodeURIComponent(cleanQuery)}`, {
+      signal: AbortSignal.timeout(4500)
+    });
+    if (apiRes.ok) {
+      const tracks = await apiRes.json();
+      if (Array.isArray(tracks) && tracks.length > 0) {
+        return tracks;
+      }
+    }
+  } catch (_) {
+    // Continue to external gateways
+  }
+
+  // 3. YouTube Data API v3 (if user added key in settings)
   try {
     const apiResults = await searchWithYouTubeDataApi(cleanQuery);
     if (apiResults.length > 0) {
-      const ids = new Set(apiResults.map((r) => r.id));
-      return [...apiResults, ...localMatches.filter((l) => !ids.has(l.id))];
+      return apiResults;
     }
   } catch (_) {}
 
-  // 3. Try Invidious & Piped public mirrors in parallel with resilient timeouts
+  // 4. Live CORS Gateways for YouTube HTML
+  const corsGateways = [
+    `https://corsproxy.io/?url=${encodeURIComponent(`https://www.youtube.com/results?search_query=${encodeURIComponent(cleanQuery)}`)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://www.youtube.com/results?search_query=${encodeURIComponent(cleanQuery)}`)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://www.youtube.com/results?search_query=${encodeURIComponent(cleanQuery)}`)}`,
+  ];
+
+  for (const gwUrl of corsGateways) {
+    try {
+      const res = await fetch(gwUrl, { signal: AbortSignal.timeout(3500) });
+      if (res.ok) {
+        const text = await res.text();
+        const parsed = parseYouTubeSearchResults(text);
+        if (parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 5. Invidious & Piped public mirrors in parallel
   const searchEndpoints = [
     {
-      url: `https://inv.nadeko.net/api/v1/search?q=${encodeURIComponent(cleanQuery)}&type=video`,
-      parse: (data: any) => (Array.isArray(data) ? data : [])
-        .filter((it: any) => it.videoId)
-        .slice(0, 15)
-        .map((item: any) => ({
-          id: item.videoId,
-          title: item.title || 'Untitled Song',
-          artist: item.author || 'Artist',
-          album: 'YouTube Music',
-          duration: item.lengthSeconds || 210,
-          thumbnailUrl: item.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${item.videoId}/0.jpg`,
-          youtubeUrl: `https://www.youtube.com/watch?v=${item.videoId}`,
-          lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
-        } as Track))
-    },
-    {
-      url: `https://invidious.nerdvpn.de/api/v1/search?q=${encodeURIComponent(cleanQuery)}&type=video`,
-      parse: (data: any) => (Array.isArray(data) ? data : [])
-        .filter((it: any) => it.videoId)
-        .slice(0, 15)
-        .map((item: any) => ({
-          id: item.videoId,
-          title: item.title || 'Untitled Song',
-          artist: item.author || 'Artist',
-          album: 'YouTube Music',
-          duration: item.lengthSeconds || 210,
-          thumbnailUrl: item.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${item.videoId}/0.jpg`,
-          youtubeUrl: `https://www.youtube.com/watch?v=${item.videoId}`,
-          lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
-        } as Track))
-    },
-    {
-      url: `https://invidious.jing.rocks/api/v1/search?q=${encodeURIComponent(cleanQuery)}&type=video`,
-      parse: (data: any) => (Array.isArray(data) ? data : [])
-        .filter((it: any) => it.videoId)
-        .slice(0, 15)
-        .map((item: any) => ({
-          id: item.videoId,
-          title: item.title || 'Untitled Song',
-          artist: item.author || 'Artist',
-          album: 'YouTube Music',
-          duration: item.lengthSeconds || 210,
-          thumbnailUrl: item.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${item.videoId}/0.jpg`,
-          youtubeUrl: `https://www.youtube.com/watch?v=${item.videoId}`,
-          lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
-        } as Track))
-    },
-    {
-      url: `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(cleanQuery)}&filter=music_songs`,
+      url: `https://pipedapi.tokhmi.xyz/search?q=${encodeURIComponent(cleanQuery)}&filter=music_songs`,
       parse: (data: any) => (data.items || data || [])
         .filter((it: any) => it.url || it.id)
         .slice(0, 15)
@@ -728,12 +737,28 @@ export async function searchYouTube(query: string): Promise<Track[]> {
             artist: item.uploaderName || item.artist || 'Artist',
             album: item.album || 'YouTube Music',
             duration: item.duration || 210,
-            thumbnailUrl: item.thumbnail || `https://img.youtube.com/vi/${vidId}/0.jpg`,
+            thumbnailUrl: item.thumbnail || `https://img.youtube.com/vi/${vidId}/hqdefault.jpg`,
             youtubeUrl: `https://www.youtube.com/watch?v=${vidId}`,
             lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
           } as Track;
         })
-    }
+    },
+    {
+      url: `https://vid.puffyan.us/api/v1/search?q=${encodeURIComponent(cleanQuery)}&type=video`,
+      parse: (data: any) => (Array.isArray(data) ? data : [])
+        .filter((it: any) => it.videoId)
+        .slice(0, 15)
+        .map((item: any) => ({
+          id: item.videoId,
+          title: item.title || 'Untitled Song',
+          artist: item.author || 'Artist',
+          album: 'YouTube Music',
+          duration: item.lengthSeconds || 210,
+          thumbnailUrl: item.videoThumbnails?.[0]?.url || `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`,
+          youtubeUrl: `https://www.youtube.com/watch?v=${item.videoId}`,
+          lyrics: `[Enjoy listening to ${item.title} on Resonate!]`
+        } as Track))
+    },
   ];
 
   try {
@@ -747,30 +772,25 @@ export async function searchYouTube(query: string): Promise<Track[]> {
         return parsed;
       })
     );
-
     const remoteResults = (await remotePromise) as Track[];
     if (remoteResults && remoteResults.length > 0) {
-      const ids = new Set(remoteResults.map((r: Track) => r.id));
-      return [...remoteResults, ...localMatches.filter((l) => !ids.has(l.id))];
-    }
-  } catch (_) {
-    // Endpoints timed out or rate limited
-  }
-
-  // 4. Try YouTube HTML search scraper with CORS gateway
-  try {
-    const corsUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://www.youtube.com/results?search_query=${encodeURIComponent(cleanQuery)}`)}`;
-    const res = await fetch(corsUrl, { signal: AbortSignal.timeout(3500) });
-    if (res.ok) {
-      const html = await res.text();
-      const parsed = parseYouTubeSearchResults(html);
-      if (parsed.length > 0) {
-        const ids = new Set(parsed.map((r) => r.id));
-        return [...parsed, ...localMatches.filter((l) => !ids.has(l.id))];
-      }
+      return remoteResults;
     }
   } catch (_) {}
 
-  // 5. Fallback to token matches
-  return localMatches;
+  // 6. Smart Fuzzy Fallback: Score against extended verified catalog
+  const cleanTokens = cleanQuery.toLowerCase().replace(/[-–—]/g, ' ').split(/\s+/).filter(Boolean);
+  const scoredCatalog = EXTENDED_CATALOG.map((track) => {
+    const text = `${track.title} ${track.artist} ${track.album || ''}`.toLowerCase();
+    let score = 0;
+    for (const token of cleanTokens) {
+      if (text.includes(token)) score += 1;
+    }
+    return { track, score };
+  })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.track);
+
+  return scoredCatalog;
 }

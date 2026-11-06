@@ -236,15 +236,15 @@ export const KaraokeLyrics: React.FC<KaraokeLyricsProps> = ({
                     wordPercent = ((lineProgressRatio - wStart) / (wEnd - wStart)) * 100;
                   }
 
+                  const isWordSung = wordPercent >= 35;
+
                   return (
                     <span
                       key={wIdx}
                       style={{
-                        background: `linear-gradient(90deg, #ffffff ${wordPercent}%, rgba(255, 255, 255, 0.4) ${wordPercent}%)`,
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        textShadow: wordPercent > 0 ? '0 0 20px rgba(255, 255, 255, 0.5)' : 'none',
-                        transition: 'text-shadow 0.2s ease',
+                        color: isWordSung ? '#ffffff' : 'rgba(255, 255, 255, 0.45)',
+                        textShadow: isWordSung ? '0 0 16px rgba(255, 255, 255, 0.75)' : 'none',
+                        transition: 'color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), text-shadow 0.2s ease',
                       }}
                     >
                       {word}

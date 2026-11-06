@@ -40,6 +40,38 @@ class MainActivity : AppCompatActivity() {
                 this@MainActivity.startActivity(intent)
             } catch (_: Exception) {}
         }
+
+        @android.webkit.JavascriptInterface
+        fun searchYouTubeNative(query: String): String {
+            return try {
+                val future = java.util.concurrent.Executors.newSingleThreadExecutor().submit(java.util.concurrent.Callable {
+                    val encoded = java.net.URLEncoder.encode(query, "UTF-8")
+                    val url = java.net.URL("https://www.youtube.com/results?search_query=$encoded")
+                    val conn = url.openConnection() as java.net.HttpURLConnection
+                    conn.requestMethod = "GET"
+                    conn.setRequestProperty(
+                        "User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                    )
+                    conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9")
+                    conn.connectTimeout = 7000
+                    conn.readTimeout = 7000
+                    val html = conn.inputStream.bufferedReader().use { it.readText() }
+                    conn.disconnect()
+
+                    val regex = Regex("ytInitialData\\s*=\\s*(\\{.+?\\});<\\/script>", RegexOption.DOT_MATCHES_ALL)
+                    val match = regex.find(html) ?: Regex("var ytInitialData\\s*=\\s*(\\{.+?\\});").find(html)
+                    if (match != null) {
+                        match.groupValues[1]
+                    } else {
+                        "[]"
+                    }
+                })
+                future.get(8, java.util.concurrent.TimeUnit.SECONDS)
+            } catch (e: Exception) {
+                "[]"
+            }
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")

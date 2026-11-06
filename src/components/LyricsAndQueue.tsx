@@ -2,6 +2,7 @@ import React from 'react';
 import { Trash2, Disc, Play } from 'lucide-react';
 import type { Track } from '../types';
 import { KaraokeLyrics } from './KaraokeLyrics';
+import { useTrackLyrics } from '../utils/lyrics';
 
 interface LyricsAndQueueProps {
   showLyrics: boolean;
@@ -28,6 +29,8 @@ export const LyricsAndQueue: React.FC<LyricsAndQueueProps> = ({
   duration,
   onSeek,
 }) => {
+  const dynamicLyrics = useTrackLyrics(currentTrack);
+
   if (!showLyrics && !showQueue) return null;
 
   return (
@@ -44,7 +47,7 @@ export const LyricsAndQueue: React.FC<LyricsAndQueueProps> = ({
       <div className="drawer-content">
         {showLyrics && (
           <KaraokeLyrics
-            lyrics={currentTrack?.lyrics}
+            lyrics={dynamicLyrics || currentTrack?.lyrics}
             progress={progress}
             duration={duration || currentTrack?.duration || 180}
             onSeek={onSeek}

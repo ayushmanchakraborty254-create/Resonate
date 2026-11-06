@@ -23,7 +23,7 @@ import { personalization } from './utils/personalization';
 import { useBreakpoint } from './utils/responsive';
 import { useNavigation } from './utils/navigation';
 import type { ActiveView } from './utils/navigation';
-import { Home, Search, Library, Mic, Radio } from 'lucide-react';
+import { Home, Search, Library } from 'lucide-react';
 
 // Color themes mapped to each track's visual identity to simulate Material You dynamic theme
 const TRACK_THEMES: Record<string, { primary: string; glow: string; bg: string }> = {
@@ -574,64 +574,7 @@ function App() {
         onToggleLike={handleToggleLike}
       />
 
-      {/* Mobile Floating Action Buttons on Home (Reference Match: Image 5) */}
-      {isMobile && currentView === 'home' && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: currentTrack ? '124px' : '62px',
-            right: '14px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            zIndex: 60,
-          }}
-        >
-          {/* Floating Mic for Music Recognizer / Voice Search */}
-          <button
-            onClick={() => setIsRecognizerOpen(true)}
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '14px',
-              backgroundColor: '#3b5478',
-              color: '#fff',
-              border: 'none',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'transform 0.2s',
-            }}
-            title="Music Recognizer (Metrolist / Shazam)"
-          >
-            <Mic size={19} />
-          </button>
 
-          {/* Floating Listen Together / Shuffle Room button */}
-          <button
-            onClick={() => setIsListenTogetherOpen(true)}
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '14px',
-              backgroundColor: '#384358',
-              color: '#fff',
-              border: 'none',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'transform 0.2s',
-            }}
-            title="Listen Together Room"
-          >
-            <Radio size={19} />
-          </button>
-        </div>
-      )}
 
       {/* Mobile Bottom Navigation Bar (Material You 3-Tab - Reference Match: Images 3, 4, 5) */}
       {isMobile && (

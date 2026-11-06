@@ -1,12 +1,18 @@
 package com.resonate.app
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ServiceInfo
 import android.net.Uri
-import android.os.Bundle
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.OptIn
+import androidx.core.app.NotificationCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -15,11 +21,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.session.CommandButton
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import androidx.media3.session.SessionCommand
-import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.resonate.app.playback.NativeCacheManager
@@ -33,6 +37,8 @@ import com.resonate.app.playback.NativeCacheManager
  * - Transient and permanent Audio Focus management (ducks on navigation, pauses on calls)
  * - MediaSession.Callback.onPlaybackResumption() for state restoration across process recreation
  * - Native caching permission enforcement for authorized media
+ * - Strict MainLooper dispatching to eliminate "Player accessed on wrong thread" exceptions
+ * - Explicit startForeground compliance to prevent Android 14+ ForegroundServiceDidNotStartInTimeException
  */
 @OptIn(UnstableApi::class)
 class MediaPlaybackService : MediaSessionService() {
@@ -50,6 +56,24 @@ class MediaPlaybackService : MediaSessionService() {
         const val KEY_SHUFFLE_MODE = "last_shuffle_mode"
         const val KEY_CAN_CACHE = "last_can_cache"
 
+        const val CHANNEL_ID = "resonate_media3_playback_channel"
+        const val NOTIFICATION_ID = 888
+
+        const val ACTION_PLAY_TEST = "com.resonate.app.action.PLAY_TEST"
+        const val ACTION_PLAY_AUTHORIZED = "com.resonate.app.action.PLAY_AUTHORIZED"
+        const val ACTION_PAUSE = "com.resonate.app.action.PAUSE"
+        const val ACTION_RESUME = "com.resonate.app.action.RESUME"
+        const val ACTION_STOP = "com.resonate.app.action.STOP"
+
+        const val EXTRA_TRACK_ID = "extra_track_id"
+        const val EXTRA_TITLE = "extra_title"
+        const val EXTRA_ARTIST = "extra_artist"
+        const val EXTRA_ALBUM = "extra_album"
+        const val EXTRA_ARTWORK_URL = "extra_artwork_url"
+        const val EXTRA_STREAM_URL = "extra_stream_url"
+        const val EXTRA_CAN_CACHE = "extra_can_cache"
+        const val EXTRA_START_POS = "extra_start_pos"
+
         // Authorized public royalty-free test stream (Google ExoPlayer public media library)
         const val AUTHORIZED_TEST_STREAM_URL = "https://storage.googleapis.com/exoplayer-test-media-0/Jazz_In_Paris.mp3"
         const val TEST_TRACK_TITLE = "Jazz In Paris"
@@ -63,6 +87,7 @@ class MediaPlaybackService : MediaSessionService() {
     private var player: ExoPlayer? = null
     private var mediaSession: MediaSession? = null
     private lateinit var prefs: SharedPreferences
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     data class PlaybackStateSnapshot(
         val isPlaying: Boolean,
@@ -79,7 +104,24 @@ class MediaPlaybackService : MediaSessionService() {
         instance = this
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+        createNotificationChannel()
         initializePlayerAndSession()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Resonate Audio Playback",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Keeps Resonate audio playing in background with lock-screen controls"
+                setShowBadge(false)
+                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+            }
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.createNotificationChannel(channel)
+        }
     }
 
     private fun initializePlayerAndSession() {
@@ -171,8 +213,10 @@ class MediaPlaybackService : MediaSessionService() {
                     val repeatMode = prefs.getInt(KEY_REPEAT_MODE, Player.REPEAT_MODE_OFF)
                     val shuffleMode = prefs.getBoolean(KEY_SHUFFLE_MODE, false)
 
-                    player?.repeatMode = repeatMode
-                    player?.shuffleModeEnabled = shuffleMode
+                    mainHandler.post {
+                        player?.repeatMode = repeatMode
+                        player?.shuffleModeEnabled = shuffleMode
+                    }
 
                     val result = MediaSession.MediaItemsWithStartPosition(
                         listOf(item),
@@ -193,10 +237,80 @@ class MediaPlaybackService : MediaSessionService() {
             .setSessionActivity(sessionActivityPendingIntent)
             .setCallback(sessionCallback)
             .build()
+
+        // 6. Set MediaNotificationProvider using our configured channel
+        val provider = DefaultMediaNotificationProvider.Builder(this)
+            .setChannelId(CHANNEL_ID)
+            .setNotificationId(NOTIFICATION_ID)
+            .build()
+        provider.setSmallIcon(R.drawable.media3_notification_small_icon)
+        setMediaNotificationProvider(provider)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
         return mediaSession
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        createNotificationChannel()
+
+        // 1. Immediately satisfy the Android 14+ Foreground Service contract
+        val initialNotification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.media3_notification_small_icon)
+            .setContentTitle("Resonate")
+            .setContentText("Media3 Audio Engine Active")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    initialNotification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, initialNotification)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MediaPlaybackService", "Error calling startForeground: ${e.message}", e)
+        }
+
+        // 2. Safely execute commands on the MainLooper
+        intent?.action?.let { action ->
+            mainHandler.post {
+                when (action) {
+                    ACTION_PLAY_TEST -> playTestStream()
+                    ACTION_PLAY_AUTHORIZED -> {
+                        val trackId = intent.getStringExtra(EXTRA_TRACK_ID) ?: ""
+                        val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
+                        val artist = intent.getStringExtra(EXTRA_ARTIST) ?: ""
+                        val album = intent.getStringExtra(EXTRA_ALBUM) ?: ""
+                        val artworkUrl = intent.getStringExtra(EXTRA_ARTWORK_URL) ?: ""
+                        val streamUrl = intent.getStringExtra(EXTRA_STREAM_URL) ?: ""
+                        val canCache = intent.getBooleanExtra(EXTRA_CAN_CACHE, false)
+                        val startPos = intent.getLongExtra(EXTRA_START_POS, 0L)
+                        playAuthorizedTrack(trackId, title, artist, album, artworkUrl, streamUrl, canCache, startPos)
+                    }
+                    ACTION_PAUSE -> pause()
+                    ACTION_RESUME -> resume()
+                    ACTION_STOP -> {
+                        player?.stop()
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            stopForeground(STOP_FOREGROUND_REMOVE)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            stopForeground(true)
+                        }
+                        stopSelf()
+                    }
+                }
+            }
+        }
+
+        return super.onStartCommand(intent, flags, startId)
     }
 
     /**
@@ -223,6 +337,7 @@ class MediaPlaybackService : MediaSessionService() {
     /**
      * Plays an authorized audio stream natively via ExoPlayer.
      * Enforces native caching permissions and domain validation.
+     * Guaranteed to execute on the MainLooper.
      */
     fun playAuthorizedTrack(
         trackId: String,
@@ -234,6 +349,13 @@ class MediaPlaybackService : MediaSessionService() {
         clientCanCache: Boolean,
         startPositionMs: Long = 0L
     ): Boolean {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post {
+                playAuthorizedTrack(trackId, title, artist, album, artworkUrl, streamUrl, clientCanCache, startPositionMs)
+            }
+            return true
+        }
+
         val exo = player ?: return false
         val uri = Uri.parse(streamUrl)
 
@@ -279,7 +401,7 @@ class MediaPlaybackService : MediaSessionService() {
     }
 
     /**
-     * Executes the Phase 2 Native Self-Test routine using an authorized royalty-free audio source.
+     * Executes the Phase 2/3 Native Test routine using an authorized royalty-free audio source.
      */
     fun playTestStream(): Boolean {
         return playAuthorizedTrack(
@@ -295,15 +417,27 @@ class MediaPlaybackService : MediaSessionService() {
     }
 
     fun pause() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { pause() }
+            return
+        }
         player?.pause()
         persistCurrentPlaybackState()
     }
 
     fun resume() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { resume() }
+            return
+        }
         player?.play()
     }
 
     fun seekTo(positionMs: Long) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { seekTo(positionMs) }
+            return
+        }
         player?.seekTo(positionMs)
     }
 

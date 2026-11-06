@@ -34,6 +34,38 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   const [nativeTestStatus, setNativeTestStatus] = useState<string | null>(null);
   const [isNativePlaying, setIsNativePlaying] = useState<boolean>(false);
+  const [notifGranted, setNotifGranted] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (isNative && (window as any).ResonateNative?.areNotificationsEnabled) {
+      try {
+        setNotifGranted((window as any).ResonateNative.areNotificationsEnabled());
+      } catch (_) {}
+    }
+  }, [isNative]);
+
+  useEffect(() => {
+    if (!isNativePlaying) return;
+    const interval = setInterval(() => {
+      try {
+        if ((window as any).ResonateNative?.getNativePlaybackStatus) {
+          const raw = (window as any).ResonateNative.getNativePlaybackStatus();
+          const st = JSON.parse(raw);
+          if (st.isPlaying) {
+            const curSec = Math.floor((st.positionMs || 0) / 1000);
+            const durSec = Math.floor((st.durationMs || 0) / 1000);
+            const curMin = `${Math.floor(curSec / 60)}:${(curSec % 60).toString().padStart(2, '0')}`;
+            const durMin = durSec > 0 ? `${Math.floor(durSec / 60)}:${(durSec % 60).toString().padStart(2, '0')}` : '--:--';
+            setNativeTestStatus(`Playing: Jazz In Paris (${curMin} / ${durMin}) • Media3 Active`);
+          } else if (st.playbackState === 4) {
+            setNativeTestStatus('Finished playback (Jazz In Paris)');
+            setIsNativePlaying(false);
+          }
+        }
+      } catch (_) {}
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isNativePlaying]);
 
   const handleRunNativeSelfTest = () => {
     try {
@@ -41,7 +73,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         const raw = (window as any).ResonateNative.runNativeAudioSelfTest();
         const resp = JSON.parse(raw);
         if (resp.success) {
-          setNativeTestStatus(`Playing: ${resp.track} • Engine: ${resp.engine}`);
+          setNativeTestStatus(`Starting: ${resp.track} • Engine: ${resp.engine}`);
           setIsNativePlaying(true);
         } else {
           setNativeTestStatus(`Failed to start: ${resp.error || 'Unknown error'}`);
@@ -68,6 +100,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     } catch (err: any) {
       setNativeTestStatus(`Error: ${err.message}`);
     }
+  };
+
+  const handleRequestNotifPermission = () => {
+    try {
+      (window as any).ResonateNative?.requestNotificationPermission?.();
+      setTimeout(() => {
+        if ((window as any).ResonateNative?.areNotificationsEnabled) {
+          setNotifGranted((window as any).ResonateNative.areNotificationsEnabled());
+        }
+      }, 2000);
+    } catch (_) {}
   };
 
   const handleCheckUpdate = async () => {
@@ -569,6 +612,39 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 </button>
               )}
             </div>
+            {!notifGranted && (
+              <div style={{
+                marginTop: '10px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                background: 'rgba(245, 158, 11, 0.15)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+              }}>
+                <span style={{ fontSize: '11px', color: '#fbbf24' }}>
+                  ⚠️ Notifications disabled. Lock-screen controls require notification permission.
+                </span>
+                <button
+                  onClick={handleRequestNotifPermission}
+                  style={{
+                    background: '#fbbf24',
+                    color: '#1e1b4b',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Enable
+                </button>
+              </div>
+            )}
             {nativeTestStatus && (
               <div style={{ marginTop: '10px', fontSize: '12px', color: '#c4b5fd', fontFamily: 'monospace' }}>
                 {nativeTestStatus}

@@ -11,19 +11,20 @@
   "categories": ["music", "entertainment", "audio"],
   "icons": [
     {
-      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3b5.png",
+      "src": "/favicon.png",
       "type": "image/png",
-      "sizes": "72x72"
+      "sizes": "64x64"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/128x128/1f3b5.png",
+      "src": "/icon-192.png",
       "type": "image/png",
-      "sizes": "128x128"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/512x512/1f3b5.png",
+      "src": "/icon-512.png",
       "type": "image/png",
-      "sizes": "192x192 512x512",
+      "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
@@ -31,12 +32,12 @@
     {
       "name": "Home",
       "url": "/",
-      "icons": [{ "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3b5.png", "sizes": "72x72" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Universal Library",
       "url": "/?view=universal_library",
-      "icons": [{ "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3b5.png", "sizes": "72x72" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

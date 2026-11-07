@@ -112,12 +112,12 @@ class MediaPlaybackService : MediaSessionService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Resonate Audio Playback",
+                getString(R.string.notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Keeps Resonate audio playing in background with lock-screen controls"
                 setShowBadge(false)
-                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)
@@ -177,9 +177,21 @@ class MediaPlaybackService : MediaSessionService() {
                 session: MediaSession,
                 controller: MediaSession.ControllerInfo
             ): MediaSession.ConnectionResult {
-                val availableSessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                val connectionResult = super.onConnect(session, controller)
+                val availableSessionCommands = connectionResult.availableSessionCommands.buildUpon()
+                val availablePlayerCommands = connectionResult.availablePlayerCommands.buildUpon()
+                    .add(Player.COMMAND_PLAY_PAUSE)
+                    .add(Player.COMMAND_PREPARE)
+                    .add(Player.COMMAND_STOP)
+                    .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                    .add(Player.COMMAND_SEEK_TO_DEFAULT_POSITION)
+                    .add(Player.COMMAND_SEEK_BACK)
+                    .add(Player.COMMAND_SEEK_FORWARD)
+                    .build()
+
                 return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                     .setAvailableSessionCommands(availableSessionCommands.build())
+                    .setAvailablePlayerCommands(availablePlayerCommands)
                     .build()
             }
 
@@ -233,10 +245,12 @@ class MediaPlaybackService : MediaSessionService() {
             }
         }
 
-        mediaSession = MediaSession.Builder(this, exo)
+        val session = MediaSession.Builder(this, exo)
             .setSessionActivity(sessionActivityPendingIntent)
             .setCallback(sessionCallback)
             .build()
+        mediaSession = session
+        addSession(session)
 
         // 6. Set MediaNotificationProvider using our configured channel
         val provider = DefaultMediaNotificationProvider.Builder(this)
@@ -254,58 +268,31 @@ class MediaPlaybackService : MediaSessionService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
 
-        // 1. Immediately satisfy the Android 14+ Foreground Service contract
-        val initialNotification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.media3_notification_small_icon)
-            .setContentTitle("Resonate")
-            .setContentText("Media3 Audio Engine Active")
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(
-                    NOTIFICATION_ID,
-                    initialNotification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-                )
-            } else {
-                startForeground(NOTIFICATION_ID, initialNotification)
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("MediaPlaybackService", "Error calling startForeground: ${e.message}", e)
-        }
-
-        // 2. Safely execute commands on the MainLooper
         intent?.action?.let { action ->
-            mainHandler.post {
-                when (action) {
-                    ACTION_PLAY_TEST -> playTestStream()
-                    ACTION_PLAY_AUTHORIZED -> {
-                        val trackId = intent.getStringExtra(EXTRA_TRACK_ID) ?: ""
-                        val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
-                        val artist = intent.getStringExtra(EXTRA_ARTIST) ?: ""
-                        val album = intent.getStringExtra(EXTRA_ALBUM) ?: ""
-                        val artworkUrl = intent.getStringExtra(EXTRA_ARTWORK_URL) ?: ""
-                        val streamUrl = intent.getStringExtra(EXTRA_STREAM_URL) ?: ""
-                        val canCache = intent.getBooleanExtra(EXTRA_CAN_CACHE, false)
-                        val startPos = intent.getLongExtra(EXTRA_START_POS, 0L)
-                        playAuthorizedTrack(trackId, title, artist, album, artworkUrl, streamUrl, canCache, startPos)
+            when (action) {
+                ACTION_PLAY_TEST -> playTestStream()
+                ACTION_PLAY_AUTHORIZED -> {
+                    val trackId = intent.getStringExtra(EXTRA_TRACK_ID) ?: ""
+                    val title = intent.getStringExtra(EXTRA_TITLE) ?: ""
+                    val artist = intent.getStringExtra(EXTRA_ARTIST) ?: ""
+                    val album = intent.getStringExtra(EXTRA_ALBUM) ?: ""
+                    val artworkUrl = intent.getStringExtra(EXTRA_ARTWORK_URL) ?: ""
+                    val streamUrl = intent.getStringExtra(EXTRA_STREAM_URL) ?: ""
+                    val canCache = intent.getBooleanExtra(EXTRA_CAN_CACHE, false)
+                    val startPos = intent.getLongExtra(EXTRA_START_POS, 0L)
+                    playAuthorizedTrack(trackId, title, artist, album, artworkUrl, streamUrl, canCache, startPos)
+                }
+                ACTION_PAUSE -> pause()
+                ACTION_RESUME -> resume()
+                ACTION_STOP -> {
+                    player?.stop()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        stopForeground(true)
                     }
-                    ACTION_PAUSE -> pause()
-                    ACTION_RESUME -> resume()
-                    ACTION_STOP -> {
-                        player?.stop()
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            stopForeground(STOP_FOREGROUND_REMOVE)
-                        } else {
-                            @Suppress("DEPRECATION")
-                            stopForeground(true)
-                        }
-                        stopSelf()
-                    }
+                    stopSelf()
                 }
             }
         }
@@ -441,6 +428,37 @@ class MediaPlaybackService : MediaSessionService() {
         player?.seekTo(positionMs)
     }
 
+    /**
+     * Reusable track metadata update mechanism.
+     * Updates current track info in-place without interrupting playback.
+     */
+    fun updateCurrentTrackMetadata(
+        title: String,
+        artist: String,
+        album: String,
+        artworkUrl: String?
+    ) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { updateCurrentTrackMetadata(title, artist, album, artworkUrl) }
+            return
+        }
+        val p = player ?: return
+        val currentItem = p.currentMediaItem ?: return
+        val metaBuilder = currentItem.mediaMetadata.buildUpon()
+            .setTitle(title)
+            .setArtist(artist)
+            .setAlbumTitle(album)
+        if (!artworkUrl.isNullOrEmpty()) {
+            metaBuilder.setArtworkUri(Uri.parse(artworkUrl))
+        }
+        val updatedMetadata = metaBuilder.build()
+        val updatedItem = currentItem.buildUpon()
+            .setMediaMetadata(updatedMetadata)
+            .build()
+        p.replaceMediaItem(p.currentMediaItemIndex, updatedItem)
+        persistCurrentPlaybackState()
+    }
+
     fun getPlaybackSnapshot(): PlaybackStateSnapshot {
         val p = player
         return if (p != null) {
@@ -467,15 +485,27 @@ class MediaPlaybackService : MediaSessionService() {
         }
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        val p = player
+        // Preserve uninterrupted playback if actively playing; clean up if paused or idle
+        if (p == null || !p.playWhenReady || p.playbackState == Player.STATE_IDLE || p.playbackState == Player.STATE_ENDED) {
+            stopSelf()
+        }
+    }
+
     override fun onDestroy() {
         instance = null
         persistCurrentPlaybackState()
 
+        mediaSession?.let {
+            removeSession(it)
+            it.release()
+        }
+        mediaSession = null
+
         player?.release()
         player = null
-
-        mediaSession?.release()
-        mediaSession = null
 
         super.onDestroy()
     }

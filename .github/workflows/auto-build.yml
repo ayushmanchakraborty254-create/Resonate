@@ -68,33 +68,35 @@ jobs:
           echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
           echo "date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "code=$VERSION_CODE" >> $GITHUB_OUTPUT
 
           # Find generated APK inside App/ and copy to release name
           APK_PATH=$(find App/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
-          cp "$APK_PATH" Resonate-v1.0.0.apk
-          ls -lh Resonate-v1.0.0.apk
+          cp "$APK_PATH" Resonate-v1.0.1.apk
+          ls -lh Resonate-v1.0.1.apk
 
           # Generate lightweight version.json release metadata
           cat <<EOF > version.json
           {
             "versionCode": $VERSION_CODE,
-            "versionName": "1.0.0",
+            "versionName": "1.0.1",
             "commitSha": "$SHORT_SHA",
             "commitMessage": "$COMMIT_MSG",
             "buildDate": "$BUILD_DATE",
-            "downloadUrl": "https://github.com/ayushmanchakraborty254-create/Resonate/releases/download/latest/Resonate-v1.0.0.apk"
+            "downloadUrl": "https://github.com/ayushmanchakraborty254-create/Resonate/releases/download/latest/Resonate-v1.0.1.apk"
           }
           EOF
 
       - name: Upload APK as Workflow Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Resonate-v1.0.0-APK
-          path: Resonate-v1.0.0.apk
+          name: Resonate-v1.0.1-APK
+          path: Resonate-v1.0.1.apk
           retention-days: 30
 
       - name: Remove Old Release Assets
         run: |
+          gh release delete-asset latest Resonate-v1.0.1.apk --yes || true
           gh release delete-asset latest Resonate-v1.0.0.apk --yes || true
           gh release delete-asset latest version.json --yes || true
         env:
@@ -111,13 +113,14 @@ jobs:
             - **Commit:** `${{ steps.vars.outputs.sha }}`
             - **Message:** ${{ steps.vars.outputs.msg }}
             - **Build Timestamp:** ${{ steps.vars.outputs.date }}
+            - **Version:** `v1.0.1` (Build #${{ steps.vars.outputs.code }})
 
             Direct Android APK installer compiled automatically on every push to `main` without Android Studio!
           draft: false
           prerelease: false
           make_latest: true
           files: |
-            Resonate-v1.0.0.apk
+            Resonate-v1.0.1.apk
             version.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

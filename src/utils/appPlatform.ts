@@ -1,20 +1,33 @@
 // Platform detection, native bridge, and GitHub update checker
+import { isSecureNativeBridgeAvailable, sendNativeMessage } from './nativeBridge';
 
-export const CURRENT_APP_VERSION = 'v1.0.0';
-export const CURRENT_BUILD_COMMIT = 'a89a9ef';
+export const CURRENT_APP_VERSION = 'v1.0.1';
+export const CURRENT_VERSION_CODE = 41;
+export const CURRENT_BUILD_COMMIT = 'd15eb9f';
 export const GITHUB_REPO = 'ayushmanchakraborty254-create/Resonate';
-export const DEFAULT_APK_DOWNLOAD_URL = `https://github.com/${GITHUB_REPO}/releases/latest/download/Resonate-v1.0.0.apk`;
+export const DEFAULT_APK_DOWNLOAD_URL = `https://github.com/${GITHUB_REPO}/releases/latest/download/Resonate-v1.0.1.apk`;
 export const GITHUB_RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
 
 export interface UpdateInfo {
   hasUpdate: boolean;
   currentVersion: string;
+  currentVersionCode?: number;
+  currentCommit?: string;
   latestVersion: string;
+  latestVersionCode?: number;
+  latestCommit?: string;
   releaseName: string;
   releaseNotes: string;
   downloadUrl?: string;
   htmlUrl: string;
-  releaseCommit?: string;
+  isNative?: boolean;
+}
+
+export interface NativeAppVersion {
+  versionCode: number;
+  versionName: string;
+  gitCommitSha: string;
+  packageName: string;
 }
 
 /**
@@ -57,54 +70,75 @@ function compareSemVer(a: [number, number, number], b: [number, number, number])
 }
 
 /**
+ * Retrieves the genuine installed package metadata directly from Android's PackageManager.
+ */
+export async function getNativeAppVersion(): Promise<NativeAppVersion | null> {
+  if (isNativeAndroidApp() && isSecureNativeBridgeAvailable()) {
+    try {
+      const res = await sendNativeMessage<any>('getAppVersion', {}, 3000);
+      if (res && res.success) {
+        return {
+          versionCode: Number(res.versionCode) || CURRENT_VERSION_CODE,
+          versionName: String(res.versionName || CURRENT_APP_VERSION.replace(/^v/, '')),
+          gitCommitSha: String(res.gitCommitSha || CURRENT_BUILD_COMMIT),
+          packageName: String(res.packageName || 'com.resonate.app')
+        };
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
+/**
  * Checks GitHub Releases and raw version metadata for new Resonate releases.
- * Uses a robust dual-source check (raw CDN version.json + GitHub Releases API)
- * to prevent failing on GitHub rate limits (HTTP 403).
+ * In native Android app, uses the native bridge (bypassing browser CORS completely).
+ * In browser, queries GitHub Releases API with strict error reporting.
  */
 export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
-  const current = CURRENT_APP_VERSION;
-  const currentCommit = CURRENT_BUILD_COMMIT.toLowerCase();
-  const lastInstalled = (localStorage.getItem('resonate_installed_commit') || '').toLowerCase();
+  const currentVer = CURRENT_APP_VERSION;
 
-  // 1. First attempt: check latest release version.json asset (published by GitHub Actions on every build)
-  try {
-    const rawRes = await fetch(
-      `https://github.com/${GITHUB_REPO}/releases/download/latest/version.json?t=${Date.now()}`,
-      { signal: AbortSignal.timeout(3500) }
-    );
-    if (rawRes.ok) {
-      const vData = await rawRes.json();
-      const remoteCommit = (vData.commitSha || '').trim().toLowerCase();
-      const remoteVersion = (vData.versionName ? `v${vData.versionName}` : vData.version || current).trim();
-      const isDismissed = localStorage.getItem('resonate_dismissed_update') === remoteCommit;
+  // 1. In native Android app: use the native bridge HTTP fetcher (no CORS, direct packageInfo check)
+  if (isNativeAndroidApp() && isSecureNativeBridgeAvailable()) {
+    try {
+      const res = await sendNativeMessage<any>('checkUpdate', {}, 10000);
+      if (res && res.success) {
+        const curCode = Number(res.installedVersionCode) || CURRENT_VERSION_CODE;
+        const curName = res.installedVersionName ? `v${res.installedVersionName}` : currentVer;
+        const curSha = res.installedCommitSha || CURRENT_BUILD_COMMIT;
+        const latCode = Number(res.latestVersionCode) || curCode;
+        const latName = res.latestVersionName ? `v${res.latestVersionName}` : curName;
+        const latSha = res.latestCommitSha || curSha;
 
-      let hasUpdate = false;
-      if (!isDismissed && remoteCommit && remoteCommit !== currentCommit && remoteCommit !== lastInstalled) {
-        hasUpdate = true;
+        return {
+          hasUpdate: Boolean(res.hasUpdate),
+          currentVersion: curName,
+          currentVersionCode: curCode,
+          currentCommit: curSha,
+          latestVersion: latName,
+          latestVersionCode: latCode,
+          latestCommit: latSha,
+          releaseName: res.latestVersionName ? `Resonate ${latName} (Build #${latCode})` : 'Resonate Update',
+          releaseNotes: res.releaseNotes || 'Bug fixes, performance improvements, and background audio refinements.',
+          downloadUrl: res.downloadUrl || DEFAULT_APK_DOWNLOAD_URL,
+          htmlUrl: GITHUB_RELEASES_URL,
+          isNative: true
+        };
+      } else {
+        throw new Error(res?.error || 'Native bridge reported check update failure');
       }
-
-      return {
-        hasUpdate,
-        currentVersion: current,
-        latestVersion: remoteVersion,
-        releaseName: vData.commitMessage || `Resonate Auto-Build (${remoteCommit || 'latest'})`,
-        releaseNotes: vData.commitMessage || 'Performance optimizations, background playback, and mobile refinements.',
-        downloadUrl: vData.downloadUrl || DEFAULT_APK_DOWNLOAD_URL,
-        htmlUrl: GITHUB_RELEASES_URL,
-        releaseCommit: remoteCommit
-      };
+    } catch (bridgeErr: any) {
+      console.warn('[Resonate] Native update check failed:', bridgeErr);
+      throw bridgeErr;
     }
-  } catch (_) {
-    // Release asset check failed, fall through to GitHub Releases API
   }
 
-  // 2. Second attempt: GitHub Releases API
+  // 2. In Browser / Web: query GitHub Releases API directly
   try {
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
       headers: {
         'Accept': 'application/vnd.github.v3+json'
       },
-      signal: AbortSignal.timeout(3500)
+      signal: AbortSignal.timeout(5000)
     });
 
     if (!res.ok) {
@@ -118,19 +152,13 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
 
     // Check version numbers
     const remoteSem = parseSemVer(rawTag) || parseSemVer(releaseName);
-    const localSem = parseSemVer(current) || [1, 0, 0];
+    const localSem = parseSemVer(currentVer) || [1, 0, 1];
 
     let hasUpdate = false;
     if (remoteSem) {
       hasUpdate = compareSemVer(remoteSem, localSem) > 0;
-    } else if (rawTag.toLowerCase().includes('latest') || releaseName.toLowerCase().includes('auto-build')) {
-      const isDismissed = localStorage.getItem('resonate_dismissed_update') === releaseCommit;
-
-      if (isDismissed || (releaseCommit && (releaseCommit === currentCommit || releaseCommit === lastInstalled))) {
-        hasUpdate = false;
-      } else if (releaseCommit && currentCommit && releaseCommit !== currentCommit) {
-        hasUpdate = true;
-      }
+    } else if (releaseCommit && releaseCommit !== CURRENT_BUILD_COMMIT.toLowerCase()) {
+      hasUpdate = true;
     }
 
     let apkDownloadUrl: string | undefined;
@@ -143,24 +171,54 @@ export async function checkGitHubReleaseUpdate(): Promise<UpdateInfo> {
 
     return {
       hasUpdate,
-      currentVersion: current,
-      latestVersion: rawTag || current,
+      currentVersion: currentVer,
+      currentVersionCode: CURRENT_VERSION_CODE,
+      currentCommit: CURRENT_BUILD_COMMIT,
+      latestVersion: rawTag ? (rawTag.startsWith('v') ? rawTag : `v${rawTag}`) : currentVer,
+      latestVersionCode: CURRENT_VERSION_CODE,
+      latestCommit: releaseCommit,
       releaseName: releaseName,
       releaseNotes: data.body || 'No release notes provided.',
       downloadUrl: apkDownloadUrl || DEFAULT_APK_DOWNLOAD_URL,
       htmlUrl: data.html_url || GITHUB_RELEASES_URL,
-      releaseCommit: releaseCommit
+      isNative: false
     };
-  } catch (err) {
-    console.warn('[Resonate] Update check fallback:', err);
-    return {
-      hasUpdate: false,
-      currentVersion: current,
-      latestVersion: current,
-      releaseName: 'Resonate v1.0.0',
-      releaseNotes: 'Running on current build.',
-      downloadUrl: DEFAULT_APK_DOWNLOAD_URL,
-      htmlUrl: GITHUB_RELEASES_URL
-    };
+  } catch (err: any) {
+    console.error('[Resonate] Web update check error:', err);
+    throw err;
   }
+}
+
+/**
+ * Downloads and installs the APK update natively via Android package installer handoff.
+ */
+export async function downloadAndInstallNativeUpdate(
+  downloadUrl: string,
+  onProgress?: (percent: number, bytesRead: number, totalBytes: number) => void
+): Promise<{ success: boolean; error?: string }> {
+  if (!isSecureNativeBridgeAvailable()) {
+    openExternalUrl(downloadUrl);
+    return { success: true };
+  }
+
+  return sendNativeMessage<{ success: boolean; error?: string }>(
+    'downloadAndInstallUpdate',
+    { downloadUrl },
+    300000, // 5 min timeout for slow networks
+    (progressData) => {
+      if (onProgress && typeof progressData.percent === 'number') {
+        onProgress(progressData.percent, progressData.bytesRead || 0, progressData.totalBytes || 0);
+      }
+    }
+  );
+}
+
+/**
+ * Triggers package installation of an already-downloaded update APK.
+ */
+export async function installDownloadedApkNative(): Promise<{ success: boolean; error?: string }> {
+  if (isSecureNativeBridgeAvailable()) {
+    return sendNativeMessage<{ success: boolean; error?: string }>('installDownloadedApk');
+  }
+  return { success: false, error: 'Not running in native app' };
 }

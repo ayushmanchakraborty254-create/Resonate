@@ -20,6 +20,7 @@ import android.media.session.PlaybackState
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -32,12 +33,15 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -260,6 +264,306 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getInstalledPackageInfo(): android.content.pm.PackageInfo {
+        val pm = packageManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            pm.getPackageInfo(packageName, 0)
+        }
+    }
+
+    private fun getInstalledVersionCode(): Long {
+        val pInfo = getInstalledPackageInfo()
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            pInfo.longVersionCode
+        } else {
+            @Suppress("DEPRECATION")
+            pInfo.versionCode.toLong()
+        }
+    }
+
+    private fun checkUpdateNative(onResult: (org.json.JSONObject) -> Unit) {
+        Executors.newSingleThreadExecutor().execute {
+            val currentCode = getInstalledVersionCode()
+            val pInfo = getInstalledPackageInfo()
+            val currentName = pInfo.versionName ?: "1.0.1"
+            val currentSha = BuildConfig.GIT_COMMIT_SHA
+
+            var remoteCode: Long = -1L
+            var remoteName = ""
+            var commitSha = ""
+            var commitMessage = ""
+            var downloadUrl = ""
+            var publishedDate = ""
+            var checkSucceeded = false
+            var lastError = ""
+
+            // 1. Try version.json asset first (direct release asset)
+            try {
+                val vUrl = URL("https://github.com/ayushmanchakraborty254-create/Resonate/releases/download/latest/version.json?t=${System.currentTimeMillis()}")
+                var conn = (vUrl.openConnection() as HttpURLConnection).apply {
+                    instanceFollowRedirects = true
+                    connectTimeout = 7000
+                    readTimeout = 7000
+                    setRequestProperty("User-Agent", "ResonateNativeApp/1.0.1 (Android)")
+                }
+                conn.connect()
+                var code = conn.responseCode
+                if (code in 300..399) {
+                    val redirectUrl = conn.getHeaderField("Location")
+                    if (!redirectUrl.isNullOrEmpty()) {
+                        conn.disconnect()
+                        conn = (URL(redirectUrl).openConnection() as HttpURLConnection).apply {
+                            connectTimeout = 7000
+                            readTimeout = 7000
+                            setRequestProperty("User-Agent", "ResonateNativeApp/1.0.1 (Android)")
+                        }
+                        conn.connect()
+                        code = conn.responseCode
+                    }
+                }
+
+                if (code in 200..299) {
+                    val raw = conn.inputStream.bufferedReader().use { it.readText() }
+                    conn.disconnect()
+                    val json = org.json.JSONObject(raw)
+                    remoteCode = json.optLong("versionCode", -1L)
+                    remoteName = json.optString("versionName", "")
+                    commitSha = json.optString("commitSha", "")
+                    commitMessage = json.optString("commitMessage", "")
+                    downloadUrl = json.optString("downloadUrl", "")
+                    publishedDate = json.optString("buildDate", "")
+                    checkSucceeded = true
+                } else {
+                    conn.disconnect()
+                    lastError = "version.json HTTP $code"
+                }
+            } catch (e: Exception) {
+                lastError = "version.json: ${e.message}"
+            }
+
+            // 2. Fallback to GitHub Releases API if needed
+            if (!checkSucceeded) {
+                try {
+                    val apiUrl = URL("https://api.github.com/repos/ayushmanchakraborty254-create/Resonate/releases/latest")
+                    val apiConn = (apiUrl.openConnection() as HttpURLConnection).apply {
+                        instanceFollowRedirects = true
+                        connectTimeout = 7000
+                        readTimeout = 7000
+                        setRequestProperty("Accept", "application/vnd.github.v3+json")
+                        setRequestProperty("User-Agent", "ResonateNativeApp/1.0.1 (Android)")
+                    }
+                    apiConn.connect()
+                    val code = apiConn.responseCode
+                    if (code in 200..299) {
+                        val raw = apiConn.inputStream.bufferedReader().use { it.readText() }
+                        apiConn.disconnect()
+                        val data = org.json.JSONObject(raw)
+                        val rawTag = data.optString("tag_name", "").trim()
+                        val relName = data.optString("name", rawTag).trim()
+                        commitMessage = data.optString("body", "Performance improvements and updates.")
+                        publishedDate = data.optString("published_at", "")
+
+                        val shaMatch = Regex("\\(([a-f0-9]{7,40})\\)", RegexOption.IGNORE_CASE).find(relName)
+                        commitSha = shaMatch?.groupValues?.get(1) ?: data.optString("target_commitish", "")
+
+                        val assets = data.optJSONArray("assets")
+                        if (assets != null) {
+                            for (i in 0 until assets.length()) {
+                                val asset = assets.getJSONObject(i)
+                                val name = asset.optString("name", "")
+                                if (name.endsWith(".apk", ignoreCase = true)) {
+                                    downloadUrl = asset.optString("browser_download_url", "")
+                                    break
+                                }
+                            }
+                        }
+
+                        val semMatch = Regex("v?(\\d+)\\.(\\d+)\\.(\\d+)").find(rawTag)
+                        remoteName = semMatch?.value ?: rawTag.ifEmpty { "1.0.1" }
+                        checkSucceeded = true
+                    } else {
+                        apiConn.disconnect()
+                        lastError = "GitHub API HTTP $code"
+                    }
+                } catch (e: Exception) {
+                    lastError = "GitHub API: ${e.message}"
+                }
+            }
+
+            if (!checkSucceeded) {
+                val errResp = org.json.JSONObject().apply {
+                    put("success", false)
+                    put("error", "Unable to check for updates: $lastError")
+                }
+                runOnUiThread { onResult(errResp) }
+                return@execute
+            }
+
+            val hasUpdate = if (remoteCode > 0) {
+                remoteCode > currentCode
+            } else if (commitSha.isNotEmpty() && !currentSha.equals("local", ignoreCase = true)) {
+                !commitSha.equals(currentSha, ignoreCase = true)
+            } else {
+                false
+            }
+
+            val resp = org.json.JSONObject().apply {
+                put("success", true)
+                put("hasUpdate", hasUpdate)
+                put("installedVersionCode", currentCode)
+                put("installedVersionName", currentName)
+                put("installedCommitSha", currentSha)
+                put("latestVersionCode", if (remoteCode > 0) remoteCode else currentCode)
+                put("latestVersionName", remoteName.ifEmpty { currentName })
+                put("latestCommitSha", commitSha)
+                put("releaseNotes", commitMessage)
+                put("downloadUrl", downloadUrl)
+                put("publishedDate", publishedDate)
+            }
+            runOnUiThread { onResult(resp) }
+        }
+    }
+
+    private fun startInstallIntent(apkFile: File): Boolean {
+        return try {
+            val apkUri = FileProvider.getUriForFile(
+                this@MainActivity,
+                "${packageName}.fileprovider",
+                apkFile
+            )
+            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            startActivity(installIntent)
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to start install intent", e)
+            false
+        }
+    }
+
+    private fun downloadAndInstallApkNative(
+        downloadUrl: String,
+        progressCallback: (percent: Int, bytesRead: Long, totalBytes: Long) -> Unit,
+        completionCallback: (success: Boolean, error: String?) -> Unit
+    ) {
+        Executors.newSingleThreadExecutor().execute {
+            try {
+                val apkDir = File(cacheDir, "apk_updates")
+                if (!apkDir.exists()) apkDir.mkdirs()
+                val apkFile = File(apkDir, "Resonate-update.apk")
+                if (apkFile.exists()) apkFile.delete()
+
+                val url = URL(downloadUrl)
+                var conn = (url.openConnection() as HttpURLConnection).apply {
+                    instanceFollowRedirects = true
+                    connectTimeout = 12000
+                    readTimeout = 15000
+                    setRequestProperty("User-Agent", "ResonateNativeApp/1.0.1 (Android)")
+                }
+                conn.connect()
+                var code = conn.responseCode
+                if (code in 300..399) {
+                    val redirectUrl = conn.getHeaderField("Location")
+                    if (!redirectUrl.isNullOrEmpty()) {
+                        conn.disconnect()
+                        conn = (URL(redirectUrl).openConnection() as HttpURLConnection).apply {
+                            connectTimeout = 12000
+                            readTimeout = 15000
+                            setRequestProperty("User-Agent", "ResonateNativeApp/1.0.1 (Android)")
+                        }
+                        conn.connect()
+                        code = conn.responseCode
+                    }
+                }
+
+                if (code !in 200..299) {
+                    conn.disconnect()
+                    runOnUiThread { completionCallback(false, "Download failed with HTTP $code") }
+                    return@execute
+                }
+
+                val totalBytes = conn.contentLength.toLong()
+                var bytesReadTotal = 0L
+                var lastReportPercent = -1
+
+                conn.inputStream.use { input ->
+                    FileOutputStream(apkFile).use { output ->
+                        val buffer = ByteArray(8192)
+                        var read: Int
+                        while (input.read(buffer).also { read = it } != -1) {
+                            output.write(buffer, 0, read)
+                            bytesReadTotal += read
+                            if (totalBytes > 0) {
+                                val percent = ((bytesReadTotal * 100) / totalBytes).toInt()
+                                if (percent != lastReportPercent && (percent % 2 == 0 || percent == 100)) {
+                                    lastReportPercent = percent
+                                    runOnUiThread { progressCallback(percent, bytesReadTotal, totalBytes) }
+                                }
+                            }
+                        }
+                        output.flush()
+                    }
+                }
+                conn.disconnect()
+
+                if (!apkFile.exists() || apkFile.length() < 1_000_000L) {
+                    runOnUiThread { completionCallback(false, "Downloaded file is incomplete (${apkFile.length()} bytes)") }
+                    return@execute
+                }
+
+                // Verify APK integrity and package identity
+                val pm = packageManager
+                val archiveInfo = pm.getPackageArchiveInfo(
+                    apkFile.absolutePath,
+                    PackageManager.GET_ACTIVITIES
+                )
+
+                if (archiveInfo == null) {
+                    runOnUiThread { completionCallback(false, "Invalid APK file: Package parsing failed.") }
+                    return@execute
+                }
+
+                if (archiveInfo.packageName != packageName) {
+                    runOnUiThread { completionCallback(false, "Security error: Package name mismatch (${archiveInfo.packageName} vs $packageName).") }
+                    return@execute
+                }
+
+                // Check unknown app installation permission on Android 8.0+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    if (!pm.canRequestPackageInstalls()) {
+                        runOnUiThread {
+                            try {
+                                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                    data = Uri.parse("package:$packageName")
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                }
+                                startActivity(intent)
+                            } catch (_: Exception) {}
+                            completionCallback(false, "Permission required: Please enable 'Allow from this source' for Resonate and tap Install again.")
+                        }
+                        return@execute
+                    }
+                }
+
+                runOnUiThread {
+                    val launched = startInstallIntent(apkFile)
+                    if (launched) {
+                        completionCallback(true, null)
+                    } else {
+                        completionCallback(false, "Failed to launch Android package installer.")
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread { completionCallback(false, "Update download failed: ${e.message}") }
+            }
+        }
+    }
+
     private fun syncMediaSessionAndNotification(
         title: String,
         artist: String,
@@ -408,18 +712,30 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. Initialize Notification Channel for background media playback
+        // 1. Initialize Notification Channels for background media playback
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val legacyChannel = NotificationChannel(
                 CHANNEL_ID,
                 "Resonate Playback",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Shows mini player notification in drawer"
                 setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            nm.createNotificationChannel(channel)
+            nm.createNotificationChannel(legacyChannel)
+
+            val media3Channel = NotificationChannel(
+                MediaPlaybackService.CHANNEL_ID,
+                getString(R.string.notification_channel_name),
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Keeps Resonate audio playing in background with lock-screen controls"
+                setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            }
+            nm.createNotificationChannel(media3Channel)
         }
 
         // Request POST_NOTIFICATIONS on Android 13+ (API 33+)
@@ -579,22 +895,10 @@ class MainActivity : AppCompatActivity() {
                                 }
                                 var serviceStarted = false
                                 try {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        this@MainActivity.startForegroundService(serviceIntent)
-                                    } else {
-                                        this@MainActivity.startService(serviceIntent)
-                                    }
+                                    this@MainActivity.startService(serviceIntent)
                                     serviceStarted = true
                                 } catch (e: Exception) {
-                                    android.util.Log.e("ResonateNativeSecure", "startForegroundService failed: ${e.message}", e)
-                                    val errResp = org.json.JSONObject().apply {
-                                        if (reqId.isNotEmpty()) put("id", reqId)
-                                        put("action", reqAction)
-                                        put("success", false)
-                                        put("error", "Service start failed: ${e.message}")
-                                    }
-                                    replyProxy.postMessage(errResp.toString())
-                                    return@addWebMessageListener
+                                    android.util.Log.e("ResonateNativeSecure", "startService failed: ${e.message}", e)
                                 }
 
                                 // onPostMessage executes on the UI/MainLooper thread; player operations are safe
@@ -608,7 +912,7 @@ class MainActivity : AppCompatActivity() {
                                     put("artist", MediaPlaybackService.TEST_TRACK_ARTIST)
                                     put("streamUrl", MediaPlaybackService.AUTHORIZED_TEST_STREAM_URL)
                                     put("engine", "AndroidX Media3 ExoPlayer")
-                                    put("serviceStarted", serviceStarted)
+                                    put("serviceStarted", serviceStarted || MediaPlaybackService.instance != null)
                                     put("playerPrepared", playerPrepared || MediaPlaybackService.instance != null)
                                 }
                                 replyProxy.postMessage(resp.toString())
@@ -667,11 +971,7 @@ class MainActivity : AppCompatActivity() {
                                     this.action = MediaPlaybackService.ACTION_RESUME
                                 }
                                 try {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        this@MainActivity.startForegroundService(serviceIntent)
-                                    } else {
-                                        this@MainActivity.startService(serviceIntent)
-                                    }
+                                    this@MainActivity.startService(serviceIntent)
                                 } catch (_: Exception) {}
 
                                 MediaPlaybackService.instance?.resume()
@@ -697,6 +997,20 @@ class MainActivity : AppCompatActivity() {
                                 replyProxy.postMessage(resp.toString())
                             }
 
+                            "updateMetadata" -> {
+                                val title = json.optString("title", "")
+                                val artist = json.optString("artist", "")
+                                val album = json.optString("album", "")
+                                val artworkUrl = json.optString("artworkUrl", "")
+                                MediaPlaybackService.instance?.updateCurrentTrackMetadata(title, artist, album, artworkUrl)
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+
                             "checkNotifPermission" -> {
                                 val granted = androidx.core.app.NotificationManagerCompat.from(this@MainActivity).areNotificationsEnabled()
                                 val resp = org.json.JSONObject().apply {
@@ -715,6 +1029,147 @@ class MainActivity : AppCompatActivity() {
                                         arrayOf(Manifest.permission.POST_NOTIFICATIONS),
                                         POST_NOTIF_PERMISSION_REQUEST
                                     )
+                                }
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+
+                            "getAppVersion" -> {
+                                val currentCode = getInstalledVersionCode()
+                                val pInfo = getInstalledPackageInfo()
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                    put("versionCode", currentCode)
+                                    put("versionName", pInfo.versionName ?: "1.0.1")
+                                    put("gitCommitSha", BuildConfig.GIT_COMMIT_SHA)
+                                    put("packageName", packageName)
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+
+                            "checkUpdate" -> {
+                                checkUpdateNative { result ->
+                                    if (reqId.isNotEmpty()) result.put("id", reqId)
+                                    result.put("action", reqAction)
+                                    try {
+                                        replyProxy.postMessage(result.toString())
+                                    } catch (_: Exception) {}
+                                }
+                            }
+
+                            "downloadAndInstallUpdate" -> {
+                                val downloadUrl = json.optString("downloadUrl", "")
+                                if (downloadUrl.isEmpty()) {
+                                    val errResp = org.json.JSONObject().apply {
+                                        if (reqId.isNotEmpty()) put("id", reqId)
+                                        put("action", reqAction)
+                                        put("success", false)
+                                        put("error", "No downloadUrl provided")
+                                    }
+                                    replyProxy.postMessage(errResp.toString())
+                                    return@addWebMessageListener
+                                }
+
+                                downloadAndInstallApkNative(
+                                    downloadUrl,
+                                    progressCallback = { percent, bytesRead, totalBytes ->
+                                        val progResp = org.json.JSONObject().apply {
+                                            if (reqId.isNotEmpty()) put("id", reqId)
+                                            put("action", reqAction)
+                                            put("type", "progress")
+                                            put("percent", percent)
+                                            put("bytesRead", bytesRead)
+                                            put("totalBytes", totalBytes)
+                                        }
+                                        try {
+                                            replyProxy.postMessage(progResp.toString())
+                                        } catch (_: Exception) {}
+                                        runOnUiThread {
+                                            dispatchRemote("updateDownloadProgress", percent.toDouble())
+                                        }
+                                    },
+                                    completionCallback = { success, error ->
+                                        val compResp = org.json.JSONObject().apply {
+                                            if (reqId.isNotEmpty()) put("id", reqId)
+                                            put("action", reqAction)
+                                            put("type", "complete")
+                                            put("success", success)
+                                            if (error != null) put("error", error)
+                                        }
+                                        try {
+                                            replyProxy.postMessage(compResp.toString())
+                                        } catch (_: Exception) {}
+                                    }
+                                )
+                            }
+
+                            "installDownloadedApk" -> {
+                                val apkFile = File(cacheDir, "apk_updates/Resonate-update.apk")
+                                if (apkFile.exists() && apkFile.length() > 1_000_000L) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+                                        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                            data = Uri.parse("package:$packageName")
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                        }
+                                        startActivity(intent)
+                                        val resp = org.json.JSONObject().apply {
+                                            if (reqId.isNotEmpty()) put("id", reqId)
+                                            put("action", reqAction)
+                                            put("success", false)
+                                            put("error", "Permission required: Please enable 'Allow from this source' for Resonate and tap Install again.")
+                                        }
+                                        replyProxy.postMessage(resp.toString())
+                                    } else {
+                                        val launched = startInstallIntent(apkFile)
+                                        val resp = org.json.JSONObject().apply {
+                                            if (reqId.isNotEmpty()) put("id", reqId)
+                                            put("action", reqAction)
+                                            put("success", launched)
+                                            if (!launched) put("error", "Failed to launch package installer")
+                                        }
+                                        replyProxy.postMessage(resp.toString())
+                                    }
+                                } else {
+                                    val resp = org.json.JSONObject().apply {
+                                        if (reqId.isNotEmpty()) put("id", reqId)
+                                        put("action", reqAction)
+                                        put("success", false)
+                                        put("error", "No downloaded APK found. Please tap Update to download.")
+                                    }
+                                    replyProxy.postMessage(resp.toString())
+                                }
+                            }
+
+                            "canInstallUnknownApps" -> {
+                                val canInstall = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    packageManager.canRequestPackageInstalls()
+                                } else {
+                                    true
+                                }
+                                val resp = org.json.JSONObject().apply {
+                                    if (reqId.isNotEmpty()) put("id", reqId)
+                                    put("action", reqAction)
+                                    put("success", true)
+                                    put("canInstall", canInstall)
+                                }
+                                replyProxy.postMessage(resp.toString())
+                            }
+
+                            "openUnknownAppSourcesSettings" -> {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    try {
+                                        val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                            data = Uri.parse("package:$packageName")
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                        }
+                                        startActivity(intent)
+                                    } catch (_: Exception) {}
                                 }
                                 val resp = org.json.JSONObject().apply {
                                     if (reqId.isNotEmpty()) put("id", reqId)
@@ -861,6 +1316,10 @@ class MainActivity : AppCompatActivity() {
             }
             pendingPermissionRequest = null
         }
+        if (requestCode == POST_NOTIF_PERMISSION_REQUEST) {
+            val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            dispatchRemote("notificationPermissionChanged", if (granted) 1.0 else 0.0)
+        }
     }
 
     // Keep music player state cleanly synced across window focus and minimize/restore events
@@ -906,9 +1365,9 @@ class MainActivity : AppCompatActivity() {
             unregisterReceiver(mediaActionReceiver)
         } catch (_: Exception) {}
 
-        try {
-            stopService(Intent(this, MediaPlaybackService::class.java))
-        } catch (_: Exception) {}
+        // Note: Do NOT stop MediaPlaybackService here.
+        // MediaPlaybackService runs as an independent foreground service
+        // that must continue playing when the activity is destroyed or swiped away.
 
         try {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

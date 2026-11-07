@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User as UserIcon, RefreshCw, Download, ArrowUpRight, CheckCircle2, 
-  Sparkles, ExternalLink, LogOut, ArrowLeft, Trash2, Volume2, Play, Pause
+  Sparkles, ExternalLink, LogOut, ArrowLeft, Trash2, Volume2, Play, Pause, AlertCircle
 } from 'lucide-react';
-import { isNativeAndroidApp, checkGitHubReleaseUpdate, openExternalUrl, CURRENT_APP_VERSION, type UpdateInfo } from '../utils/appPlatform';
+import { 
+  isNativeAndroidApp, 
+  checkGitHubReleaseUpdate, 
+  openExternalUrl, 
+  CURRENT_APP_VERSION, 
+  CURRENT_VERSION_CODE,
+  CURRENT_BUILD_COMMIT,
+  DEFAULT_APK_DOWNLOAD_URL,
+  getNativeAppVersion,
+  downloadAndInstallNativeUpdate,
+  installDownloadedApkNative,
+  type UpdateInfo,
+  type NativeAppVersion
+} from '../utils/appPlatform';
 import { sendNativeMessage, isSecureNativeBridgeAvailable } from '../utils/nativeBridge';
 
 interface ProfileViewProps {
@@ -24,9 +37,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onBack
 }) => {
   const isNative = isNativeAndroidApp();
+  const [nativeVersion, setNativeVersion] = useState<NativeAppVersion | null>(null);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateCheckStatus, setUpdateCheckStatus] = useState<'idle' | 'up-to-date' | 'update-available' | 'error'>('idle');
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [isDownloaded, setIsDownloaded] = useState<boolean>(false);
+
+  // Read actual installed package metadata from Android on load
+  useEffect(() => {
+    getNativeAppVersion().then(v => {
+      if (v) setNativeVersion(v);
+    });
+  }, []);
 
   // Check for updates automatically on view load
   useEffect(() => {
@@ -130,6 +155,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   const handleCheckUpdate = async () => {
     setIsCheckingUpdate(true);
+    setUpdateError(null);
     try {
       const info = await checkGitHubReleaseUpdate();
       setUpdateInfo(info);
@@ -138,33 +164,59 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       } else {
         setUpdateCheckStatus('up-to-date');
       }
-    } catch (_) {
+    } catch (err: any) {
       setUpdateCheckStatus('error');
+      setUpdateError(err.message || 'Unable to check for updates. GitHub could not be reached.');
     } finally {
       setIsCheckingUpdate(false);
     }
   };
 
   const handleDismissUpdate = () => {
-    if (updateInfo?.releaseCommit) {
-      localStorage.setItem('resonate_dismissed_update', updateInfo.releaseCommit);
-    } else {
-      localStorage.setItem('resonate_dismissed_update', 'latest');
+    if (updateInfo?.latestCommit) {
+      localStorage.setItem('resonate_dismissed_update', updateInfo.latestCommit);
     }
     setUpdateCheckStatus('up-to-date');
   };
 
-  const handleUpdateNow = () => {
+  const handleUpdateNow = async () => {
     if (!updateInfo) return;
-    const targetUrl = updateInfo.downloadUrl || updateInfo.htmlUrl;
-    // Mark this release as acknowledged
-    try {
-      const commitMatch = updateInfo.releaseName.match(/\(([a-f0-9]{7,40})\)/i);
-      if (commitMatch && commitMatch[1]) {
-        localStorage.setItem('resonate_installed_commit', commitMatch[1]);
+    if (isNative && isSecureNativeBridgeAvailable()) {
+      setIsDownloading(true);
+      setDownloadProgress(0);
+      setUpdateError(null);
+      try {
+        const res = await downloadAndInstallNativeUpdate(
+          updateInfo.downloadUrl || DEFAULT_APK_DOWNLOAD_URL,
+          (percent) => {
+            setDownloadProgress(percent);
+          }
+        );
+        if (res && res.success) {
+          setIsDownloaded(true);
+        } else if (res && res.error) {
+          setUpdateError(res.error);
+        }
+      } catch (err: any) {
+        setUpdateError(err.message || 'Download failed');
+      } finally {
+        setIsDownloading(false);
       }
-    } catch (_) {}
-    openExternalUrl(targetUrl);
+    } else {
+      openExternalUrl(updateInfo.downloadUrl || updateInfo.htmlUrl);
+    }
+  };
+
+  const handleInstallDownloaded = async () => {
+    setUpdateError(null);
+    try {
+      const res = await installDownloadedApkNative();
+      if (res && !res.success && res.error) {
+        setUpdateError(res.error);
+      }
+    } catch (err: any) {
+      setUpdateError(err.message || 'Installation handoff failed');
+    }
   };
 
   const handleClearCache = () => {
@@ -411,16 +463,24 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.6)' }}>Current Version:</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '6px' }}>
-              {CURRENT_APP_VERSION}
-            </span>
-            {isNative && (
-              <span style={{ fontSize: '11px', fontWeight: 600, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '2px 8px', borderRadius: '6px' }}>
-                Android APK Native
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.6)' }}>Installed:</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '6px' }}>
+                {nativeVersion ? `v${nativeVersion.versionName}` : CURRENT_APP_VERSION}
               </span>
-            )}
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#a78bfa', background: 'rgba(167, 139, 250, 0.15)', padding: '2px 8px', borderRadius: '6px' }}>
+                Build #{nativeVersion ? nativeVersion.versionCode : CURRENT_VERSION_CODE}
+              </span>
+              {isNative && (
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '2px 8px', borderRadius: '6px' }}>
+                  Android APK Native
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', paddingLeft: '2px' }}>
+              SHA: {nativeVersion ? nativeVersion.gitCommitSha : CURRENT_BUILD_COMMIT}
+            </div>
           </div>
 
           {/* Status Message */}
@@ -428,33 +488,88 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <div style={{ marginTop: '12px', padding: '12px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fbbf24', fontWeight: 700, fontSize: '13px', marginBottom: '4px' }}>
                 <span>✨ New Update Available: {updateInfo.latestVersion}</span>
+                <span style={{ fontSize: '11px', background: 'rgba(251, 191, 36, 0.2)', padding: '1px 6px', borderRadius: '4px' }}>
+                  Build #{updateInfo.latestVersionCode || 'new'}
+                </span>
               </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '12px' }}>
-                {updateInfo.releaseName || 'A new version with performance improvements is available on GitHub.'}
+              <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '8px' }}>
+                {updateInfo.releaseName || 'A new build is available with performance improvements and updates.'}
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={handleUpdateNow}
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%)',
-                    color: '#1e1b4b',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 20px rgba(167, 139, 250, 0.38)',
-                  }}
-                >
-                  <Download size={15} />
-                  <span>Update Now</span>
-                </button>
+              {updateInfo.releaseNotes && updateInfo.releaseNotes !== updateInfo.releaseName && (
+                <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '10px', maxHeight: '80px', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '6px' }}>
+                  {updateInfo.releaseNotes}
+                </div>
+              )}
+
+              {/* Download Progress Bar */}
+              {isDownloading && (
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#c4b5fd', marginBottom: '4px', fontWeight: 600 }}>
+                    <span>Downloading APK update...</span>
+                    <span>{downloadProgress}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: `${downloadProgress}%`, height: '100%', backgroundColor: '#a78bfa', transition: 'width 0.2s ease-out' }} />
+                  </div>
+                </div>
+              )}
+
+              {updateError && (
+                <div style={{ color: '#f87171', fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertCircle size={14} />
+                  <span>{updateError}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {isDownloaded ? (
+                  <button
+                    onClick={handleInstallDownloaded}
+                    style={{
+                      flex: 1,
+                      padding: '10px 16px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
+                      color: '#064e3b',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 20px rgba(16, 185, 129, 0.38)',
+                    }}
+                  >
+                    <Download size={15} />
+                    <span>Install APK Now</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleUpdateNow}
+                    disabled={isDownloading}
+                    style={{
+                      flex: 1,
+                      padding: '10px 16px',
+                      borderRadius: '12px',
+                      background: isDownloading ? 'rgba(255, 255, 255, 0.1)' : 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%)',
+                      color: isDownloading ? '#fff' : '#1e1b4b',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: isDownloading ? 'default' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: isDownloading ? 'none' : '0 4px 20px rgba(167, 139, 250, 0.38)',
+                    }}
+                  >
+                    <Download size={15} />
+                    <span>{isDownloading ? `Downloading (${downloadProgress}%)` : 'Update Now'}</span>
+                  </button>
+                )}
                 <button
                   onClick={handleDismissUpdate}
                   style={{
@@ -475,34 +590,57 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </div>
           ) : updateCheckStatus === 'error' ? (
             <div style={{ marginTop: '8px' }}>
-              <div style={{ color: '#f87171', fontSize: '12px', marginBottom: '8px' }}>
-                Unable to check automatic updates. You can download the latest APK directly from GitHub.
+              <div style={{ color: '#f87171', fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <AlertCircle size={14} />
+                <span>Unable to check for updates: {updateError || 'GitHub could not be reached.'}</span>
               </div>
-              <button
-                onClick={() => openExternalUrl(updateInfo?.downloadUrl || 'https://github.com/ayushmanchakraborty254-create/Resonate/releases/latest')}
-                style={{
-                  padding: '7px 14px',
-                  borderRadius: '12px',
-                  background: 'rgba(196, 181, 253, 0.16)',
-                  border: '1px solid rgba(196, 181, 253, 0.35)',
-                  boxShadow: '0 2px 12px rgba(167, 139, 250, 0.25)',
-                  color: '#c4b5fd',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Download size={13} />
-                <span>Download Latest APK</span>
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleCheckUpdate}
+                  disabled={isCheckingUpdate}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#fff',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <RefreshCw size={13} style={{ animation: isCheckingUpdate ? 'spin 1s linear infinite' : 'none' }} />
+                  <span>Try Again</span>
+                </button>
+                <button
+                  onClick={() => openExternalUrl(updateInfo?.downloadUrl || DEFAULT_APK_DOWNLOAD_URL)}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(196, 181, 253, 0.16)',
+                    border: '1px solid rgba(196, 181, 253, 0.35)',
+                    boxShadow: '0 2px 12px rgba(167, 139, 250, 0.25)',
+                    color: '#c4b5fd',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Download size={13} />
+                  <span>Download Latest APK</span>
+                </button>
+              </div>
             </div>
           ) : updateCheckStatus === 'up-to-date' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4ade80', fontSize: '12px', marginTop: '6px' }}>
               <CheckCircle2 size={15} />
-              <span>You have the latest version installed.</span>
+              <span>You have the latest version installed (Build #{nativeVersion ? nativeVersion.versionCode : CURRENT_VERSION_CODE}).</span>
             </div>
           ) : (
             <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)', marginTop: '4px' }}>

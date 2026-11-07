@@ -3,16 +3,54 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+fun getGitSha(): String {
+    return try {
+        ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+            .start()
+            .inputStream
+            .bufferedReader()
+            .readText()
+            .trim()
+            .ifEmpty { "d15eb9f" }
+    } catch (_: Exception) {
+        "d15eb9f"
+    }
+}
+
+fun getGitCount(): Int {
+    return try {
+        ProcessBuilder("git", "rev-list", "--count", "HEAD")
+            .start()
+            .inputStream
+            .bufferedReader()
+            .readText()
+            .trim()
+            .toIntOrNull() ?: 41
+    } catch (_: Exception) {
+        41
+    }
+}
+
+val gitShaProp = (project.findProperty("gitCommitSha") as? String) ?: getGitSha()
+val gitCountProp = (project.findProperty("versionCode") as? String)?.toIntOrNull() ?: getGitCount()
+
 android {
     namespace = "com.resonate.app"
     compileSdk = 35
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.resonate.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = (project.findProperty("versionCode") as? String)?.toIntOrNull() ?: 1
-        versionName = "1.0.0"
+        versionCode = gitCountProp
+        versionName = "1.0.1"
+
+        buildConfigField("String", "GIT_COMMIT_SHA", "\"$gitShaProp\"")
+        buildConfigField("long", "BUILD_TIME_MILLIS", "${System.currentTimeMillis()}L")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

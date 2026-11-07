@@ -10,6 +10,7 @@ interface PendingRequest {
   resolve: (value: any) => void;
   reject: (reason: any) => void;
   timer: ReturnType<typeof setTimeout>;
+  onProgress?: (progressData: any) => void;
 }
 
 let messageSeq = 0;
@@ -35,10 +36,14 @@ if (typeof window !== 'undefined') {
         try {
           const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
           if (data && data.id && pendingRequests.has(data.id)) {
-            const { resolve, timer } = pendingRequests.get(data.id)!;
-            clearTimeout(timer);
+            const entry = pendingRequests.get(data.id)!;
+            if (data.type === 'progress') {
+              entry.onProgress?.(data);
+              return;
+            }
+            clearTimeout(entry.timer);
             pendingRequests.delete(data.id);
-            resolve(data);
+            entry.resolve(data);
           }
         } catch (err) {
           console.error('[ResonateNativeSecure] Error parsing message from native:', err);
@@ -57,7 +62,8 @@ if (typeof window !== 'undefined') {
 export const sendNativeMessage = <T = any>(
   action: string,
   payload: Record<string, any> = {},
-  timeoutMs = 8000
+  timeoutMs = 8000,
+  onProgress?: (progressData: any) => void
 ): Promise<T> => {
   return new Promise((resolve, reject) => {
     const bridge = (window as any).ResonateNativeSecure;
@@ -74,7 +80,7 @@ export const sendNativeMessage = <T = any>(
       }
     }, timeoutMs);
 
-    pendingRequests.set(id, { resolve, reject, timer });
+    pendingRequests.set(id, { resolve, reject, timer, onProgress });
 
     // Make sure listener is attached
     if (!bridge.__resonateListenerAttached) {
@@ -84,6 +90,10 @@ export const sendNativeMessage = <T = any>(
           const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
           if (data && data.id && pendingRequests.has(data.id)) {
             const entry = pendingRequests.get(data.id)!;
+            if (data.type === 'progress') {
+              entry.onProgress?.(data);
+              return;
+            }
             clearTimeout(entry.timer);
             pendingRequests.delete(data.id);
             entry.resolve(data);
@@ -103,3 +113,4 @@ export const sendNativeMessage = <T = any>(
     }
   });
 };
+
